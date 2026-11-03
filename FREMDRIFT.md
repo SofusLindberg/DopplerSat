@@ -4,6 +4,26 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-03 (2) — Pushet til GitHub. Gem og luk
+
+- Brugeren oprettede det private repo og skrev: "DopplerSat er oprettet på Git. Push, gem, luk, og fortæl mig næste gang, hvor vi er kommet til. :-)"
+- Pushet til `https://github.com/SofusLindberg/DopplerSat` (`master` sporer `origin/master`).
+- Installationen er kontrolleret igen: den installerede "Doppler Saturator 1.0" er identisk med buildet (filhash `624E93D9…`, moduleinfo 1.0.0).
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):**
+- Seneste version er **1.0**. Den er installeret og verificeret, men **ikke testet i Ableton**.
+- Genstart Live og scan plugins igen, og indsæt "Doppler Saturator 1.0". Prøv:
+  - Sine ved 0,5–2 Hz med Amount 100 % på en bas eller et pad.
+  - Square med Sync.
+  - Dry/Wet 50 % (phaser).
+- Spørg:
+  - Er pitch-effekten stærk nok? Fartgrænsen er 40 / 20 okt/s.
+  - Skal Edge Q være fra (som nu) eller et blødt fade?
+  - Er knapperne de rigtige?
+  - Skal leverandøren "DitNavn" ændres?
+
+---
+
 ## 2026-11-03 — Version 1.0: projektet oprettet ud fra Multiband Saturators 0 ms-tilstande
 
 **Status:**
