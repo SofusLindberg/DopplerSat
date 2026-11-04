@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "SatDsp.h"
+#include "DopplerCore.h"
 
 // Doppler Saturator (brugeren 2026-11-03): "Dobbler-effekt (ptitch ændres, når man trækker båndet henover
 // frekvenserne) i multiband saturation er faktisk super fedt. [...] Tag spektogrammet med et enkelt bånd med
@@ -9,6 +9,11 @@
 //
 // Lyden er 0 ms-motoren fra Multiband Saturator 3.17 (satdsp::Engine, SatDsp.h) med eet baand. En LFO flytter
 // baandet hen over det valgte omraade, og naar dets delefiltre flytter sig, aendres pitchen (Doppler).
+//
+// 1.1 (brugeren 2026-11-04): "Brugeren skal ikke kunne ændre drive [...] Selve drive-effekten skal være så lidt
+// lydbar som overhovedet muligt, gerne helt væk". Drive er fast 0 % (ingen saturation overhovedet), og Distortion
+// er fjernet, fordi den intet goer ved 0 %. Lyden er kun delefiltrenes allpass (satdsp::DopplerCore), bit for bit
+// som 1.0 med Drive paa 0 %.
 class DopplerSatProcessor : public juce::AudioProcessor
 {
 public:
@@ -26,7 +31,6 @@ public:
     static juce::StringArray shapeNames();        // Sine, Triangle, Square, Random
     static juce::StringArray syncNames();         // nodevaerdier til Rate i Sync
     static double            syncBeats (int index, double barBeats);   // laengden i fjerdedele
-    static juce::StringArray distortionNames();
 
     // LFO'ens form ved fase 0..1 (foer offset), -1..1. rndA / rndB: tilfaeldige vaerdier ved denne og naeste periode.
     // squareW: Square's overgang som andel af perioden (bloed, saa den ikke klikker).
@@ -57,6 +61,9 @@ public:
 
     void getStateInformation (juce::MemoryBlock&) override;
     void setStateInformation (const void*, int) override;
+
+    // Pluginnets Bypass er ogsaa DAW'ens bypass (VST3 kIsBypass), saa der kun er een Bypass i automationslisten
+    juce::AudioProcessorParameter* getBypassParameter() const override { return apvts.getParameter ("bypass"); }
 
     // Spektrum-analysator: FFT af mono-summen. Audio-traaden skriver, editoren laeser.
     struct Analyzer
@@ -98,7 +105,7 @@ public:
         std::array<float, size * 2> data {};
         int idx = 0;
     };
-    Analyzer inAnalyzer, outAnalyzer;
+    Analyzer outAnalyzer;            // 1.1: kun output vises (brugeren: "Vis kun output på grafen")
 
     // Baandets kanter for en LFO-vaerdi v (-1..1): midten flyttes v * Amount * 3 oktaver fra Frequency
     void bandEdgesFor (double v, double& lo, double& hi) const;
@@ -117,11 +124,11 @@ private:
     void updateLfoState (int numSamples);            // fasen ved blokkens start (Sync: fra vaertens position)
     void newRandom();
 
-    std::atomic<float> *modeP = nullptr, *freqP = nullptr, *amountP = nullptr, *widthP = nullptr, *driveP = nullptr,
-                       *typeP = nullptr, *rateP = nullptr, *syncP = nullptr, *syncRateP = nullptr, *shapeP = nullptr,
+    std::atomic<float> *modeP = nullptr, *freqP = nullptr, *amountP = nullptr, *widthP = nullptr,
+                       *rateP = nullptr, *syncP = nullptr, *syncRateP = nullptr, *shapeP = nullptr,
                        *offsetP = nullptr, *dryWetP = nullptr, *outP = nullptr, *bypassP = nullptr;
 
-    satdsp::Engine engine;
+    satdsp::DopplerCore core;        // = satdsp::Engine ved 0 % drive, uden alt det, der ikke kan hoeres
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
     juce::dsp::DelayLine<float, juce::dsp::DelayLineInterpolationTypes::Lagrange3rd> dryDelay { 4096 };
     juce::AudioBuffer<float> dryBuf;

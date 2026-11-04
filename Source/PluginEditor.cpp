@@ -8,7 +8,7 @@ using P = DopplerSatProcessor;
 namespace layout
 {
     constexpr int   modH  = 234, gap = 8;
-    constexpr float widths[] = { 0.33f, 0.25f, 0.24f, 0.18f };    // LFO, Band, Saturation, Output
+    constexpr float widths[] = { 0.33f, 0.29f, 0.20f, 0.18f };    // LFO, Band, Edges, Output
     constexpr float title = 17;                                   // modultitlernes grundlinje
     constexpr float knobLabel = 131, knobSub = 142;               // knap-labels og deres undertekst
     constexpr float knob = 180, value = 210.5f;                   // drejeknappernes midte og tal-felternes top
@@ -20,8 +20,7 @@ namespace hw
                        cyan (0xff6ee7ff), green (0xff50fa7b), purple (0xffc77dff), red (0xffff4b4b),
                        selBlue (0xff3b9eff), lfo (0xff8be9fd);
 }
-static const juce::Colour driveColour (0xffffa94d), inputColour (0xff6ee7ff), outputColour (0xffc77dff),
-                          bandColour (0xff50fa7b);
+static const juce::Colour outputColour (0xffc77dff), bandColour (0xff50fa7b);
 
 static juce::Font hwFont (const juce::String& name, float size, const juce::String& style = "Regular", float spacing = 0.f)
 {
@@ -362,7 +361,7 @@ private:
 };
 
 // =============================================================================
-//  PlotArea: spektrum, omraadet LFO'en flytter baandet hen over, og baandet lige nu (med saturationskurven)
+//  PlotArea: spektrum (output), omraadet LFO'en flytter baandet hen over, og baandet lige nu
 // =============================================================================
 class DopplerSatEditor::PlotArea : public juce::Component, public juce::SettableTooltipClient
 {
@@ -370,8 +369,10 @@ public:
     explicit PlotArea (DopplerSatProcessor& p) : proc (p)
     {
         setOpaque (true);
-        setTooltip ("Drag left / right: Frequency (the middle of the band's sweep). Drag up / down: Drive.");
+        setTooltip ("Drag left / right: Frequency (the middle of the band's sweep). Right-click: automation.");
     }
+
+    std::function<void()> onRightClick;            // hoejreklik = Frequency's automationsmenu
 
     void paint (juce::Graphics& g) override
     {
@@ -384,44 +385,48 @@ public:
         drawGrid (g, r);
         drawRange (g, r);
         drawSpectrum (g, r, proc.outAnalyzer, outputColour, 0.40f, 1.f);
-        drawInputLine (g, r);
+        drawLegend (g, r);
         drawBand (g, r);
     }
 
+    // 1.1: kun venstre / hoejre (Frequency). Op / ned var Drive, som er fjernet.
     void mouseDown (const juce::MouseEvent& e) override
     {
-        startFreq  = getP ("freq");
-        startDrive = getP ("drive");
-        startPos   = e.position;
-        for (auto* id : { "freq", "drive" })
-            if (auto* p = proc.apvts.getParameter (id)) p->beginChangeGesture();
+        if (e.mods.isPopupMenu()) { if (onRightClick) onRightClick(); return; }
+        dragging  = true;
+        startFreq = getP ("freq");
+        startPos  = e.position;
+        if (auto* p = proc.apvts.getParameter ("freq")) p->beginChangeGesture();
     }
 
     void mouseDrag (const juce::MouseEvent& e) override
     {
+        if (! dragging) return;
         const auto r = plotRect();
         const float octPerPx = std::log2 (P::maxFreq / P::minFreq) / r.getWidth();
-        const float f = juce::jlimit (P::minFreq, P::maxFreq, startFreq * std::exp2 ((e.position.x - startPos.x) * octPerPx));
-        const float n0 = std::pow (startDrive / 400.f, satdsp::kDriveAxisExp);
-        const float n  = juce::jlimit (0.f, 1.f, n0 - (e.position.y - startPos.y) / (r.getHeight() - driveTop));
-        setP ("freq", f);
-        setP ("drive", 400.f * std::pow (n, 1.f / (float) satdsp::kDriveAxisExp));
+        setP ("freq", juce::jlimit (P::minFreq, P::maxFreq, startFreq * std::exp2 ((e.position.x - startPos.x) * octPerPx)));
     }
 
     void mouseUp (const juce::MouseEvent&) override
     {
-        for (auto* id : { "freq", "drive" })
-            if (auto* p = proc.apvts.getParameter (id)) p->endChangeGesture();
+        if (! dragging) return;
+        dragging = false;
+        if (auto* p = proc.apvts.getParameter ("freq")) p->endChangeGesture();
     }
 
-    void mouseDoubleClick (const juce::MouseEvent&) override      // nulstil Frequency og Drive
+    void mouseDoubleClick (const juce::MouseEvent&) override      // nulstil Frequency
     {
-        for (auto* id : { "freq", "drive" })
-            if (auto* p = proc.apvts.getParameter (id)) p->setValueNotifyingHost (p->getDefaultValue());
+        if (auto* p = proc.apvts.getParameter ("freq"))
+        {
+            p->beginChangeGesture();
+            p->setValueNotifyingHost (p->getDefaultValue());
+            p->endChangeGesture();
+        }
     }
 
 private:
-    static constexpr float driveTop = 14.f;
+    static constexpr float driveTop = 14.f;      // baandets top (samme hoejde som i 1.0 ved 100 % drive)
+    static constexpr double kShowDrive = 100.0;  // tegningens hoejde: som 1.0's standard (lyden har ingen drive)
 
     float getP (const char* id) const { return proc.apvts.getRawParameterValue (id)->load(); }
     void  setP (const char* id, float v)
@@ -431,7 +436,7 @@ private:
 
     juce::Rectangle<float> plotRect() const
     {
-        return getLocalBounds().toFloat().withTrimmedLeft (46.f).withTrimmedRight (46.f).withTrimmedBottom (24.f).withTrimmedTop (4.f);
+        return getLocalBounds().toFloat().withTrimmedLeft (46.f).withTrimmedRight (20.f).withTrimmedBottom (24.f).withTrimmedTop (4.f);
     }
 
     float freqToX (double f) const
@@ -472,12 +477,6 @@ private:
             g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
             g.setColour (axis);
             g.drawSingleLineText (juce::String (db) + " dB", juce::roundToInt (r.getX() - 8.f), juce::roundToInt (y + 3.5f), juce::Justification::right);
-        }
-        for (auto d : { 0.f, 25.f, 100.f, 400.f })
-        {
-            const float y = driveToY (d, r);
-            g.setColour (driveColour.withAlpha (0.8f));
-            g.drawSingleLineText (juce::String ((int) d) + "%", juce::roundToInt (r.getRight() + 6.f), juce::roundToInt (y + 3.5f));
         }
     }
 
@@ -550,33 +549,25 @@ private:
         g.strokePath (line, juce::PathStrokeType (1.5f, juce::PathStrokeType::curved));
     }
 
-    void drawInputLine (juce::Graphics& g, juce::Rectangle<float> r) const
+    // Forklaringen oeverst til hoejre: kun Output (1.1, brugeren: "Vis kun output på grafen og som forklaringstekst")
+    void drawLegend (juce::Graphics& g, juce::Rectangle<float> r) const
     {
-        juce::Path line = spectrumPath (proc.inAnalyzer, r);
-        g.setColour (inputColour.withAlpha (0.55f));
-        g.strokePath (line, juce::PathStrokeType (1.f, juce::PathStrokeType::curved));
-
         g.setFont (hwFont ("Bahnschrift", 10.f, "Bold"));
-        float lx = r.getRight() - 8.f;
-        const char*        texts[] = { "Output", "Input" };
-        const juce::Colour cols[]  = { outputColour, inputColour };
-        for (int k = 0; k < 2; ++k)
-        {
-            const char* text = texts[k];
-            const auto  col  = cols[k];
-            const float w = 6.f * (float) juce::String (text).length() + 14.f;
-            lx -= w;
-            g.setColour (col);
-            g.fillEllipse (lx, r.getY() + 8.f, 7.f, 7.f);
-            g.drawText (text, juce::Rectangle<float> (lx + 10.f, r.getY() + 4.f, w, 15.f), juce::Justification::left);
-        }
+        const juce::String text ("Output");
+        const float w  = 6.f * (float) text.length() + 14.f;
+        const float lx = r.getRight() - 8.f - w;
+        g.setColour (outputColour);
+        g.fillEllipse (lx, r.getY() + 8.f, 7.f, 7.f);
+        g.drawText (text, juce::Rectangle<float> (lx + 10.f, r.getY() + 4.f, w, 15.f), juce::Justification::left);
     }
 
-    // Baandet lige nu: kurven er den samme model, som lyden bruger (CurveModel, 0 ms-tilstanden)
+    // Baandet lige nu: formen er motorens egen model (CurveModel, 0 ms-tilstanden) tegnet i samme hoejde som 1.0
+    // ved 100 % drive. Lyden har ingen drive; tegningen viser bare, hvor baandet og dets kanter er.
     void drawBand (juce::Graphics& g, juce::Rectangle<float> r) const
     {
         const double lo = proc.bandLoNow.load(), hi = proc.bandHiNow.load();
-        const auto ep = proc.buildEngineParams (lo, hi);
+        auto ep = proc.buildEngineParams (lo, hi);
+        ep.band[P::kBand].drive = kShowDrive;
         const auto cm = satdsp::makeCurveModel (ep, proc.getProcessingRate());
 
         juce::Path fill, line;
@@ -597,23 +588,214 @@ private:
         g.setColour (bandColour);
         g.strokePath (line, juce::PathStrokeType (1.6f));
 
-        // kanterne og drive-stregen
+        // kanterne
         const float x1 = freqToX (lo), x2 = freqToX (hi);
         g.setColour (bandColour.withAlpha (0.9f));
         g.drawVerticalLine ((int) std::round (x1), r.getY(), r.getBottom());
         g.drawVerticalLine ((int) std::round (x2), r.getY(), r.getBottom());
-        const float yd = driveToY (getP ("drive"), r);
-        const float dash[] = { 5.f, 3.f };
-        g.setColour (driveColour);
-        g.drawDashedLine (juce::Line<float> (x1, yd, x2, yd), dash, 2, 1.5f);
-        g.setFont (hwFont ("Bahnschrift", 10.f, "Bold"));
-        g.drawSingleLineText ("Drive " + juce::String (juce::roundToInt (getP ("drive"))) + "%", juce::roundToInt (x1 + 4.f),
-                              juce::roundToInt (juce::jmax (r.getY() + 12.f, yd - 5.f)));
     }
 
     DopplerSatProcessor& proc;
-    float startFreq = 600.f, startDrive = 100.f;
+    float startFreq = 600.f;
+    bool  dragging = false;
     juce::Point<float> startPos;
+};
+
+// =============================================================================
+//  SlopeView: hvad 24 og 48 dB/oct betyder - de to kanters fald, den valgte lyser (1.1)
+// =============================================================================
+class DopplerSatEditor::SlopeView : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    SlopeView()
+    {
+        setTooltip ("How steep the band's edges are. One octave past the edge, 24 dB/oct has turned the sound down by "
+                    "24 dB and 48 dB/oct by 48 dB. Steeper edges bend the pitch more when the band moves.");
+    }
+
+    void setMode (int m) { if (m != mode) { mode = m; repaint(); } }
+
+    void paint (juce::Graphics& g) override
+    {
+        const auto R = getLocalBounds().toFloat();
+        drawLcd (g, R.reduced (0.5f));
+        const auto r = R.reduced (9.f, 8.f).withTrimmedTop (12.f).withTrimmedBottom (10.f);
+        constexpr float octL = -0.6f, octR = 2.1f, dbMin = -60.f;
+        auto xOf = [&] (float oct) { return r.getX() + r.getWidth() * (oct - octL) / (octR - octL); };
+        auto yOf = [&] (float db)  { return r.getY() + r.getHeight() * juce::jmin (db / dbMin, 1.6f); };
+
+        // kanten (0 oktav) og 1 oktav udenfor
+        g.setColour (hw::silkDim.withAlpha (0.35f));
+        g.drawVerticalLine (juce::roundToInt (xOf (0.f)), r.getY(), r.getBottom());
+        const float dash[] = { 2.f, 3.f };
+        g.drawDashedLine (juce::Line<float> (xOf (1.f), r.getY(), xOf (1.f), r.getBottom()), dash, 2, 1.f);
+        g.setFont (hwFont ("Consolas", 9.5f));
+        g.drawText ("edge", juce::Rectangle<float> (xOf (0.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
+        g.drawText ("+1 oct", juce::Rectangle<float> (xOf (1.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
+
+        // Linkwitz-Riley-kantens fald: 1 / (1 + (f / fc) ^ n), n = 4 (24 dB/oct) eller 8 (48 dB/oct)
+        for (int m = 0; m < 2; ++m)
+        {
+            const double n = m == 0 ? 4.0 : 8.0;
+            juce::Path p;
+            for (int i = 0; i <= 120; ++i)
+            {
+                const float  oct = octL + (octR - octL) * (float) i / 120.f;
+                const double db  = 20.0 * std::log10 (1.0 / (1.0 + std::pow (2.0, n * (double) oct)));
+                const float  x = xOf (oct), y = yOf ((float) db);
+                if (i == 0) p.startNewSubPath (x, y); else p.lineTo (x, y);
+            }
+            const bool on = (m == mode);
+            {
+                juce::Graphics::ScopedSaveState clip (g);            // kurven forsvinder ud af bunden (ingen flad streg)
+                g.reduceClipRegion (r.expanded (2.f, 1.f).toNearestInt());
+                g.setColour (hw::amber.withAlpha (on ? 0.18f : 0.f));
+                g.strokePath (p, juce::PathStrokeType (4.f));
+                g.setColour (on ? hw::amber : hw::silkDim.withAlpha (0.45f));
+                g.strokePath (p, juce::PathStrokeType (on ? 1.8f : 1.f));
+            }
+            const float yLab = yOf (m == 0 ? -24.6f : -48.2f);
+            g.setFont (hwFont ("Consolas", 10.f));
+            g.drawText (m == 0 ? "-24 dB" : "-48 dB", juce::Rectangle<float> (xOf (1.f) + 4.f, yLab - 6.f, 50.f, 12.f),
+                        juce::Justification::centredLeft);
+        }
+        g.setColour (hw::silkDim);
+        g.setFont (hwFont ("Bahnschrift", 9.5f));
+        g.drawText ("Edge steepness", juce::Rectangle<float> (R.getX() + 9.f, R.getY() + 5.f, R.getWidth() - 18.f, 12.f),
+                    juce::Justification::centredLeft);
+    }
+
+private:
+    int mode = 1;
+};
+
+// =============================================================================
+//  Hjaelp (som i Multiband Saturator): lille rundt "?" og en forklaringsboks, der ligger oven paa hele editoren.
+//  Klik udenfor boksen, paa krydset eller Esc lukker den.
+// =============================================================================
+class DopplerSatEditor::HelpButton : public juce::Button
+{
+public:
+    HelpButton() : juce::Button ("?") { setMouseCursor (juce::MouseCursor::PointingHandCursor); }
+
+    // Rund trykknap (16 px) med "?"
+    void paintButton (juce::Graphics& g, bool over, bool down) override
+    {
+        const auto r = getLocalBounds().toFloat().reduced (0.5f);
+        juce::ColourGradient grad (juce::Colour (down ? 0xff383b41 : (over ? 0xff676b74 : 0xff5a5e66)), 0.f, r.getY(),
+                                   juce::Colour (down ? 0xff5a5e66 : 0xff383b41), 0.f, r.getBottom(), false);
+        g.setGradientFill (grad);
+        g.fillEllipse (r);
+        g.setColour (juce::Colour (0xff0a0a0b));
+        g.drawEllipse (r, 1.f);
+        g.setFont (hwFont ("Bahnschrift", 11.f, "Bold"));
+        g.setColour (juce::Colour (0xffeceef3));
+        g.drawSingleLineText ("?", juce::roundToInt (r.getCentreX()), juce::roundToInt (r.getCentreY() + 4.f),
+                              juce::Justification::horizontallyCentred);
+    }
+};
+
+class DopplerSatEditor::HelpOverlay : public juce::Component
+{
+public:
+    struct Section { juce::String heading, body; };     // overskrift (kan vaere tom) + tekst
+
+    HelpOverlay() { setWantsKeyboardFocus (true); }
+
+    void show (const juce::String& newTitle, std::vector<Section> newSections, juce::Colour newAccent)
+    {
+        title    = newTitle;
+        sections = std::move (newSections);
+        accent   = newAccent;
+        setVisible (true);
+        toFront (true);
+        layoutText();
+        repaint();
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (juce::Colours::black.withAlpha (0.62f));
+        g.setColour (juce::Colour (0xff202226));
+        g.fillRoundedRectangle (box, 4.f);
+        g.setColour (accent.withAlpha (0.7f));
+        g.drawRoundedRectangle (box, 4.f, 1.5f);
+
+        g.setColour (accent);
+        g.setFont (hwFont ("Bahnschrift", 15.f, "Bold"));
+        g.drawText (title, titleRect, juce::Justification::centredLeft, true);
+
+        g.setColour (juce::Colour (0xff9a9fab));
+        g.setFont (hwFont ("Bahnschrift", 20.f));
+        g.drawText (juce::String::fromUTF8 ("\xc3\x97"), closeRect, juce::Justification::centred);   // kryds
+
+        text.draw (g, textRect);
+
+        g.setColour (juce::Colour (0xff9a9fab).withAlpha (0.7f));
+        g.setFont (hwFont ("Bahnschrift", 10.f));
+        g.drawText ("Click outside the box or press Esc to close", footRect, juce::Justification::centredRight);
+    }
+
+    void resized() override { layoutText(); }
+
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        if (! box.contains (e.position) || closeRect.contains (e.position))
+            setVisible (false);
+    }
+
+    bool keyPressed (const juce::KeyPress& k) override
+    {
+        if (k != juce::KeyPress::escapeKey) return false;
+        setVisible (false);
+        return true;
+    }
+
+private:
+    juce::String         title;
+    std::vector<Section> sections;
+    juce::Colour         accent;
+    juce::TextLayout     text;
+    juce::Rectangle<float> box, titleRect, closeRect, textRect, footRect;
+
+    // Boksen centreres. Er vinduet for lavt til hele teksten, bliver skriften mindre.
+    void layoutText()
+    {
+        if (getWidth() <= 0 || getHeight() <= 0 || sections.empty()) return;
+        constexpr float pad = 18.f, titleH = 22.f, footH = 14.f;
+        const float w    = juce::jmin (680.f, (float) getWidth() - 32.f);
+        const float maxH = (float) getHeight() - 24.f;
+
+        for (float fh = 13.f; ; fh -= 0.5f)
+        {
+            juce::AttributedString as;
+            as.setWordWrap (juce::AttributedString::byWord);
+            as.setLineSpacing (1.5f);
+            for (size_t i = 0; i < sections.size(); ++i)
+            {
+                if (i > 0) as.append ("\n\n", hwFont ("Bahnschrift", fh * 0.6f), juce::Colours::transparentBlack);   // halv linje luft
+                if (sections[i].heading.isNotEmpty())
+                    as.append (sections[i].heading + "\n", hwFont ("Bahnschrift", fh, "Bold"), accent);
+                as.append (sections[i].body, hwFont ("Bahnschrift", fh), juce::Colour (0xffd3d6dd));
+            }
+            text.createLayout (as, w - 2.f * pad);
+
+            const float h = pad + titleH + 10.f + text.getHeight() + 12.f + footH + 10.f;
+            if (h <= maxH || fh <= 9.f)
+            {
+                box = getLocalBounds().toFloat().withSizeKeepingCentre (w, juce::jmin (h, maxH));
+                auto r = box.reduced (pad, 0.f);
+                r.removeFromTop (pad);
+                titleRect = r.removeFromTop (titleH).withTrimmedRight (28.f);
+                closeRect = juce::Rectangle<float> (box.getRight() - 34.f, box.getY() + 8.f, 26.f, 26.f);
+                r.removeFromTop (10.f);
+                textRect  = r.removeFromTop (text.getHeight());
+                r.removeFromTop (12.f);
+                footRect  = r.removeFromTop (footH);
+                return;
+            }
+        }
+    }
 };
 
 // =============================================================================
@@ -682,7 +864,10 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
 {
     plot = std::make_unique<PlotArea> (processor);
     plot->setComponentID ("plot");
+    plot->onRightClick = [this] { showParamMenu ("freq"); };
     addAndMakeVisible (*plot);
+    slopeView = std::make_unique<SlopeView>();
+    addAndMakeVisible (*slopeView);
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
@@ -727,14 +912,10 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     styleKnob (widthSlider,  " oct", hw::green);
     widthSlider.setTooltip ("The band's width in octaves.");
 
-    // ---- Saturation
-    styleKnob (driveSlider, " %", hw::orange);
-    driveSlider.setTooltip ("How hard the band is saturated. The pitch effect is there even at 0 %.");
-    typeBox.setColour (juce::ComboBox::textColourId, hw::amber);
-    typeBox.addItemList (P::distortionNames(), 1);
+    // ---- Edges (1.1: Drive og Distortion er fjernet; lyden er kun kanternes Doppler-effekt)
     static const char* modeTip[] = {
-        "0 ms, soft edges (24 dB/oct): a gentle pitch bend when the band moves, and the saturation blends softly.",
-        "0 ms, firmer edges (48 dB/oct): about three times more pitch bend when the band moves." };
+        "Softer edges (24 dB/oct): a gentler, smoother pitch bend. Click ? for more.",
+        "Steeper edges (48 dB/oct): a stronger, clearer pitch bend. Click ? for more." };
     for (int i = 0; i < 2; ++i)
     {
         auto& b = modeButtons[i];
@@ -753,10 +934,30 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     bypassButton.setButtonText ("Bypass");
     bypassButton.getProperties().set ("led", (juce::int64) hw::red.getARGB());
 
+    outSlider.setTooltip ("Output level.");
+    bypassButton.setTooltip ("Bypass: the untouched sound. This is also the DAW's own bypass for the plugin.");
+
     juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton,
-                                    &freqSlider, &amountSlider, &widthSlider, &driveSlider, &typeBox,
+                                    &freqSlider, &amountSlider, &widthSlider,
                                     &modeButtons[0], &modeButtons[1], &dryWetSlider, &outSlider, &bypassButton };
     for (auto* c : children) addAndMakeVisible (*c);
+
+    // Hoejreklik paa enhver knap / vaelger: automationsmenuen for dens parameter (brugeren 2026-11-04: "Sørg for alle
+    // parametre kan automatiseres [...] Ved at kunne højreklikke på en knob/knap inde i pluginnet")
+    auto menuFor = [this] (auto& c, const char* id) { c.onRightClick = [this, id] { showParamMenu (id); }; };
+    menuFor (rateSlider, "rate");    menuFor (syncRateSlider, "syncrate"); menuFor (offsetSlider, "offset");
+    menuFor (shapeBox, "shape");     menuFor (hzButton, "sync");           menuFor (syncButton, "sync");
+    menuFor (freqSlider, "freq");    menuFor (amountSlider, "amount");     menuFor (widthSlider, "width");
+    menuFor (modeButtons[0], "mode"); menuFor (modeButtons[1], "mode");
+    menuFor (dryWetSlider, "drywet"); menuFor (outSlider, "outgain");      menuFor (bypassButton, "bypass");
+
+    // "?" ved de to 0 ms-tilstande. Overlayet tilfoejes sidst, saa det ligger oeverst.
+    modeHelp = std::make_unique<HelpButton>();
+    modeHelp->setTooltip ("What is the difference between 24 and 48 dB/oct?");
+    modeHelp->onClick = [this] { showModeHelp(); };
+    addAndMakeVisible (*modeHelp);
+    helpOverlay = std::make_unique<HelpOverlay>();
+    addChildComponent (*helpOverlay);
 
     // Looket til sidst, naar alle boern er tilfoejet (saa faar tal-felterne og vaelgerne det nye look)
     setLookAndFeel (look.get());
@@ -768,11 +969,9 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     freqAtt     = std::make_unique<SliderAtt> (s, "freq",     freqSlider);
     amountAtt   = std::make_unique<SliderAtt> (s, "amount",   amountSlider);
     widthAtt    = std::make_unique<SliderAtt> (s, "width",    widthSlider);
-    driveAtt    = std::make_unique<SliderAtt> (s, "drive",    driveSlider);
     dryWetAtt   = std::make_unique<SliderAtt> (s, "drywet",   dryWetSlider);
     outAtt      = std::make_unique<SliderAtt> (s, "outgain",  outSlider);
     shapeAtt    = std::make_unique<ComboAtt>  (s, "shape",    shapeBox);
-    typeAtt     = std::make_unique<ComboAtt>  (s, "type",     typeBox);
     bypassAtt   = std::make_unique<ButtonAtt> (s, "bypass",   bypassButton);
     syncAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("sync"), [this] (float v) { updateSync (v > 0.5f); });
     syncAtt->sendInitialUpdate();
@@ -800,6 +999,75 @@ void DopplerSatEditor::updateSync (bool sync)
 void DopplerSatEditor::updateMode (int mode)
 {
     for (int i = 0; i < 2; ++i) modeButtons[i].setToggleState (i == mode, juce::dontSendNotification);
+    if (slopeView != nullptr) slopeView->setMode (mode);
+}
+
+// "?" ved de to 0 ms-tilstande (brugeren 2026-11-04): "forklar helt kort, hvad forskellen er. Ikke noget teknisk,
+// men forklaring om den lydlige kvalitet: Laver den ene mere pitch end den anden? Og så ultra kort og på
+// begynderniveau, hvad 24db vs 48 db rent teknisk betyder." Tallene er maalt med HostSmoke's pitch-tabel (1.1):
+// 48 / 24 = 3.0-3.2 ved 0.25-1 Hz og 1.25-1.4 ved 3-12 Hz (Amount 100 %, fartgraensen 40 / 20 okt/s).
+void DopplerSatEditor::showModeHelp()
+{
+    using S = HelpOverlay::Section;
+    helpOverlay->show ("0 ms - 24 dB/oct or 48 dB/oct", {
+        S { "How they sound",
+            "Both bend the pitch while the band moves. 48 dB/oct bends it more: a stronger, clearer wobble, about "
+            "3 times as much as 24 dB/oct at slow and medium rates. 24 dB/oct is gentler and smoother.\n"
+            "At fast rates with a large Amount (from about 3 Hz), the edges reach their top speed, and the "
+            "difference gets smaller: 48 dB/oct then bends about 1.3 times as much." },
+        S { "What 24 and 48 dB/oct mean",
+            "The band's edges are filters, and the number is how steep they are. One octave past the edge, "
+            "a 24 dB/oct filter has turned the sound down by 24 dB, and a 48 dB/oct filter by 48 dB: twice as steep.\n"
+            "A filter also delays the sound a tiny bit around its edge, and a steeper filter delays it more. When the "
+            "edge moves, that delay changes, and the pitch bends (the Doppler effect)." } },
+        hw::amber);
+    helpOverlay->grabKeyboardFocus();
+}
+
+// Hoejreklik paa en kontrol. Har DAW'en sin egen menu til parameteren (VST3: fx Cubase, Bitwig, Reaper, Studio
+// One), staar dens punkter (automation, MIDI learn ...) oeverst. Derunder vores egne punkter, der virker i alle DAW'er.
+void DopplerSatEditor::showParamMenu (const juce::String& paramID)
+{
+    auto* param = processor.apvts.getParameter (paramID);
+    if (param == nullptr) return;
+    const juce::String name = param->getName (64);
+
+    juce::PopupMenu m;
+    bool hostItems = false;
+    if (auto* ctx = getHostContext())
+        if (auto hostMenu = ctx->getContextMenuForParameter (param))
+        {
+            m = hostMenu->getEquivalentPopupMenu();
+            hostItems = m.getNumItems() > 0;
+        }
+    if (hostItems)
+        m.addSeparator();
+    m.addSectionHeader (name);
+
+    // Saet parameteren som "sidst rørt" i DAW'en uden at aendre den (begin / samme vaerdi / end)
+    m.addItem ("Select \"" + name + "\" for automation (last touched)", [param]
+    {
+        param->beginChangeGesture();
+        param->setValueNotifyingHost (param->getValue());
+        param->endChangeGesture();
+    });
+    m.addItem ("Reset \"" + name + "\" to default", [param]
+    {
+        param->beginChangeGesture();
+        param->setValueNotifyingHost (param->getDefaultValue());
+        param->endChangeGesture();
+    });
+
+    if (! hostItems)
+    {
+        m.addSeparator();
+        m.addSectionHeader ("How to automate it");
+        m.addItem ("Ableton Live: pick Doppler Saturator > " + name + " in the track's automation lane", false, false, nullptr);
+        m.addItem ("FL Studio: Select ... (above), then Tools > Last tweaked > Create automation clip", false, false, nullptr);
+        m.addItem ("Other DAWs: Select ... (above), then use the DAW's 'last touched parameter'", false, false, nullptr);
+    }
+    m.setLookAndFeel (look.get());                 // pluginnets moerke look (ikke JUCE's standard)
+    m.showMenuAsync (juce::PopupMenu::Options().withMousePosition());
 }
 
 void DopplerSatEditor::timerCallback()
@@ -842,13 +1110,13 @@ void DopplerSatEditor::resized()
             placeKnob (*std::array<juce::Slider*, 3> { &freqSlider, &amountSlider, &widthSlider }[(size_t) i],
                        (float) (x + 12) + (float) (w - 24) / 3.f * ((float) i + 0.5f), mY + layout::knob, mY + layout::value);
     }
-    // Saturation: Distortion, de to 0 ms-tilstande, Drive
+    // Edges: de to 0 ms-tilstande, "?" ved titlen og kanternes fald
     {
         const int x = L.mx[2], w = L.mw[2];
-        typeBox.setBounds (x + 12, y (42), w - 24, 22);
-        modeButtons[0].setBounds (x + 12, y (72), w - 24, 22);
-        modeButtons[1].setBounds (x + 12, y (99), w - 24, 22);
-        placeKnob (driveSlider, (float) x + (float) w * 0.5f, mY + layout::knob, mY + layout::value);
+        modeHelp->setBounds (x + w - 28, (int) mY + 5, 16, 16);
+        modeButtons[0].setBounds (x + 12, y (34), w - 24, 24);
+        modeButtons[1].setBounds (x + 12, y (64), w - 24, 24);
+        slopeView->setBounds (x + 12, y (100), w - 24, 122);
     }
     // Output: Bypass, Dry / Wet og Output gain
     {
@@ -857,6 +1125,7 @@ void DopplerSatEditor::resized()
         placeKnob (dryWetSlider, (float) x + (float) w * 0.27f, mY + layout::knob, mY + layout::value);
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }
+    helpOverlay->setBounds (getLocalBounds());
 }
 
 void DopplerSatEditor::renderPlate()
@@ -903,10 +1172,10 @@ void DopplerSatEditor::renderPlate()
 
     g.setFont (hwFont ("Bahnschrift", 10.f));
     g.setColour (hw::silkDim);
-    g.drawSingleLineText ("Drag left / right: Frequency  |  Drag up / down: Drive  |  Double-click: reset  |  "
+    g.drawSingleLineText ("Drag left / right: Frequency  |  Double-click: reset  |  Right-click any control: automation  |  "
                           "Shaded: where the LFO moves the band", W / 2, L.hintY + 12, juce::Justification::horizontallyCentred);
 
-    static const char* titles[] = { "LFO", "Band", "Saturation", "Output" };
+    static const char* titles[] = { "LFO", "Band", "Edges", "Output" };
     for (int i = 0; i < 4; ++i)
     {
         const juce::Rectangle<float> m ((float) L.mx[i], mY, (float) L.mw[i], (float) layout::modH);
@@ -918,7 +1187,7 @@ void DopplerSatEditor::renderPlate()
         g.drawRoundedRectangle (m.reduced (1.f), 4.f, 1.f);
         const juce::String t = titles[i];
         silkText (g, t, m.getX() + 12.f, mY + layout::title, 11.f, hw::silk);
-        const float x1 = m.getX() + 12.f + (float) t.length() * 7.4f + 8.f, x2 = m.getRight() - 12.f;
+        const float x1 = m.getX() + 12.f + (float) t.length() * 7.4f + 8.f, x2 = m.getRight() - (i == 2 ? 34.f : 12.f);
         if (x2 - x1 > 8.f) groove (g, x1, mY + 13.f, x2, mY + 13.f);
     }
 
@@ -927,7 +1196,6 @@ void DopplerSatEditor::renderPlate()
     silkText (g, "Shape", (float) L.mx[0] + 12.f, mY + 109.f, 9.5f, silkC);
     silkText (g, "Sweep range", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
     silkText (g, "Band now", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
-    silkText (g, "Distortion", (float) L.mx[2] + 12.f, mY + 37.f, 9.5f, silkC);
     auto knobText = [&] (int mod, float fx, const juce::String& main, const juce::String& sub)
     {
         const float x = (float) L.mx[mod] + fx;
@@ -942,7 +1210,6 @@ void DopplerSatEditor::renderPlate()
         static const char* m[] = { "Frequency", "Amount", "Width" }, *sb[] = { "middle", "how far", "octaves" };
         knobText (1, 12.f + (float) (L.mw[1] - 24) / 3.f * ((float) i + 0.5f), m[i], sb[i]);
     }
-    knobText (2, (float) L.mw[2] * 0.5f, "Drive", "saturation");
     knobText (3, (float) L.mw[3] * 0.27f, "Dry / Wet", "");
     knobText (3, (float) L.mw[3] * 0.73f, "Output", "gain");
 }

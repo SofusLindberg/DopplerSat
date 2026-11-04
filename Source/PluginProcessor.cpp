@@ -28,11 +28,6 @@ double DopplerSatProcessor::syncBeats (int index, double barBeats)
     return v < 0.0 ? -v * barBeats : v;
 }
 
-juce::StringArray DopplerSatProcessor::distortionNames()
-{
-    return { "Soft (tanh)", "Hard Clip", "Tube (asymmetric)", "Fold", "Warm Analog" };
-}
-
 double DopplerSatProcessor::lfoWave (int shape, double ph, double rndA, double rndB, double squareW)
 {
     switch (shape)
@@ -82,8 +77,6 @@ DopplerSatProcessor::DopplerSatProcessor()
     freqP     = apvts.getRawParameterValue ("freq");
     amountP   = apvts.getRawParameterValue ("amount");
     widthP    = apvts.getRawParameterValue ("width");
-    driveP    = apvts.getRawParameterValue ("drive");
-    typeP     = apvts.getRawParameterValue ("type");
     rateP     = apvts.getRawParameterValue ("rate");
     syncP     = apvts.getRawParameterValue ("sync");
     syncRateP = apvts.getRawParameterValue ("syncrate");
@@ -110,10 +103,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     widthRange.setSkewForCentre (1.f);
     add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "width", 1 }, "Width", widthRange, 1.f));
 
-    // Saturationen
-    add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "drive", 1 }, "Drive",
-         juce::NormalisableRange<float> (0.f, 400.f, 0.1f, 0.4f), 100.f));
-    add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "type", 1 }, "Distortion", distortionNames(), 4));
+    // Kanternes stejlhed (de to 0 ms-tilstande). 1.1: Drive (fast 0 %) og Distortion er fjernet (brugeren 2026-11-04).
     add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "mode", 1 }, "Mode", modeNames(), 1));
 
     // LFO: Rate i Hz (fra meget langsomt til meget hurtigt) eller i nodevaerdier (Sync), form og offset
@@ -176,8 +166,10 @@ satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double h
     bp.on     = true;
     bp.lo     = lo;
     bp.hi     = hi;
-    bp.type   = (int) std::lround (typeP->load());
-    bp.drive  = (double) driveP->load();
+    // 1.1: ingen saturation (brugeren: "Selve drive-effekten skal være så lidt lydbar som overhovedet muligt, gerne
+    // helt væk, hvis doppler-effekten så stadig virker"). Doppler-effekten er delefiltrene, ikke driven.
+    bp.type   = 0;
+    bp.drive  = 0.0;
     bp.mix    = 1.0;
     // Edge Q er bestemt paa forhaand (brugeren: "Edge Q er forudbestemt for brugeren og kan ikke ændres"): fra,
     // saa saturationen er et tydeligt baand med 0 ms-tilstandens skraa kanter (24 / 48 dB/oct). Med Edge Q 50 %
@@ -199,9 +191,7 @@ void DopplerSatProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     oversampler->initProcessing ((size_t) juce::jmax (maxBlock, kChunk));
     oversampler->reset();
 
-    engine.forceTree = true;       // Doppler-effekten (delefiltrene i den toerre lyd) ogsaa ved 0 % drive
-    engine.onlyOnBands = true;     // de tre slukkede baands opdeling koeres ikke (halv CPU, samme lyd)
-    engine.prepare (sampleRate * 4.0);
+    core.prepare (sampleRate * 4.0);
 
     const float lat = oversampler->getLatencyInSamples();
     dryDelay.prepare ({ sampleRate, (juce::uint32) juce::jmax (maxBlock, kChunk), 2 });
@@ -216,7 +206,6 @@ void DopplerSatProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     phase = 0.0;
     cycle = 0.0;
     wasPlaying = false;
-    inAnalyzer.reset();
     outAnalyzer.reset();
 }
 
@@ -261,16 +250,13 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const int numSamples = buffer.getNumSamples();
     if (numSamples == 0 || buffer.getNumChannels() < 2) return;
 
-    for (int i = 0; i < numSamples; ++i)
-        inAnalyzer.push (0.5f * (buffer.getSample (0, i) + buffer.getSample (1, i)));
-
     updateLfoState (numSamples);
     const double fs      = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
 
     // Skift mellem 24 og 48 dB/oct: delefiltrene faar en anden opbygning, saa motoren startes forfra (den toerre
     // lyd hoeres, mens filtrene varmes op, og saa fades der ind - som fasetilstandene i Multiband Saturator)
     const int mode = (int) std::lround (modeP->load());
-    if (mode != lastMode) { engine.prepare (fs * 4.0); lastMode = mode; }
+    if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; }
     const double maxSpeed = mode == 0 ? kMaxOctPerSec24 : kMaxOctPerSec48;
     const int    shape   = (int) std::lround (shapeP->load());
     const double offset  = (double) offsetP->load() * 0.01;
@@ -296,7 +282,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         curHiOct += juce::jlimit (-maxStep, maxStep, tHi - curHiOct);
         lastLo = std::exp2 (curLoOct);
         lastHi = std::exp2 (curHiOct);
-        engine.setParams (buildEngineParams (lastLo, lastHi));
+        core.setParams (buildEngineParams (lastLo, lastHi));
 
         // Det uroerte signal (til Dry/Wet), forsinket lige saa meget som oversamplingen
         float dryL[kChunk], dryR[kChunk];
@@ -310,7 +296,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
 
         juce::dsp::AudioBlock<float> block (buffer.getArrayOfWritePointers(), 2, (size_t) start, (size_t) len);
         auto up = oversampler->processSamplesUp (block);
-        engine.process (up.getChannelPointer (0), up.getChannelPointer (1), (int) up.getNumSamples());
+        core.process (up.getChannelPointer (0), up.getChannelPointer (1), (int) up.getNumSamples());
         oversampler->processSamplesDown (block);
 
         for (int i = 0; i < len; ++i)

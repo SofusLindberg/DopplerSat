@@ -2,7 +2,9 @@
 #include "PluginProcessor.h"
 
 // Doppler Saturator's editor: samme moerke hardware-look som Multiband Saturator (design 2A), med et display
-// (spektrum + baandet, der bevaeger sig) og fire moduler: LFO, Band, Saturation og Output.
+// (spektrum + baandet, der bevaeger sig) og fire moduler: LFO, Band, Edges og Output.
+// 1.1: Drive og Distortion er fjernet, kun output-spektret vises, "?" ved de to 0 ms-tilstande, og hoejreklik paa
+// enhver knap / vaelger giver en menu til automation (DAW'ens egen, hvis den har en).
 class DopplerSatEditor : public juce::AudioProcessorEditor,
                          private juce::Timer
 {
@@ -15,46 +17,73 @@ public:
 
     static constexpr int kWidth = 900, kHeight = 600;
 
+    // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
+    template <class Base>
+    class ParamControl : public Base
+    {
+    public:
+        std::function<void()> onRightClick;
+
+        void mouseDown (const juce::MouseEvent& e) override
+        {
+            if (e.mods.isPopupMenu()) { if (onRightClick) onRightClick(); return; }
+            Base::mouseDown (e);
+        }
+        void mouseDrag (const juce::MouseEvent& e) override { if (! e.mods.isPopupMenu()) Base::mouseDrag (e); }
+        void mouseUp   (const juce::MouseEvent& e) override { if (! e.mods.isPopupMenu()) Base::mouseUp (e); }
+    };
+
 private:
     class HardwareLook;
     class PlotArea;
     class LfoView;
     class LcdText;
+    class SlopeView;
+    class HelpButton;                          // lille rundt "?" (som i Multiband Saturator)
+    class HelpOverlay;                         // forklaringsboksen oven paa hele editoren
 
     void timerCallback() override;
     void renderPlate();
     void updateSync (bool sync);
     void updateMode (int mode);
+    void showModeHelp();
+    void showParamMenu (const juce::String& paramID);
 
     using SliderAtt = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAtt = juce::AudioProcessorValueTreeState::ButtonAttachment;
     using ComboAtt  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    using PSlider   = ParamControl<juce::Slider>;
+    using PCombo    = ParamControl<juce::ComboBox>;
+    using PButton   = ParamControl<juce::TextButton>;
+    using PToggle   = ParamControl<juce::ToggleButton>;
 
     std::unique_ptr<HardwareLook> look;        // foerst: nedlaegges sidst
     DopplerSatProcessor& processor;
     juce::TooltipWindow tooltipWindow { this, 600 };
     juce::Image plate;
 
-    std::unique_ptr<PlotArea> plot;
-    std::unique_ptr<LfoView>  lfoView;
-    std::unique_ptr<LcdText>  rangeLcd, nowLcd;
+    std::unique_ptr<PlotArea>  plot;
+    std::unique_ptr<LfoView>   lfoView;
+    std::unique_ptr<LcdText>   rangeLcd, nowLcd;
+    std::unique_ptr<SlopeView> slopeView;
 
     // LFO
-    juce::Slider     rateSlider, syncRateSlider, offsetSlider;
-    juce::ComboBox   shapeBox;
-    juce::TextButton hzButton, syncButton;
+    PSlider rateSlider, syncRateSlider, offsetSlider;
+    PCombo  shapeBox;
+    PButton hzButton, syncButton;
     // Baand
-    juce::Slider     freqSlider, amountSlider, widthSlider;
-    // Saturation
-    juce::Slider     driveSlider;
-    juce::ComboBox   typeBox;
-    juce::TextButton modeButtons[2];
+    PSlider freqSlider, amountSlider, widthSlider;
+    // Edges (de to 0 ms-tilstande)
+    PButton modeButtons[2];
     // Output
-    juce::Slider       dryWetSlider, outSlider;
-    juce::ToggleButton bypassButton;
+    PSlider dryWetSlider, outSlider;
+    PToggle bypassButton;
 
-    std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, driveAtt, dryWetAtt, outAtt;
-    std::unique_ptr<ComboAtt>  shapeAtt, typeAtt;
+    std::unique_ptr<HelpButton>  modeHelp;
+    std::unique_ptr<HelpOverlay> helpOverlay;
+
+    std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;
+    std::unique_ptr<ComboAtt>  shapeAtt;
     std::unique_ptr<ButtonAtt> bypassAtt;
     std::unique_ptr<juce::ParameterAttachment> syncAtt, modeAtt;
 

@@ -4,6 +4,107 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-04 — Version 1.1: ingen drive, kun output, højreklik-automation, "?" ved 0 ms, 2–3 gange lettere (samme lyd), FL Studio ryddet op. Gem og luk
+
+**Status ved lukning:**
+- Bygget som **"Doppler Saturator 1.1"** (plugin-kode D101, **12 parametre**). Ingen fejl eller advarsler.
+- **`HostSmoke --compare` mod 1.0 (Drive 0 %): bit-identisk** i alle 14 situationer: former, offset, Sync, fartgrænsen, Dry/Wet, Output, Bypass til/fra, skift 24/48, højt og lavt bånd.
+- **Røgtesten er OK:**
+  - alle 12 parametre kan automatiseres;
+  - "Bypass" er DAW'ens bypass;
+  - peak højst 0,74 for en indgang på 0,6;
+  - ingen NaN.
+- **EditorShot:** `doppler1..3.png`, `doppler4_help.png` og `doppler5_menu.png` er set. Testen viser også, at højreklik åbner menuen og *ikke* ændrer Bypass eller Frequency.
+- **Installeret og verificeret med filhash** (`C1FEA715…`, moduleinfo 1.1.0). VST3'en er bygget 23:23:15, efter sidste kildeændring kl. 23:22:50. 1.0 ligger uændret ved siden af (`624E93D9…`).
+- **Ikke testet i Ableton eller FL Studio.** Committed og pushet.
+
+**Ønsket:** se `KRAV.md` ("Version 1.1", brugerens ord). Kort fortalt:
+1. fjern Drive (mindst mulig drive) og Distortion, hvis den ikke ændrer pitch-effektens lyd;
+2. kun output i spektret og forklaringen;
+3. alle parametre skal kunne automatiseres, fx med højreklik;
+4. "?" ved de to 0 ms med en kort, ikke-teknisk forklaring og hvad 24 / 48 dB betyder;
+5. gør pluginnet lettere uden at ændre lyden;
+6. ryd op i plugin-listen (skærmbillede fra FL Studio).
+
+Undervejs skrev brugeren: "gem og luk, gør det til en regel, at du altid skal fortælle mig næste gang, hvor vi kom til" og "den nye version [...] skal i navnet have versionnummer og lægges i VST3-mappen [...] så jeg stadig har de ældre versioner".
+
+**Fundet:**
+- **Ved 0 % drive saturerer motoren intet.** `BandSat` er slukket, så formeren køres slet ikke. Lyden er kun den tørre sum T = tch(gch0(h23(x))), dvs. allpassene fra alle delefiltre. Kun bånd 1's fire delefiltre flytter sig, og det er Doppler-effekten.
+  - Distortion gjorde altså *ingen* forskel. Den er fjernet, ligesom Drive.
+  - 1.0 regnede desuden hele bånd 1's opdeling (8 kæder + fades), gch[1] og 16 delefilter-designs + punkter + fades hver 32. sample og smed resultatet væk.
+- **Fejl i testværten siden 1.0:** `setReal` sendte rå værdier som 0..1 til VST3-værten. Frequency 300 blev 20 kHz, Width 1 blev 6 okt, Rate 1 blev 20 Hz, og Output 0 blev −24 dB. **1.0's pitch-tal i posten nedenfor (89 / 127 cent) er altså målt ved forkerte indstillinger.** Rettet (`normFor`: diskrete = nr. / (antal − 1), ellers binær søgning på pluginnets egen tekst), og testen tjekker selv omregningen.
+- **Rigtige pitch-tal** (Amount 100 %, Width 1 okt, båndet om tonen, gennemsnit over 4 perioder):
+
+| tone, Rate | 24 dB | 48 dB | 48/24 |
+|---|---|---|---|
+| 300 Hz, 0,25 Hz | 16 | 49 | 3,1 |
+| 300 Hz, 1 Hz | 64 | 202 | 3,2 |
+| 300 Hz, 3 Hz | 162 | 228 | 1,4 |
+| 300 Hz, 6 Hz | 154 | 192 | 1,25 |
+| 300 Hz, 12 Hz | 110 | 152 | 1,4 |
+| 100 Hz, 1 Hz | 196 | 615 | 3,1 |
+| 1 kHz, 1 Hz | 20 | 59 | 3,0 |
+| 3 kHz, 1 Hz | 7 | 21 | 2,8 |
+| 8 kHz, 1 Hz | 5 | 13 | 2,6 |
+
+  - 48 bøjer ca. 3 gange så meget ved langsom og middel Rate.
+  - Fra ca. 3 Hz rammer kanterne fartgrænsen (40 / 20 okt/s), og så er forskellen kun ca. 1,3 gange.
+  - Effekten er størst på dybe toner.
+- **Plugin-listen i FL Studio:** de 364 "plugins" (Qt6…, qwindows, medialib, asiobtin, REX Shared Library osv.) er DLL'er fra Steinbergs programmer. Activation Manager, ASIO og MediaBay blev installeret 3/11 kl. 17:10.
+  - De ligger i `C:\Program Files\Steinberg\`, som er en *egen* søgesti i FL Studio (brugeren tilføjede den, formentlig til Wobble 2).
+  - FL Studio scannede dem 3/11 kl. 22:09. Det har intet med vores plugins at gøre.
+
+**Bygget:**
+1. **Drive og Distortion fjernet.** `buildEngineParams` sætter drive 0. Knappen, vælgeren, drive-aksen (0–400 %), drive-stregen og træk op/ned i displayet er væk. Modulet hedder nu **"Edges"**.
+2. **Kun output:** inputspektret er fjernet fra tegningen *og* fra lyden (`inAnalyzer` er væk, så der er én FFT mindre). Forklaringen viser kun "Output".
+3. **Automation:**
+   - `ParamControl<>` om alle drejeknapper, vælgere og knapper. Højreklik viser `showParamMenu`:
+     - DAW'ens egne punkter øverst, hvis DAW'en har dem (VST3 `IComponentHandler3` via `getHostContext()->getContextMenuForParameter`);
+     - "Select ... for automation (last touched)" (begin, samme værdi, end);
+     - "Reset ... to default";
+     - uden DAW-menu: en kort vejledning til Ableton og FL Studio.
+   - Højreklik på displayet giver Frequency's menu.
+   - Menuen har pluginnets mørke look.
+   - `getBypassParameter()` gør vores Bypass til DAW'ens bypass (før havde JUCE sin egen ekstra, altså 15 parametre).
+4. **"?" ved Edges:** `HelpButton` / `HelpOverlay` er kopieret fra Multiband Saturator (samme layout). Teksten er "How they sound" og "What 24 and 48 dB/oct mean" (tallene ovenfor). Desuden viser `SlopeView` ("Edge steepness") de to kanters fald (−24 / −48 dB én oktav ude), og det valgte lyser.
+5. **Lettere:** nyt `Source/DopplerCore.h` gør præcis det samme som `Engine` ved 0 % drive: samme filtre, samme rækkefølge, samme opvarmning og samme toning ved Bypass og 24/48-skift.
+   - Kun allpass-delen af bånd 1's delefiltre designes (`designXoverAp`), og kun når kanterne har flyttet sig. De faste designes én gang.
+   - CPU (skiftevis 3 gange, `HostSmoke --bench`):
+
+| blokstørrelse | 1.0 | 1.1 |
+|---|---|---|
+| 512 | 15–18 % | 7–8 % |
+| 64 | 28–31 % | 10–11 % |
+| 1024 | 28–31 % | 12 % |
+
+   - `DspBench` (nyt): oversamplingen er ca. halvdelen af det, der er tilbage, filtrene resten, og `setParams` 0,1–0,3 %.
+   - **Latensen er stadig 60 samples (1,4 ms)** fra 4x-oversamplingen. Den kan ikke fjernes uden at ændre lyden: ved 1x kan de øverste delefiltre ikke ligge over 20,7 kHz og holder op med at flytte sig, når båndet ligger højt. DAW'en udligner de 60 samples selv.
+6. **FL Studio ryddet op:** 364 falske poster (728 filer, `.nfo` + `.fst`) i `Dokumenter\Image-Line\FL Studio\Presets\Plugin database\Installed\{Effects,Generators}\{VST,New}` er slettet. Backup ligger i `Dokumenter\Image-Line\Backup FL plugin-database (Steinberg-filer) 2026-11-04.zip`. Wobble 2 og alle rigtige plugins er urørt. FL Studios søgesti er *ikke* ændret (se Åbent).
+7. **Tests:**
+   - HostSmoke har fået `--compare`, `--bench`, pitch-tabellen og parameter-/omregningstjekket.
+   - EditorShot har fået hjælpe- og menubilledet plus højreklik-tjekket.
+   - `DspBench` er nyt.
+
+**Faldgruber:**
+- PowerShell's `Get-ChildItem` (og `Compress-Archive`) ser ikke skjulte filer, og FL's `.nfo`-filer er skjulte. Den første zip manglede derfor halvdelen. Brug `-Force` eller `[IO.Compression.ZipFile]::CreateFromDirectory`.
+- En JUCE-popupmenu lukker selv igen, når programmet ikke er i forgrunden. I testen skal den derfor tælles straks efter klikket.
+- En VST3-værts parametre er ikke `RangedAudioParameter` (se fejlen ovenfor).
+
+**Åbent / til brugeren:**
+- **FL Studio vil finde Steinberg-DLL'erne igen** ved næste "Find more plugins", fordi `C:\Program Files\Steinberg\` er en søgesti. Wobble 2 (`Wobble 2_x64.dll`) ligger direkte i den mappe. Mulighed: flyt Wobble 2 til `C:\Program Files\Common Files\VST2` og fjern Steinberg-stien i FL's Plugin Manager. Spørg først.
+- Skal latensen fjernes, selvom diskanten så ændrer sig lidt, når båndet ligger højt? (Kun hvis brugeren mærker de 1,4 ms.)
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):**
+- Seneste version er **Doppler Saturator 1.1**. Den er installeret ved siden af 1.0, men ikke testet i en DAW. Scan plugins igen i Ableton og FL Studio.
+- Prøv:
+  - Højreklik på en knap: i Ableton og FL Studio kommer vores menu; i fx Reaper/Bitwig også DAW'ens egne punkter.
+  - I FL Studio: "Select ... for automation" → Tools > Last tweaked > Create automation clip.
+  - "?" ved Edges.
+  - At lyden er som 1.0 med Drive 0 %.
+- Spørg om Steinberg-søgestien i FL Studio (se Åbent).
+
+---
+
 ## 2026-11-03 (2) — Pushet til GitHub. Gem og luk
 
 - Brugeren oprettede det private repo og skrev: "DopplerSat er oprettet på Git. Push, gem, luk, og fortæl mig næste gang, hvor vi er kommet til. :-)"
