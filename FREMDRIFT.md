@@ -4,6 +4,32 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-05 (3) — Gem og luk
+
+**Status ved lukning:**
+- Brugeren skrev: "gem og luk, og fortæl mig næste gang, hvor vi er kommet til".
+- Seneste version er **Doppler Saturator 1.2**.
+  - Den er installeret og verificeret igen ved lukning: den installerede fil er identisk med buildet (`D0246096…`).
+  - Buildet er fra 22:36:11, efter sidste kildeændring kl. 22:35:47.
+  - 1.0 og 1.1 ligger uændret ved siden af.
+- Alt er committed og pushet. Arbejdsmappen er ren.
+- **Ikke testet i en DAW.**
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):**
+- **1.2 er det nyeste.** Det, der kom med:
+  - en tredje knap, **0 ms - 96 dB/oct**: næsten 3 gange så meget pitch som 48 ved langsom Rate og 1,1–1,5 gange ved hurtigere Rate;
+  - **Bypass** flugter nu med midten af den første 0 ms-knap.
+  - 24 og 48 lyder bit for bit som før.
+- **Scan plugins igen** i Ableton og FL Studio, og prøv:
+  - 96 med Sine ved 0,1–0,5 Hz og Amount 100 % på en bas eller et pad. Er niveausvinget og smøringen ved båndets nederste kant o.k.?
+  - at Bypass sidder rigtigt;
+  - at Wobble 2 stadig virker. Den fungerede ifølge brugeren, og Steinberg-stien er væk fra FL Studio.
+- **Spørg:**
+  - Skal **192 dB/oct** med som fjerde knap? Den giver 2,5 gange så meget pitch som 96 ved langsom Rate, men kun 20–30 % mere ved normal Rate. Den svinger +5 til +11 dB i niveau og smører bassen op til 0,5 s. Se posten nedenfor.
+  - Skal latensen (1,4 ms) fjernes? Se 1.1.
+
+---
+
 ## 2026-11-05 (2) — Version 1.2: tredje kant "0 ms - 96 dB/oct", Bypass flugter med den første 0 ms-knap
 
 **Status:**
