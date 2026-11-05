@@ -14,6 +14,9 @@
 // lydbar som overhovedet muligt, gerne helt væk". Drive er fast 0 % (ingen saturation overhovedet), og Distortion
 // er fjernet, fordi den intet goer ved 0 %. Lyden er kun delefiltrenes allpass (satdsp::DopplerCore), bit for bit
 // som 1.0 med Drive paa 0 %.
+//
+// 1.2 (brugeren 2026-11-05): "yderligere en 0 - ms, som er endnu stejlere og pitcher lyden endnu mere". Tredje valg
+// "0 ms - 96 dB/oct"; 24 og 48 lyder bit for bit som i 1.1.
 class DopplerSatProcessor : public juce::AudioProcessor
 {
 public:
@@ -25,9 +28,14 @@ public:
     static constexpr int    kChunk      = 32;      // LFO'en og filtrene opdateres hver 32. sample (0.7 ms ved 44.1 kHz)
     // Kanterne flytter sig hoejst saa hurtigt (oktaver pr. sekund). Hurtigere gav niveauhop (maalt med eet baand,
     // tone 0.6 peak: 24 dB 80 okt/s 0.78, 48 dB 60 okt/s 1.25 og 100 okt/s 1.7). Ved grænsen hoejst ca. +1.4 dB.
-    static constexpr double kMaxOctPerSec24 = 40.0, kMaxOctPerSec48 = 20.0;
+    // 96 dB (1.2): dobbelt saa stejl, halv fart. Square 20 Hz med to toner (peak 0.6) giver da 0.68 / 0.75 / 0.79 for
+    // 24 / 48 / 96 (maaleproeve, verste af fire baandplaceringer); ved 20 okt/s gav 96 1.01 og ved 160 okt/s 4.8.
+    static constexpr double kMaxOctPerSec24 = 40.0, kMaxOctPerSec48 = 20.0, kMaxOctPerSec96 = 10.0;
+    static constexpr int    kNumModes = 3;
 
-    static juce::StringArray modeNames();         // index 0 = 0 ms 24 dB/oct, 1 = 0 ms 48 dB/oct
+    static juce::StringArray modeNames();         // index 0 = 0 ms 24 dB/oct, 1 = 48 dB/oct, 2 = 96 dB/oct (1.2)
+    static int    modePhase (int index);          // valg nr. -> satdsp::kPhaseZl24 / 48 / 96
+    static double modeMaxSpeed (int index);       // fartgraensen for valg nr.
     static juce::StringArray shapeNames();        // Sine, Triangle, Square, Random
     static juce::StringArray syncNames();         // nodevaerdier til Rate i Sync
     static double            syncBeats (int index, double barBeats);   // laengden i fjerdedele

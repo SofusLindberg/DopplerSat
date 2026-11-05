@@ -250,7 +250,10 @@ int main (int argc, char** argv)
     // 1) Pitch: tone 300 Hz, baandet om 300 Hz (1 oktav bredt), LFO 1 Hz sinus (ren Doppler)
     setReal (freq, 300.f); setReal (width, 1.f); setReal (rate, 1.f); setReal (shape, 0.f); setReal (offset, 0.f);
     setReal (drive, 0.f); setReal (dryWet, 100.f);
-    for (int m = 0; m < 2; ++m)
+    // 1.2: tre tilstande (24 / 48 / 96); 1.0 og 1.1 har to
+    const int nModes = juce::jlimit (2, 3, mode->getNumSteps());
+    static const char* modeName[] = { "0 ms 24", "0 ms 48", "0 ms 96" };
+    for (int m = 0; m < nModes; ++m)
     {
         setReal (mode, (float) m);
         setReal (amount, 0.f);
@@ -260,26 +263,27 @@ int main (int argc, char** argv)
         const bool pass = still < 1.0 && moving > 20.0;
         ok = ok && pass;
         std::printf ("  %s: pitch-afvigelse Amount 0 %%: %.2f cent, Amount 100 %% (1 Hz): %.0f cent  %s\n",
-                     m == 0 ? "0 ms 24" : "0 ms 48", still, moving, pass ? "OK" : "FEJL");
+                     modeName[m], still, moving, pass ? "OK" : "FEJL");
     }
 
-    // 2) Pitch-tabel til "?"-teksten: 24 mod 48 ved forskellige hastigheder og toner (Amount 100 %, Width 1 okt,
+    // 2) Pitch-tabel til "?"-teksten: 24 / 48 / 96 ved forskellige hastigheder og toner (Amount 100 %, Width 1 okt,
     //    baandet om tonen, gennemsnit over 4 perioder)
     std::printf ("  Pitch-tabel (cent, Amount 100 %%, Width 1 okt, baandet om tonen):\n");
-    std::printf ("    %-22s %8s %8s %7s\n", "", "24 dB", "48 dB", "48/24");
+    std::printf ("    %-22s %8s %8s %8s %7s %7s\n", "", "24 dB", "48 dB", "96 dB", "48/24", "96/48");
     struct Row { double tone; float rate; };
     const Row rows[] = { { 300.0, 0.25f }, { 300.0, 1.f }, { 300.0, 3.f }, { 300.0, 6.f }, { 300.0, 12.f },
                          { 100.0, 1.f }, { 1000.0, 1.f }, { 3000.0, 1.f }, { 8000.0, 1.f } };
     for (const auto& row : rows)
     {
         setReal (freq, (float) row.tone); setReal (rate, row.rate); setReal (amount, 100.f);
-        double c[2];
-        for (int m = 0; m < 2; ++m)
+        double c[3] = { 0.0, 0.0, 0.0 };
+        for (int m = 0; m < nModes; ++m)
         {
             setReal (mode, (float) m);
             c[m] = pitchDeviation (*inst, row.tone, row.rate < 0.5f ? 9.0 : 4.5, bad, peak, 4);
         }
-        std::printf ("    tone %5.0f Hz, %5.2f Hz %8.0f %8.0f %7.2f\n", row.tone, row.rate, c[0], c[1], c[1] / std::max (c[0], 1.0e-9));
+        std::printf ("    tone %5.0f Hz, %5.2f Hz %8.0f %8.0f %8.0f %7.2f %7.2f\n", row.tone, row.rate, c[0], c[1], c[2],
+                     c[1] / std::max (c[0], 1.0e-9), c[2] / std::max (c[1], 1.0e-9));
     }
     setReal (freq, 300.f); setReal (rate, 1.f);
 
@@ -289,12 +293,14 @@ int main (int argc, char** argv)
     double t = 0.0;
     const auto start = juce::Time::getMillisecondCounterHiRes();
     long samples = 0;
-    for (int step = 0; step < 16; ++step)
+    // alle former x alle tilstande x Hz / Sync (to tilstande: 16 trin som foer 1.2)
+    for (int step = 0; step < 8 * nModes; ++step)
     {
+        const bool stepSync = (step / (4 * nModes)) % 2 == 1;
         setReal (shape, (float) (step % 4));
-        setReal (mode, (float) ((step / 4) % 2));
+        setReal (mode, (float) ((step / 4) % nModes));
         setReal (offset, step % 3 == 0 ? 60.f : step % 3 == 1 ? -60.f : 0.f);
-        setReal (sync, step >= 8 ? 1.f : 0.f);
+        setReal (sync, stepSync ? 1.f : 0.f);
         setReal (rate, step % 2 ? 20.f : 0.05f);
         setReal (amount, 100.f);
         setReal (dryWet, step == 5 ? 50.f : 100.f);
@@ -320,8 +326,8 @@ int main (int argc, char** argv)
         // Niveauet maa ikke hoppe (indgangen har peak 0.6): foer fartgraensen paa kanterne gav Square og 20 Hz op til 8.8
         const bool levelOk = stepPeak < 1.25;
         ok = ok && levelOk;
-        std::printf ("  form %d, tilstand %d, offset %+d, %s %s: peak %.2f  %s\n", step % 4, (step / 4) % 2,
-                     step % 3 == 0 ? 60 : step % 3 == 1 ? -60 : 0, step >= 8 ? "sync" : "Hz", step % 2 ? "hurtig" : "langsom",
+        std::printf ("  form %d, tilstand %d, offset %+d, %s %s: peak %.2f  %s\n", step % 4, (step / 4) % nModes,
+                     step % 3 == 0 ? 60 : step % 3 == 1 ? -60 : 0, stepSync ? "sync" : "Hz", step % 2 ? "hurtig" : "langsom",
                      stepPeak, levelOk ? "OK" : "FEJL");
     }
     const double ms = juce::Time::getMillisecondCounterHiRes() - start;

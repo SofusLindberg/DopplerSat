@@ -3,7 +3,17 @@
 
 juce::StringArray DopplerSatProcessor::modeNames()
 {
-    return { "0 ms - 24 dB/oct", "0 ms - 48 dB/oct" };
+    return { "0 ms - 24 dB/oct", "0 ms - 48 dB/oct", "0 ms - 96 dB/oct" };
+}
+
+int DopplerSatProcessor::modePhase (int index)
+{
+    return index <= 0 ? satdsp::kPhaseZl24 : index == 1 ? satdsp::kPhaseZl48 : satdsp::kPhaseZl96;
+}
+
+double DopplerSatProcessor::modeMaxSpeed (int index)
+{
+    return index <= 0 ? kMaxOctPerSec24 : index == 1 ? kMaxOctPerSec48 : kMaxOctPerSec96;
 }
 
 juce::StringArray DopplerSatProcessor::shapeNames()
@@ -103,7 +113,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     widthRange.setSkewForCentre (1.f);
     add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "width", 1 }, "Width", widthRange, 1.f));
 
-    // Kanternes stejlhed (de to 0 ms-tilstande). 1.1: Drive (fast 0 %) og Distortion er fjernet (brugeren 2026-11-04).
+    // Kanternes stejlhed (0 ms-tilstandene; 1.2: 96 dB/oct er tilfoejet sidst, standard er stadig 48).
+    // 1.1: Drive (fast 0 %) og Distortion er fjernet (brugeren 2026-11-04).
     add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "mode", 1 }, "Mode", modeNames(), 1));
 
     // LFO: Rate i Hz (fra meget langsomt til meget hurtigt) eller i nodevaerdier (Sync), form og offset
@@ -150,7 +161,7 @@ satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double h
 {
     satdsp::EngineParams p;
     const double fsProc = getProcessingRate();
-    p.phaseMode = (int) std::lround (modeP->load()) == 0 ? satdsp::kPhaseZl24 : satdsp::kPhaseZl48;
+    p.phaseMode = modePhase ((int) std::lround (modeP->load()));
     p.baseRate  = fsProc / 4.0;
     p.bypass    = bypassP->load() > 0.5f;
     p.soloBand  = -1;
@@ -172,7 +183,7 @@ satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double h
     bp.drive  = 0.0;
     bp.mix    = 1.0;
     // Edge Q er bestemt paa forhaand (brugeren: "Edge Q er forudbestemt for brugeren og kan ikke ændres"): fra,
-    // saa saturationen er et tydeligt baand med 0 ms-tilstandens skraa kanter (24 / 48 dB/oct). Med Edge Q 50 %
+    // saa saturationen er et tydeligt baand med 0 ms-tilstandens skraa kanter (24 / 48 / 96 dB/oct). Med Edge Q 50 %
     // bredte fadet saturationen ud over det meste af spektret. Doppler-effekten er den samme (delefiltrene).
     bp.edgeOn = false;
     bp.edgeQ  = 50.0;
@@ -253,11 +264,11 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     updateLfoState (numSamples);
     const double fs      = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
 
-    // Skift mellem 24 og 48 dB/oct: delefiltrene faar en anden opbygning, saa motoren startes forfra (den toerre
+    // Skift mellem 24, 48 og 96 dB/oct: delefiltrene faar en anden opbygning, saa motoren startes forfra (den toerre
     // lyd hoeres, mens filtrene varmes op, og saa fades der ind - som fasetilstandene i Multiband Saturator)
     const int mode = (int) std::lround (modeP->load());
     if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; }
-    const double maxSpeed = mode == 0 ? kMaxOctPerSec24 : kMaxOctPerSec48;
+    const double maxSpeed = modeMaxSpeed (mode);
     const int    shape   = (int) std::lround (shapeP->load());
     const double offset  = (double) offsetP->load() * 0.01;
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms

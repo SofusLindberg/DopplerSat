@@ -3,7 +3,7 @@
 
 // Doppler Saturator's editor: samme moerke hardware-look som Multiband Saturator (design 2A), med et display
 // (spektrum + baandet, der bevaeger sig) og fire moduler: LFO, Band, Edges og Output.
-// 1.1: Drive og Distortion er fjernet, kun output-spektret vises, "?" ved de to 0 ms-tilstande, og hoejreklik paa
+// 1.1: Drive og Distortion er fjernet, kun output-spektret vises, "?" ved 0 ms-tilstandene, og hoejreklik paa
 // enhver knap / vaelger giver en menu til automation (DAW'ens egen, hvis den har en).
 class DopplerSatEditor : public juce::AudioProcessorEditor,
                          private juce::Timer
@@ -73,8 +73,8 @@ private:
     PButton hzButton, syncButton;
     // Baand
     PSlider freqSlider, amountSlider, widthSlider;
-    // Edges (de to 0 ms-tilstande)
-    PButton modeButtons[2];
+    // Edges (de tre 0 ms-tilstande, 1.2: 96 dB/oct)
+    PButton modeButtons[DopplerSatProcessor::kNumModes];
     // Output
     PSlider dryWetSlider, outSlider;
     PToggle bypassButton;

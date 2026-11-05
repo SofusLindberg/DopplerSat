@@ -4,6 +4,105 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-05 (2) — Version 1.2: tredje kant "0 ms - 96 dB/oct", Bypass flugter med den første 0 ms-knap
+
+**Status:**
+- Bygget som **"Doppler Saturator 1.2"** (plugin-kode D102, stadig 12 parametre). Ingen fejl eller advarsler.
+- **`HostSmoke --compare` mod 1.1:** bit-identisk i alle 14 situationer (24 og 48 lyder som før).
+- **Røgtesten er OK**, også for 96: alle former, Hz og Sync. Peak højst 0,88 for en indgang på 0,6, hvor grænsen er 1,25. Ingen NaN.
+- **EditorShot:** billederne er set, og højreklik virker. `doppler3.png` viser 96 valgt.
+- **Installeret og verificeret med filhash** (`D0246096…`, moduleinfo 1.2.0). Buildet er fra 22:36:11, efter sidste kildeændring kl. 22:35:47. 1.0 (`624E93D9…`) og 1.1 (`C1FEA715…`) ligger uændret ved siden af.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.2", brugerens ord):
+1. Bypass skal flugte med midten af den første 0 ms-knap (referencebillede `design/1.1/LayoutV1.1.png`, nu i repoet).
+2. Endnu en 0 ms, der er stejlere og pitcher mere: "Hvad er maksimalt du kan gøre det?"
+- Brugeren skrev også, at Wobble 2-flytningen "fungerer godt".
+
+**Fundet** (måleprøve med DopplerCore direkte, uden vært; den gav præcis 1.1's pitch-tal for 24 og 48):
+- Motoren kan bygge kanter op til 192 dB/oct med de filtre, den har (`sectionInfo` op til orden 16).
+- **Pitch ved samme bevægelse** (300 Hz, 0,25 Hz, Amount 100 %): 24 → 16, 48 → 49, 96 → 131, 192 → 329 cent. Hver fordobling giver ca. 2,5–3 gange så meget.
+- **Uden fartgrænse** ved 1 Hz: 48 → 202, 96 → 559, 192 → 1514 cent. Men niveauet hopper.
+- **Niveauhop ved Square 20 Hz** (to toner, peak 0,6, værste af fire båndplaceringer):
+  - 24 @ 40 okt/s: 0,68;
+  - 48 @ 20 okt/s: 0,75;
+  - 96 @ 10: 0,79, @ 20: 1,01, @ 160: 4,8;
+  - 192 @ 5: 0,72.
+- Derfor gælder samme regel som før: dobbelt så stejl, halv fart. **96 har fartgrænsen 10 okt/s.**
+- **Niveauet svinger med pitchen, uanset stejlhed.** En tone midt i båndet bliver ca. 1,5 dB kraftigere for hver 200 cent ved 300 Hz, mest når pitchen går op:
+  - 48: 201 cent, −1,2 / +1,5 dB;
+  - 96: 295 cent, −2,0 / +2,9 dB;
+  - 192 @ 5: 358 cent, −3,0 / +5,0 dB.
+  - Ved 100 Hz: 48 giver 615 cent og +5,4 dB, 96 giver 914 cent og +9,7 dB, og 192 giver 1186 cent og +11,3 dB.
+  - Det er en del af effekten, ikke en fejl. Uden fartgrænse gav en glat sinus med 192 allerede +5 dB ved 0,25 Hz.
+- **Filterstrukturen:** en TPT-SVF-allpass er det samme filter i ro (forskel ca. 6e-5).
+  - Den fjerner eksplosionerne ved ekstreme hastigheder: ved 320–1000 okt/s får biquads peaks på 7–27, SVF kun ca. 1,1–1,5.
+  - Ved de hastigheder, vi tillader (10–40 okt/s), giver den de samme niveauhop. Derfor er den ikke brugt.
+- **Forsinkelse omkring kanten** (største gruppeforsinkelse i bånd 1's allpass; det smører fx en kick ved båndets nederste kant):
+
+| bånd | 48 | 96 | 192 |
+|---|---|---|---|
+| 212–424 Hz | 21 ms | 41 ms | 88 ms |
+| 40–80 Hz | 110 ms | 218 ms | 466 ms |
+
+  - Den er der også, når båndet står stille.
+- **Konklusion om "maksimalt":** 192 kan bygges. Men når niveauhoppene skal holdes nede, vokser pitchen ved fartgrænsen kun ca. 30 % pr. fordobling. Ved 300 Hz er den 163 → 228 → 295 → 358 cent for 24 → 48 → 96 → 192.
+  - Smøringen fordobles for hvert trin, og niveauudsvinget vokser.
+  - Den store gevinst ligger ved langsom Rate.
+- **CPU:** kernen alene koster præcis dobbelt så meget for hvert trin: 1,15 / 2,4 / 5,0 %. Hele processBlock med 96 koster 7,2 % af én kerne (målt som den første tilstand).
+  - **Faldgrube:** i `DspBench` bliver de tilstande, der måles efter den første, målt op til 2 gange for højt, også oversamplingen, der slet ikke afhænger af tilstanden. Mål den tilstand, der skal sammenlignes, først, eller brug en separat proces.
+
+**Pitch-tabel fra pluginnet** (HostSmoke, cent, Amount 100 %, Width 1 okt, båndet om tonen):
+
+| tone, Rate | 24 dB | 48 dB | 96 dB | 96/48 |
+|---|---|---|---|---|
+| 300 Hz, 0,25 Hz | 16 | 48 | 131 | 2,70 |
+| 300 Hz, 1 Hz | 64 | 201 | 295 | 1,46 |
+| 300 Hz, 3 Hz | 162 | 228 | 294 | 1,29 |
+| 300 Hz, 6 Hz | 154 | 185 | 201 | 1,08 |
+| 300 Hz, 12 Hz | 110 | 152 | 186 | 1,22 |
+| 100 Hz, 1 Hz | 196 | 620 | 917 | 1,48 |
+| 1 kHz, 1 Hz | 20 | 59 | 85 | 1,45 |
+| 3 kHz, 1 Hz | 7 | 20 | 29 | 1,39 |
+| 8 kHz, 1 Hz | 5 | 13 | 15 | 1,15 |
+
+**Bygget:**
+1. **`SatDsp.h`:**
+   - `kPhaseZl96` er tilføjet, og `zlN6` (24 → 4, 48 → 8, 96 → 16) bruges af `zlSpec`.
+   - Murens afstand er stadig 5 / n6 oktaver.
+   - Kopien afviger nu fra Multiband Saturator (der kun bruger 24 og 48).
+2. **Processoren:**
+   - `mode` har tre valg ("0 ms - 96 dB/oct" er tilføjet sidst, standard er stadig 48).
+   - `modePhase` og `modeMaxSpeed` (40 / 20 / 10 okt/s), `kNumModes` = 3.
+   - Skift af tilstand starter stadig motoren forfra (dry under opvarmningen).
+3. **Editoren:**
+   - Tre knapper under hinanden. De to gamle ligger, hvor de lå (y 34 / 64), og 96 ligger ved y 94.
+   - "Edge steepness" er blevet lavere (96 px). Aksen går til −110 dB, viser −24 / −48 / −96 dB, og kurverne slutter ved +1 oct, så hver ender ved sit tal (før krydsede de tallene).
+   - **Bypass** sættes efter midten af `modeButtons[0]` (7 px højere end før), så den følger med, hvis knapperne flyttes.
+   - "?"-teksten, værktøjstips og Rate-tippet (10 okt/s for 96) er opdateret.
+4. **Tests:**
+   - HostSmoke finder selv antallet af tilstande, så den virker med både 1.1 og 1.2. Pitch-tabellen har fået en 96-kolonne og 96/48.
+   - Røgtesten kører alle former × alle tilstande × Hz/Sync, i alt 24 trin.
+   - DspBench har tre tilstande og sætter `mode` med `convertTo0to1`. Før blev 1.0 sendt rå, og med tre valg ville det have givet 96.
+   - EditorShot viser 96 i `doppler3`.
+
+**Åbent / til brugeren:**
+- Skal **192 dB/oct** med som fjerde knap ("Extreme")? Målt koster den (se Fundet):
+  - +5 dB niveausving ved 300 Hz og +11 dB ved 100 Hz;
+  - op til 0,1–0,5 s smøring i bassen;
+  - kun ca. 20–30 % mere pitch end 96 ved middel og hurtig Rate, men 2,5 gange så meget ved langsom Rate.
+- Latensen (se 1.1).
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):**
+- Seneste version er **Doppler Saturator 1.2**. Den er installeret ved siden af 1.0 og 1.1, men ikke testet i en DAW. Scan plugins igen i Ableton og FL Studio.
+- Prøv **0 ms - 96 dB/oct**:
+  - Sine ved 0,1–0,5 Hz med Amount 100 % på en bas eller et pad, hvor forskellen til 48 er størst;
+  - om niveausvinget og smøringen af en kick ved båndets nederste kant er o.k.;
+  - at Bypass flugter med 24 dB-knappen.
+- Spørg, om 192 dB/oct skal med (se Åbent).
+
+---
+
 ## 2026-11-05 — Wobble 2 flyttet til VST2, Steinberg-søgestien fjernet i FL Studio
 
 **Status:** Ingen ændring i pluginnet. Seneste version er stadig **Doppler Saturator 1.1** (installeret, ikke testet i en DAW).

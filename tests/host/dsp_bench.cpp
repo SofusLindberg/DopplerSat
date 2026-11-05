@@ -27,15 +27,16 @@ int main()
     auto fill = [&] { for (int c = 0; c < 2; ++c) for (int i = 0; i < block; ++i) buf.setSample (c, i, 0.3f * (rng.nextFloat() * 2.f - 1.f)); };
     auto pct = [&] (double ms) { return 100.0 * ms / (1000.0 * seconds); };
 
-    for (int mode = 0; mode < 2; ++mode)
+    static const char* modeName[] = { "24 dB", "48 dB", "96 dB" };
+    for (int mode = 0; mode < DopplerSatProcessor::kNumModes; ++mode)
     {
         DopplerSatProcessor proc;
-        if (auto* p = proc.apvts.getParameter ("mode")) p->setValueNotifyingHost ((float) mode);
+        if (auto* p = proc.apvts.getParameter ("mode")) p->setValueNotifyingHost (p->convertTo0to1 ((float) mode));
         proc.setPlayConfigDetails (2, 2, fs, block);
         proc.prepareToPlay (fs, block);
         const double all = timeIt ([&] { for (int b = 0; b < blocks; ++b) { fill(); proc.processBlock (buf, midi); } }, 5);
         const double gen = timeIt ([&] { for (int b = 0; b < blocks; ++b) fill(); }, 5);
-        std::printf ("%s: hele processBlock %.2f %% af een kerne\n", mode == 0 ? "24 dB" : "48 dB", pct (all - gen));
+        std::printf ("%s: hele processBlock %.2f %% af een kerne\n", modeName[mode], pct (all - gen));
 
         // Delene hver for sig, i stykker paa 32 samples som i processBlock
         juce::dsp::Oversampling<float> os (2, 2, juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple, true, false);

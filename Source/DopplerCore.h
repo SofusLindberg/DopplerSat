@@ -16,7 +16,7 @@
 // sammen smidt vaek ved 0 % drive.
 //
 // Denne klasse goer PRAECIS det samme som Engine ved 0 % drive (samme filtre, samme raekkefoelge, samme
-// opvarmning og samme toning ind / ud ved Bypass og ved skift mellem 24 og 48), saa lyden er bit for bit den
+// opvarmning og samme toning ind / ud ved Bypass og ved skift mellem 24, 48 og 96), saa lyden er bit for bit den
 // samme som i 1.0 med Drive paa 0 % (tjekkes af HostSmoke --compare). Kun baand 1's fire crossovers designes
 // pr. stykke; de faste designes, naar motoren startes.
 namespace satdsp
@@ -72,7 +72,7 @@ public:
 
         if (newStatic)
         {
-            // Baand 0, 2 og 3 staar stille (de afhaenger kun af raten og 24 / 48)
+            // Baand 0, 2 og 3 staar stille (de afhaenger kun af raten og 24 / 48 / 96)
             XoverCoefs xc[kEnds];
             for (int k = 0; k < kEnds; ++k)
                 if (k < 4 || k >= 8) xc[k] = designEnd (k, L, fs, sp);

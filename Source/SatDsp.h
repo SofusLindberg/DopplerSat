@@ -38,6 +38,7 @@ constexpr double kDisplayRangeDb = 30.0;   // Edge Q-vaegten tegnes i dB ned til
 constexpr int kPhaseLinear = 0;            // lineaer fase (FIR), ca. 0.2 s forsinkelse
 constexpr int kPhaseZl24   = 1;            // 0 ms, 24 dB/okt
 constexpr int kPhaseZl48   = 2;            // 0 ms, 48 dB/okt
+constexpr int kPhaseZl96   = 3;            // 0 ms, 96 dB/okt (kun Doppler Saturator, 1.2)
 
 inline double clampd (double x, double lo, double hi) { return x < lo ? lo : (x > hi ? hi : x); }
 inline double driveToGain (double pct)               { return std::exp (pct * std::log (64.0) / 400.0); }
@@ -691,9 +692,16 @@ struct ZlSpec
 };
 
 // Murens afstand: LR-vaegten er 1 / (1 + r^n6), og 0.97 naas ved r^n6 = 1/32
+// Doppler Saturator 1.2 (brugeren 2026-11-05: "yderligere en 0 - ms, som er endnu stejlere og pitcher lyden endnu
+// mere"): 96 dB/okt. Multiband Saturator bruger kun 24 og 48.
+inline int zlN6 (int phaseMode)
+{
+    return phaseMode == kPhaseZl24 ? 4 : phaseMode == kPhaseZl96 ? 16 : 8;
+}
+
 inline ZlSpec zlSpec (int phaseMode)
 {
-    const int n6 = phaseMode == kPhaseZl24 ? 4 : 8;
+    const int n6 = zlN6 (phaseMode);
     return { n6, n6, 5.0 / n6 };
 }
 

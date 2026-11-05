@@ -602,7 +602,7 @@ private:
 };
 
 // =============================================================================
-//  SlopeView: hvad 24 og 48 dB/oct betyder - de to kanters fald, den valgte lyser (1.1)
+//  SlopeView: hvad 24, 48 og 96 dB/oct betyder - kanternes fald, den valgte lyser (1.1, 96 i 1.2)
 // =============================================================================
 class DopplerSatEditor::SlopeView : public juce::Component, public juce::SettableTooltipClient
 {
@@ -610,7 +610,7 @@ public:
     SlopeView()
     {
         setTooltip ("How steep the band's edges are. One octave past the edge, 24 dB/oct has turned the sound down by "
-                    "24 dB and 48 dB/oct by 48 dB. Steeper edges bend the pitch more when the band moves.");
+                    "24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB. Steeper edges bend the pitch more when the band moves.");
     }
 
     void setMode (int m) { if (m != mode) { mode = m; repaint(); } }
@@ -620,9 +620,10 @@ public:
         const auto R = getLocalBounds().toFloat();
         drawLcd (g, R.reduced (0.5f));
         const auto r = R.reduced (9.f, 8.f).withTrimmedTop (12.f).withTrimmedBottom (10.f);
-        constexpr float octL = -0.6f, octR = 2.1f, dbMin = -60.f;
+        // 1.2: aksen gaar til -110 dB (foer -60), saa -96 dB en oktav ude kan ses
+        constexpr float octL = -0.6f, octR = 2.1f, dbMin = -110.f;
         auto xOf = [&] (float oct) { return r.getX() + r.getWidth() * (oct - octL) / (octR - octL); };
-        auto yOf = [&] (float db)  { return r.getY() + r.getHeight() * juce::jmin (db / dbMin, 1.6f); };
+        auto yOf = [&] (float db)  { return r.getY() + r.getHeight() * juce::jmin (db / dbMin, 1.2f); };
 
         // kanten (0 oktav) og 1 oktav udenfor
         g.setColour (hw::silkDim.withAlpha (0.35f));
@@ -633,14 +634,17 @@ public:
         g.drawText ("edge", juce::Rectangle<float> (xOf (0.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
         g.drawText ("+1 oct", juce::Rectangle<float> (xOf (1.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
 
-        // Linkwitz-Riley-kantens fald: 1 / (1 + (f / fc) ^ n), n = 4 (24 dB/oct) eller 8 (48 dB/oct)
-        for (int m = 0; m < 2; ++m)
+        // Linkwitz-Riley-kantens fald: 1 / (1 + (f / fc) ^ n), n = 4 (24 dB/oct), 8 (48 dB/oct) eller 16 (96 dB/oct)
+        static const char* labels[] = { "-24 dB", "-48 dB", "-96 dB" };
+        static const float labelDb[] = { -24.6f, -48.2f, -96.f };
+        for (int m = 0; m < DopplerSatProcessor::kNumModes; ++m)
         {
-            const double n = m == 0 ? 4.0 : 8.0;
+            const double n = 4.0 * (double) (1 << m);
+            // 1.2: kurverne slutter ved +1 oktav, saa hver ender lige ved sit tal (tre tal blev ellers krydset af kurverne)
             juce::Path p;
             for (int i = 0; i <= 120; ++i)
             {
-                const float  oct = octL + (octR - octL) * (float) i / 120.f;
+                const float  oct = octL + (1.f - octL) * (float) i / 120.f;
                 const double db  = 20.0 * std::log10 (1.0 / (1.0 + std::pow (2.0, n * (double) oct)));
                 const float  x = xOf (oct), y = yOf ((float) db);
                 if (i == 0) p.startNewSubPath (x, y); else p.lineTo (x, y);
@@ -654,9 +658,9 @@ public:
                 g.setColour (on ? hw::amber : hw::silkDim.withAlpha (0.45f));
                 g.strokePath (p, juce::PathStrokeType (on ? 1.8f : 1.f));
             }
-            const float yLab = yOf (m == 0 ? -24.6f : -48.2f);
+            const float yLab = yOf (labelDb[m]);
             g.setFont (hwFont ("Consolas", 10.f));
-            g.drawText (m == 0 ? "-24 dB" : "-48 dB", juce::Rectangle<float> (xOf (1.f) + 4.f, yLab - 6.f, 50.f, 12.f),
+            g.drawText (labels[m], juce::Rectangle<float> (xOf (1.f) + 4.f, yLab - 6.f, 50.f, 12.f),
                         juce::Justification::centredLeft);
         }
         g.setColour (hw::silkDim);
@@ -880,7 +884,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     // ---- LFO
     styleKnob (rateSlider, " Hz", hw::lfo);
     rateSlider.setTooltip ("How fast the band moves: from very slow (0.01 Hz = once every 100 seconds) to very fast (20 Hz). "
-                           "The edges move at most 40 (24 dB) or 20 (48 dB) octaves per second, so at fast rates the sweep "
+                           "The edges move at most 40 (24 dB), 20 (48 dB) or 10 (96 dB) octaves per second, so at fast rates the sweep "
                            "gets smaller. Faster made the level jump.");
     styleKnob (syncRateSlider, "", hw::lfo);
     syncRateSlider.setTooltip ("How fast the band moves, in note values at the song's tempo (bars, . = dotted, T = triplet).");
@@ -915,8 +919,9 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     // ---- Edges (1.1: Drive og Distortion er fjernet; lyden er kun kanternes Doppler-effekt)
     static const char* modeTip[] = {
         "Softer edges (24 dB/oct): a gentler, smoother pitch bend. Click ? for more.",
-        "Steeper edges (48 dB/oct): a stronger, clearer pitch bend. Click ? for more." };
-    for (int i = 0; i < 2; ++i)
+        "Steeper edges (48 dB/oct): a stronger, clearer pitch bend. Click ? for more.",
+        "Steepest edges (96 dB/oct): the strongest pitch bend, most of all at slow rates. Click ? for more." };
+    for (int i = 0; i < P::kNumModes; ++i)
     {
         auto& b = modeButtons[i];
         b.setButtonText (P::modeNames()[i]);
@@ -939,7 +944,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
 
     juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton,
                                     &freqSlider, &amountSlider, &widthSlider,
-                                    &modeButtons[0], &modeButtons[1], &dryWetSlider, &outSlider, &bypassButton };
+                                    &modeButtons[0], &modeButtons[1], &modeButtons[2], &dryWetSlider, &outSlider, &bypassButton };
     for (auto* c : children) addAndMakeVisible (*c);
 
     // Hoejreklik paa enhver knap / vaelger: automationsmenuen for dens parameter (brugeren 2026-11-04: "Sørg for alle
@@ -948,12 +953,12 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     menuFor (rateSlider, "rate");    menuFor (syncRateSlider, "syncrate"); menuFor (offsetSlider, "offset");
     menuFor (shapeBox, "shape");     menuFor (hzButton, "sync");           menuFor (syncButton, "sync");
     menuFor (freqSlider, "freq");    menuFor (amountSlider, "amount");     menuFor (widthSlider, "width");
-    menuFor (modeButtons[0], "mode"); menuFor (modeButtons[1], "mode");
+    for (auto& b : modeButtons) menuFor (b, "mode");
     menuFor (dryWetSlider, "drywet"); menuFor (outSlider, "outgain");      menuFor (bypassButton, "bypass");
 
-    // "?" ved de to 0 ms-tilstande. Overlayet tilfoejes sidst, saa det ligger oeverst.
+    // "?" ved 0 ms-tilstandene. Overlayet tilfoejes sidst, saa det ligger oeverst.
     modeHelp = std::make_unique<HelpButton>();
-    modeHelp->setTooltip ("What is the difference between 24 and 48 dB/oct?");
+    modeHelp->setTooltip ("What is the difference between 24, 48 and 96 dB/oct?");
     modeHelp->onClick = [this] { showModeHelp(); };
     addAndMakeVisible (*modeHelp);
     helpOverlay = std::make_unique<HelpOverlay>();
@@ -998,7 +1003,7 @@ void DopplerSatEditor::updateSync (bool sync)
 
 void DopplerSatEditor::updateMode (int mode)
 {
-    for (int i = 0; i < 2; ++i) modeButtons[i].setToggleState (i == mode, juce::dontSendNotification);
+    for (int i = 0; i < P::kNumModes; ++i) modeButtons[i].setToggleState (i == mode, juce::dontSendNotification);
     if (slopeView != nullptr) slopeView->setMode (mode);
 }
 
@@ -1006,18 +1011,24 @@ void DopplerSatEditor::updateMode (int mode)
 // men forklaring om den lydlige kvalitet: Laver den ene mere pitch end den anden? Og så ultra kort og på
 // begynderniveau, hvad 24db vs 48 db rent teknisk betyder." Tallene er maalt med HostSmoke's pitch-tabel (1.1):
 // 48 / 24 = 3.0-3.2 ved 0.25-1 Hz og 1.25-1.4 ved 3-12 Hz (Amount 100 %, fartgraensen 40 / 20 okt/s).
+// 1.2 (96 dB/oct, fartgraense 10 okt/s): 96 / 48 = 2.7 ved 0.25 Hz og 1.1-1.5 ved 1-12 Hz. Kanterne naar
+// fartgraensen ved Amount 100 % fra 2.1 / 1.1 / 0.53 Hz (sinus: top-fart 18.85 * Rate okt/s).
 void DopplerSatEditor::showModeHelp()
 {
     using S = HelpOverlay::Section;
-    helpOverlay->show ("0 ms - 24 dB/oct or 48 dB/oct", {
+    helpOverlay->show ("0 ms - 24, 48 or 96 dB/oct", {
         S { "How they sound",
-            "Both bend the pitch while the band moves. 48 dB/oct bends it more: a stronger, clearer wobble, about "
-            "3 times as much as 24 dB/oct at slow and medium rates. 24 dB/oct is gentler and smoother.\n"
-            "At fast rates with a large Amount (from about 3 Hz), the edges reach their top speed, and the "
-            "difference gets smaller: 48 dB/oct then bends about 1.3 times as much." },
-        S { "What 24 and 48 dB/oct mean",
-            "The band's edges are filters, and the number is how steep they are. One octave past the edge, "
-            "a 24 dB/oct filter has turned the sound down by 24 dB, and a 48 dB/oct filter by 48 dB: twice as steep.\n"
+            "All three bend the pitch while the band moves. 24 dB/oct is the gentlest and smoothest. 48 dB/oct "
+            "bends about 3 times as much: a stronger, clearer wobble. 96 dB/oct bends the most: at slow rates "
+            "almost 3 times as much as 48 dB/oct again.\n"
+            "With a large Amount the edges reach their top speed from about 2 Hz (24), 1 Hz (48) or 0.5 Hz (96). "
+            "Above that the difference gets smaller: each step then bends about 1.1-1.5 times as much as the one before.\n"
+            "The steeper the edges, the more the level swells and dips along with the pitch, and the more a kick or bass "
+            "right at the band's lower edge is smeared." },
+        S { "What 24, 48 and 96 dB/oct mean",
+            "The band's edges are filters, and the number is how steep they are. One octave past the edge, a 24 dB/oct "
+            "filter has turned the sound down by 24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB: each is twice as "
+            "steep as the one before.\n"
             "A filter also delays the sound a tiny bit around its edge, and a steeper filter delays it more. When the "
             "edge moves, that delay changes, and the pitch bends (the Doppler effect)." } },
         hw::amber);
@@ -1110,18 +1121,20 @@ void DopplerSatEditor::resized()
             placeKnob (*std::array<juce::Slider*, 3> { &freqSlider, &amountSlider, &widthSlider }[(size_t) i],
                        (float) (x + 12) + (float) (w - 24) / 3.f * ((float) i + 0.5f), mY + layout::knob, mY + layout::value);
     }
-    // Edges: de to 0 ms-tilstande, "?" ved titlen og kanternes fald
+    // Edges: 0 ms-tilstandene, "?" ved titlen og kanternes fald. 1.2: 96 dB/oct under de to andre (de ligger, hvor de
+    // laa), og "Edge steepness" er blevet lavere.
     {
         const int x = L.mx[2], w = L.mw[2];
         modeHelp->setBounds (x + w - 28, (int) mY + 5, 16, 16);
-        modeButtons[0].setBounds (x + 12, y (34), w - 24, 24);
-        modeButtons[1].setBounds (x + 12, y (64), w - 24, 24);
-        slopeView->setBounds (x + 12, y (100), w - 24, 122);
+        for (int i = 0; i < P::kNumModes; ++i)
+            modeButtons[i].setBounds (x + 12, y (34.f + 30.f * (float) i), w - 24, 24);
+        slopeView->setBounds (x + 12, y (126), w - 24, 96);
     }
-    // Output: Bypass, Dry / Wet og Output gain
+    // Output: Bypass, Dry / Wet og Output gain. Bypass flugter med midten af den foerste 0 ms-knap (brugeren 2026-11-05:
+    // "Ryk bypass op, så den flugter med den første 0 - ms indstilling [...] gerne flugte lige med midten")
     {
-        const int x = L.mx[3], w = L.mw[3];
-        bypassButton.setBounds (x + 12, y (42), w - 24, 22);
+        const int x = L.mx[3], w = L.mw[3], h = 22;
+        bypassButton.setBounds (x + 12, modeButtons[0].getBounds().getCentreY() - h / 2, w - 24, h);
         placeKnob (dryWetSlider, (float) x + (float) w * 0.27f, mY + layout::knob, mY + layout::value);
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }

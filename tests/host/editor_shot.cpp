@@ -57,6 +57,7 @@ int main (int argc, char** argv)
     save (*ed, dir.getChildFile ("doppler2.png"));
 
     setParam (proc, "shape", 3.f);  setParam (proc, "offset", -30.f); setParam (proc, "sync", 0.f);
+    setParam (proc, "mode", 2.f);                          // 1.2: 96 dB/oct
     setParam (proc, "freq", 2000.f);  setParam (proc, "width", 2.5f);
     setParam (proc, "rate", 2.f);
     for (int i = 0; i < 60; ++i)                          // Random-sporet fyldes af editorens timer

@@ -52,13 +52,23 @@ Claude foreslog at flytte Wobble 2 til `C:\Program Files\Common Files\VST2` og f
 
 Det betyder: kun Wobble 2's plugin-fil flyttes. Dens presets og samples bliver i `C:\Program Files\Steinberg\SONiVOX\Wobble 2`, fordi Wobble 2 har den sti gemt (`C:\ProgramData\SONiVOX\Wobble 2\Wobble.txt` og preset-databasen `Wobble.svxdb`). Wobble 2 skal stadig virke i FL Studio.
 
+## Version 1.2 (2026-11-05)
+
+Brugerens ord:
+> Det fungerer godt. 1) GUI: Ryk bypass op, så den flugter med den første 0 - ms indstilling (se reference, og gerne flugte lige med midten af den første 0 - ms) "C:\Users\sofus\Documents\Programmering\DopplerSat\design\1.1\LayoutV1.1.png"), 2) Kan du lave yderligere en 0 - ms, som er endnu stejlere og pitcher lyden endnu mere? Hvad er maksimalt du kan gøre det?
+
+Det betyder (punkterne nedenfor er rettet efter det):
+- **Bypass** står i højde med den første 0 ms-knap (24 dB/oct), og dens midte flugter med knappens midte. Referencen er `design/1.1/LayoutV1.1.png` (den grønne streg).
+- **En tredje 0 ms-knap: 0 ms - 96 dB/oct** (dobbelt så stejl som 48). 24 og 48 skal lyde præcis som før (bit for bit som 1.1).
+- **"Hvad er maksimalt":** motoren kan bygge kanter op til 192 dB/oct. Claude valgte 96 og forklarede brugeren, hvad 192 koster (målt, se `FREMDRIFT.md` 1.2). Brugeren bestemmer, om 192 skal med.
+
 ## Funktioner der skal blive ved med at virke
 
-- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **0 ms - 24 dB/oct** og **0 ms - 48 dB/oct** (to knapper, standard 48). Der er ingen lineær fase.
+- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **0 ms - 24 dB/oct**, **0 ms - 48 dB/oct** og (1.2) **0 ms - 96 dB/oct** (tre knapper under hinanden, standard 48). Der er ingen lineær fase.
 - **Spektrum: kun output** (fyldt, og kun "Output" i forklaringen; 1.1, brugeren: "Vis kun output på grafen og som forklaringstekst"), med båndet, der bevæger sig. Det skraverede område viser, hvor LFO'en flytter båndet hen. (1.0 viste også input som streg.)
-- **"?" ved de to 0 ms-knapper** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24 og 48 lyder (48 bøjer pitchen ca. 3 gange så meget ved langsom og middel Rate, ca. 1,3 gange ved hurtig Rate, målt), og på begynderniveau, hvad 24 / 48 dB/oct betyder. Under knapperne viser "Edge steepness" de to kanters fald.
+- **"?" ved 0 ms-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Under knapperne viser "Edge steepness" kanternes fald, og den valgte lyser.
 - **Edge Q er bestemt på forhånd** og kan ikke ændres: fra (et tydeligt bånd med 0 ms-tilstandens skrå kanter). Claude valgte det i 1.0, fordi Edge Q 50 % bredte saturationen ud over det meste af spektret. Doppler-effekten er den samme. Tegningen af båndet har samme form og højde som i 1.0 ved 100 % drive, men den viser kun, hvor båndet er.
-- **Kanterne flytter sig højst 40 (24 dB) / 20 (48 dB) oktaver i sekundet.** Hurtigere gav niveauhop (op til 8,8 i peak for en tone på 0,6). Ved hurtig Rate og stor Amount bliver bevægelsen derfor mindre.
+- **Kanterne flytter sig højst 40 (24 dB) / 20 (48 dB) / 10 (96 dB) oktaver i sekundet.** Hurtigere gav niveauhop (op til 8,8 i peak for en tone på 0,6). Ved hurtig Rate og stor Amount bliver bevægelsen derfor mindre.
 - **LFO:**
   - **Rate** i Hz, fra 0,01 Hz (én gang hvert 100. sekund) til 20 Hz.
   - **Sync** til tempoet: 8 / 4 / 2 / 1 takt, 1/2., 1/2, 1/2T, 1/4., 1/4, 1/4T, 1/8., 1/8, 1/8T, 1/16., 1/16, 1/16T og 1/32 (. = punkteret, T = triol). Når sangen spiller, følger fasen værtens position, så LFO'en ligger fast i takten.
@@ -69,7 +79,7 @@ Det betyder: kun Wobble 2's plugin-fil flyttes. Dens presets og samples bliver i
   - **Amount**: hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side.
   - **Width**: båndets bredde, 0,1–6 oktaver.
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
-- **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én.
+- **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første 0 ms-knap (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)
 - **Automation (1.1):** alle 12 parametre kan automatiseres. Højreklik på enhver knap, vælger eller displayet viser en menu: DAW'ens egne punkter øverst, hvis DAW'en har dem (VST3: fx Cubase, Bitwig, Reaper, Studio One), "Select ... for automation" (gør parameteren til "sidst rørt", fx til FL Studios Tools > Last tweaked > Create automation clip), "Reset ... to default" og en kort vejledning til Ableton og FL Studio. Et højreklik ændrer aldrig selve kontrollen.
 - **Let at køre (1.1):** 2–3 gange mindre CPU end 1.0 med præcis samme lyd. Kun de filtre, man hører, regnes (`DopplerCore`). Latensen er 60 samples (1,4 ms ved 44,1 kHz) fra 4x-oversamplingen. DAW'en udligner den selv.
