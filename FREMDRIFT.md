@@ -4,6 +4,51 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-05 — Wobble 2 flyttet til VST2, Steinberg-søgestien fjernet i FL Studio
+
+**Status:** Ingen ændring i pluginnet. Seneste version er stadig **Doppler Saturator 1.1** (installeret, ikke testet i en DAW).
+
+**Ønsket:**
+- Ved opstart fik brugeren status fra posten nedenfor.
+- Brugeren svarede ja til forslaget under "Åbent" med "Ja, flyt Wobble to til VST2" (se `KRAV.md`).
+
+**Fundet:**
+- Wobble 2 (SONiVOX 2.4.0, VST2-synth) består af tre dele:
+  - plugin-filen `C:\Program Files\Steinberg\Wobble 2_x64.dll`;
+  - presets og samples i `C:\Program Files\Steinberg\SONiVOX\Wobble 2` (433 filer, 277 MB, ingen DLL'er);
+  - indstillinger i `C:\ProgramData\SONiVOX\Wobble 2`.
+- **Wobble 2 har stierne til sit indhold gemt:**
+  - `Wobble.txt` peger på `.../Steinberg/SONiVOX/Wobble 2/Samples`;
+  - preset-databasen `Wobble.svxdb` (SQLite) har 226 faste stier ind i Steinberg-mappen.
+  - Derfor er kun plugin-filen flyttet. Indholdet skulle ellers rettes i SQLite-databasen, og der er intet SQLite-værktøj på maskinen.
+- **Ableton** (Live 11.3.43) bruger allerede `C:/Program Files/Common Files/VST2` som VST2-mappe. Før så den altså ikke Wobble 2. Det gør den nu efter en ny scanning.
+- I FL's database var det kun `Wobble 2.nfo`, der pegede ind i `C:\Program Files\Steinberg\`.
+
+**Gjort:**
+1. **Backup** af FL's søgestier, SONiVOX-registreringen og `Wobble 2.nfo` i `Dokumenter\Image-Line\Backup Wobble 2-flytning 2026-11-05\`. En `.reg`-fil kan dobbeltklikkes for at lægge den tilbage.
+2. **Flyttet** (med administrator-adgang) `Wobble 2_x64.dll` til `C:\Program Files\Common Files\VST2\`.
+   - Hashen er den samme før og efter (`F3DCA15F…`), og filens dato er bevaret.
+   - Registreringsnøglen `HKLM\SOFTWARE\WOW6432Node\SONiVOX\Wobble 2` har nu `VSTDir` = VST2-mappen. Så lægger en senere opdatering filen samme sted. `ContentDir` er uændret.
+3. **FL Studio** (var lukket):
+   - `ps_file_filename_0` i `Wobble 2.nfo` peger nu på den nye placering. Filen er stadig skjult og har stadig CRLF.
+   - Søgestien `C:\Program Files\Steinberg\` (List\6) er fjernet fra `HKCU\Software\Image-Line\Shared\Plugin search paths`, og Count er sat fra 7 til 6.
+   - Tilbage står FL's egne mapper samt `Common Files\VST3`, `Common Files\VST2` og `C:\Program Files\VstPlugins`.
+
+**Åbent:**
+- Wobble 2's afinstallationsprogram (`C:\Program Files (x86)\Wobble 2\unins000.exe`) kender kun den gamle placering. Afinstalleres Wobble 2, bliver `VST2\Wobble 2_x64.dll` liggende og skal slettes i hånden.
+- Det er ikke testet, at Wobble 2 åbner med presets i FL Studio og Ableton.
+- Latensen (se posten nedenfor).
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):**
+- Seneste version er **Doppler Saturator 1.1**. Den er installeret ved siden af 1.0, men ikke testet i en DAW.
+- Wobble 2 ligger nu i `Common Files\VST2`, og Steinberg-stien er væk fra FL Studio. Spørg:
+  - Virker Wobble 2 med presets i FL Studio?
+  - Er Steinberg-filerne væk efter "Find more plugins"?
+  - Er Wobble 2 kommet med i Ableton efter en ny scanning?
+- Scan plugins igen i Ableton og FL Studio, og prøv 1.1. Se punkterne under "NÆSTE GANG" i posten nedenfor.
+
+---
+
 ## 2026-11-04 — Version 1.1: ingen drive, kun output, højreklik-automation, "?" ved 0 ms, 2–3 gange lettere (samme lyd), FL Studio ryddet op. Gem og luk
 
 **Status ved lukning:**

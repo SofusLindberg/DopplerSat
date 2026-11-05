@@ -45,6 +45,13 @@ Det betyder (punkterne nedenfor er rettet efter det):
 - **Drive og Distortion er fjernet** (brugerens udtrykkelige ønske). Drive er fast 0 %: der er ingen saturation overhovedet, kun Doppler-effekten. Distortion gjorde intet ved 0 % (formeren køres slet ikke), så den kunne ikke give pitch-ændringen en anden lyd.
 - **Lyden må ikke ændre sig** ved at gøre pluginnet lettere: 1.1 er bit for bit som 1.0 med Drive 0 % (`HostSmoke --compare`). Derfor er 4x-oversamplingen og dens latens (60 samples) beholdt (uden den kan kanterne over 20 kHz ikke flytte sig, og det ville ændre lyden i diskanten, når båndet ligger højt).
 
+## Oprydning i FL Studio, del 2 (2026-11-05)
+
+Claude foreslog at flytte Wobble 2 til `C:\Program Files\Common Files\VST2` og fjerne søgestien `C:\Program Files\Steinberg\` i FL Studio, så Steinbergs DLL'er ikke kommer tilbage i plugin-listen. Brugerens ord:
+> Ja, flyt Wobble to til VST2
+
+Det betyder: kun Wobble 2's plugin-fil flyttes. Dens presets og samples bliver i `C:\Program Files\Steinberg\SONiVOX\Wobble 2`, fordi Wobble 2 har den sti gemt (`C:\ProgramData\SONiVOX\Wobble 2\Wobble.txt` og preset-databasen `Wobble.svxdb`). Wobble 2 skal stadig virke i FL Studio.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **0 ms - 24 dB/oct** og **0 ms - 48 dB/oct** (to knapper, standard 48). Der er ingen lineær fase.
