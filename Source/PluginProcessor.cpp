@@ -3,7 +3,9 @@
 
 juce::StringArray DopplerSatProcessor::modeNames()
 {
-    return { "0 ms - 24 dB/oct", "0 ms - 48 dB/oct", "0 ms - 96 dB/oct" };
+    // 1.3: "0 ms - " er fjernet (brugeren 2026-11-08: "Hvis teksten ikke har nogen repræsentativ betydning, skal
+    // '0 ms' fjernes"). Alle tre er 0 ms, saa det skilte dem ikke ad. Kun teksten er aendret, indeks er de samme.
+    return { "24 dB/oct", "48 dB/oct", "96 dB/oct" };
 }
 
 int DopplerSatProcessor::modePhase (int index)

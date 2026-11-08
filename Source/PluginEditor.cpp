@@ -232,12 +232,15 @@ public:
         fillButton (g, b.getLocalBounds().toFloat().reduced (0.5f), b.getToggleState(), 3.f, true);
     }
 
+    // "compact" (1.3, Hz / Sync): LED og tekst laengere til venstre, saa "Sync" kan ses helt i den smalle knap
+    // (brugeren 2026-11-08: "Teksten (ikke boksen) skal rykkes lidt til venstre, så hele teksten er synlig").
     void drawButtonText (juce::Graphics& g, juce::TextButton& b, bool, bool) override
     {
-        drawLed (g, 13.f, (float) b.getHeight() * 0.5f, b.getToggleState(), ledOf (b), 3.5f);
+        const bool compact = b.getProperties()["compact"];
+        drawLed (g, compact ? 10.f : 13.f, (float) b.getHeight() * 0.5f, b.getToggleState(), ledOf (b), 3.5f);
         g.setFont (hwFont ("Bahnschrift", 12.f, "Regular", 0.3f));
         g.setColour (juce::Colour (0xffeceef3));
-        g.drawSingleLineText (b.getButtonText(), 26, juce::roundToInt ((float) b.getHeight() * 0.5f + 4.f));
+        g.drawSingleLineText (b.getButtonText(), compact ? 19 : 26, juce::roundToInt ((float) b.getHeight() * 0.5f + 4.f));
     }
 
     void drawComboBox (juce::Graphics& g, int w, int h, bool, int, int, int, int, juce::ComboBox& box) override
@@ -900,6 +903,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
         b->setClickingTogglesState (true);
         b->setRadioGroupId (201);
         b->getProperties().set ("led", (juce::int64) hw::lfo.getARGB());
+        b->getProperties().set ("compact", true);
     }
     hzButton.setButtonText ("Hz");
     syncButton.setButtonText ("Sync");
@@ -1016,7 +1020,7 @@ void DopplerSatEditor::updateMode (int mode)
 void DopplerSatEditor::showModeHelp()
 {
     using S = HelpOverlay::Section;
-    helpOverlay->show ("0 ms - 24, 48 or 96 dB/oct", {
+    helpOverlay->show ("24, 48 or 96 dB/oct", {
         S { "How they sound",
             "All three bend the pitch while the band moves. 24 dB/oct is the gentlest and smoothest. 48 dB/oct "
             "bends about 3 times as much: a stronger, clearer wobble. 96 dB/oct bends the most: at slow rates "
@@ -1030,7 +1034,9 @@ void DopplerSatEditor::showModeHelp()
             "filter has turned the sound down by 24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB: each is twice as "
             "steep as the one before.\n"
             "A filter also delays the sound a tiny bit around its edge, and a steeper filter delays it more. When the "
-            "edge moves, that delay changes, and the pitch bends (the Doppler effect)." } },
+            "edge moves, that delay changes, and the pitch bends (the Doppler effect).\n"
+            "None of the three adds latency (0 ms). The plugin as a whole delays the sound by 1.4 ms, which your DAW "
+            "compensates for." } },
         hw::amber);
     helpOverlay->grabKeyboardFocus();
 }
@@ -1073,7 +1079,7 @@ void DopplerSatEditor::showParamMenu (const juce::String& paramID)
     {
         m.addSeparator();
         m.addSectionHeader ("How to automate it");
-        m.addItem ("Ableton Live: pick Doppler Saturator > " + name + " in the track's automation lane", false, false, nullptr);
+        m.addItem ("Ableton Live: pick " + juce::String (JucePlugin_Name) + " > " + name + " in the track's automation lane", false, false, nullptr);
         m.addItem ("FL Studio: Select ... (above), then Tools > Last tweaked > Create automation clip", false, false, nullptr);
         m.addItem ("Other DAWs: Select ... (above), then use the DAW's 'last touched parameter'", false, false, nullptr);
     }
@@ -1171,7 +1177,7 @@ void DopplerSatEditor::renderPlate()
 
     g.setFont (hwFont ("Bahnschrift", 15.f, "SemiBold", 3.f));
     g.setColour (juce::Colours::white.withAlpha (0.92f));
-    g.drawSingleLineText ("DOPPLER SATURATOR", 30, 28);
+    g.drawSingleLineText ("PITCH BEND TEXTURE", 30, 28);       // 1.3: nyt navn (var "DOPPLER SATURATOR")
     silkText (g, "Moving band  -  pitch bends as its edges sweep across the sound", (float) W - 30.f, 27.f, 9.5f,
               hw::silkDim, juce::Justification::right, 0.6f);
 

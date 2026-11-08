@@ -1,4 +1,4 @@
-# Krav til Doppler Saturator
+# Krav til Pitch Bend Texture (til og med 1.2: Doppler Saturator)
 
 Alt hvad brugeren har bedt om til dette plugin, samlet ét sted. **Intet her må fjernes eller ændres i pluginnet, medmindre brugeren udtrykkeligt beder om det.** Claude læser denne fil, før pluginnet ændres, og tilføjer nye ønsker her i samme tur (med dato og brugerens ord).
 
@@ -62,11 +62,23 @@ Det betyder (punkterne nedenfor er rettet efter det):
 - **En tredje 0 ms-knap: 0 ms - 96 dB/oct** (dobbelt så stejl som 48). 24 og 48 skal lyde præcis som før (bit for bit som 1.1).
 - **"Hvad er maksimalt":** motoren kan bygge kanter op til 192 dB/oct. Claude valgte 96 og forklarede brugeren, hvad 192 koster (målt, se `FREMDRIFT.md` 1.2). Brugeren bestemmer, om 192 skal med.
 
+## Version 1.3 (2026-11-08)
+
+Brugerens ord:
+> Super. 1) Billede 1: Skriften i Syncknappen bliver delvist skjult. Teksten (ikke boksen) skal rykkes lidt til venstre, så hele teksten er synlig. 2) Navnet på pluginnet skal hedde Pitch shift Texture i stedet for Doppler Saturator - giver dette nye navn mening i forhold til pluginnets funktionalitet? 3) Billede 2: Hvorfor står det 0 ms foran valget af edges? Hvad betyder det? Hvis teksten ikke har nogen repræsentativ betydning, skal '0 ms' fjernes. Hvis det handler om den forsinkelse, der skabes ved valget af edge, så beskriv det eventuelt super kort inde i infoboksen
+
+Claude svarede, at "Pitch shift" normalt betyder en transposer, og foreslog "Pitch Bend Texture". Brugeren valgte **"Pitch Bend Texture"**.
+
+Det betyder (punkterne nedenfor er rettet efter det):
+- **Navnet er "Pitch Bend Texture"** fra 1.3. 1.0–1.2 hedder stadig "Doppler Saturator" og bliver liggende. Mappen, repoet og CMake-målet hedder stadig DopplerSat.
+- **Hz / Sync:** teksten (og LED'en) står længere til venstre, så "Sync" kan ses helt. Knapperne har samme størrelse og plads.
+- **"0 ms" er fjernet** fra de tre knapper (og fra parameterens valg): alle tre er 0 ms, så det skilte dem ikke ad. Infoboksen siger kort, at ingen af dem giver forsinkelse, og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner.
+
 ## Funktioner der skal blive ved med at virke
 
-- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **0 ms - 24 dB/oct**, **0 ms - 48 dB/oct** og (1.2) **0 ms - 96 dB/oct** (tre knapper under hinanden, standard 48). Der er ingen lineær fase.
+- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
 - **Spektrum: kun output** (fyldt, og kun "Output" i forklaringen; 1.1, brugeren: "Vis kun output på grafen og som forklaringstekst"), med båndet, der bevæger sig. Det skraverede område viser, hvor LFO'en flytter båndet hen. (1.0 viste også input som streg.)
-- **"?" ved 0 ms-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Under knapperne viser "Edge steepness" kanternes fald, og den valgte lyser.
+- **"?" ved Edges-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Den siger også (1.3), at ingen af de tre giver forsinkelse (0 ms), og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner. Under knapperne viser "Edge steepness" kanternes fald, og den valgte lyser.
 - **Edge Q er bestemt på forhånd** og kan ikke ændres: fra (et tydeligt bånd med 0 ms-tilstandens skrå kanter). Claude valgte det i 1.0, fordi Edge Q 50 % bredte saturationen ud over det meste af spektret. Doppler-effekten er den samme. Tegningen af båndet har samme form og højde som i 1.0 ved 100 % drive, men den viser kun, hvor båndet er.
 - **Kanterne flytter sig højst 40 (24 dB) / 20 (48 dB) / 10 (96 dB) oktaver i sekundet.** Hurtigere gav niveauhop (op til 8,8 i peak for en tone på 0,6). Ved hurtig Rate og stor Amount bliver bevægelsen derfor mindre.
 - **LFO:**
@@ -79,12 +91,13 @@ Det betyder (punkterne nedenfor er rettet efter det):
   - **Amount**: hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side.
   - **Width**: båndets bredde, 0,1–6 oktaver.
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
-- **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første 0 ms-knap (1.2).
+- **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)
 - **Automation (1.1):** alle 12 parametre kan automatiseres. Højreklik på enhver knap, vælger eller displayet viser en menu: DAW'ens egne punkter øverst, hvis DAW'en har dem (VST3: fx Cubase, Bitwig, Reaper, Studio One), "Select ... for automation" (gør parameteren til "sidst rørt", fx til FL Studios Tools > Last tweaked > Create automation clip), "Reset ... to default" og en kort vejledning til Ableton og FL Studio. Et højreklik ændrer aldrig selve kontrollen.
 - **Let at køre (1.1):** 2–3 gange mindre CPU end 1.0 med præcis samme lyd. Kun de filtre, man hører, regnes (`DopplerCore`). Latensen er 60 samples (1,4 ms ved 44,1 kHz) fra 4x-oversamplingen. DAW'en udligner den selv.
 - **Ableton:** installeren skriver selv `Options.txt` (som i Multiband Saturator 3.18). Pluginnet har kun 12 parametre, så det er ikke nødvendigt her, men det skader ikke.
-- **Versioner:** hver version hedder "Doppler Saturator 1.x" og har sin egen plugin-kode (D1xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
+- **Hz / Sync** (1.3): begge tekster kan ses helt i knapperne.
+- **Versioner:** hver version hedder "Pitch Bend Texture 1.x" (1.3 og frem; 1.0–1.2: "Doppler Saturator 1.x") og har sin egen plugin-kode (D1xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
 
 ## Arbejdsregler (som i Multiband Saturator)
 - Svar på dansk, og forklar enkelt. Kommentarer i koden skal være på dansk (ASCII: aa / oe / ae).

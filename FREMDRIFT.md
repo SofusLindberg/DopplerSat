@@ -4,6 +4,29 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (7) — Version 1.3: nyt navn "Pitch Bend Texture", "0 ms" fjernet, Sync-teksten kan ses helt
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.3"** (plugin-kode D103, stadig 12 parametre). Ingen fejl eller advarsler.
+- **`HostSmoke --compare` mod 1.2:** bit-identisk i alle 14 situationer ("SAMME LYD").
+- **Røgtesten er OK:** alle former, tilstande, Hz og Sync. Peak højst 0,88 for en indgang på 0,6. CPU 5,1 % af én kerne.
+- **EditorShot:** billederne er set. Titlen er "PITCH BEND TEXTURE", "Sync" kan ses helt, knapperne hedder "24 / 48 / 96 dB/oct", og den nye linje i "?"-boksen er inden for boksen. Højreklik virker.
+- **Installeret og verificeret med filhash** (`62F131FE…`, moduleinfo 1.3.0). Doppler Saturator 1.0 (`624E93D9…`), 1.1 (`C1FEA715…`) og 1.2 (`D0246096…`) ligger uændret ved siden af.
+- **Ikke testet i en DAW.** Pluginnet dukker op under det nye navn, når DAW'en scanner igen.
+
+**Ønsket:** se `KRAV.md` ("Version 1.3", brugerens ord): Sync-teksten skjult, nyt navn "Pitch shift Texture" (giver det mening?), hvad betyder "0 ms"?
+
+**Lavet:**
+1. **Hz / Sync:** LED og tekst står længere til venstre (LED x 10, tekst x 19 i stedet for 13 / 26, knap-egenskaben `compact`). Knapperne har samme størrelse.
+2. **Navn:** Claude svarede, at "Pitch shift" normalt betyder en transposer (fast op/ned), mens pluginnet bøjer pitchen op og ned. Brugeren valgte **"Pitch Bend Texture"**. Ændret i `PRODUCT_NAME`, titlen i editoren og Ableton-vejledningen i højrekliksmenuen (bruger nu `JucePlugin_Name`). Mappe, repo, CMake-mål og klassenavne hedder stadig DopplerSat. Installeren finder nu det nyeste build uanset navn.
+3. **"0 ms":** betød, at kanterne ikke giver forsinkelse (i Multiband Saturator skilte det dem fra Linear phase). Her er alle tre 0 ms, så det er fjernet fra knapperne og parameterens valg (indeks uændret, gemte sessioner virker). "?"-boksen har fået én linje: ingen af de tre giver forsinkelse; pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner.
+
+**NÆSTE GANG:**
+- Scan plugins igen, og find **Pitch Bend Texture 1.3**. Test som skrevet under 2026-11-05 (3): 96 med Sine 0,1–0,5 Hz på bas / pad, Bypass, automation.
+- Stadig åbent: 192 dB/oct og latensen (anbefaling: vent / behold 4x).
+
+---
+
 ## 2026-11-08 (6) — Anbefaling
 
 - Brugeren skrev: "hvad anbefaler du mig at gøre?"

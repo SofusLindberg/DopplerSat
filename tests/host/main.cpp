@@ -252,7 +252,7 @@ int main (int argc, char** argv)
     setReal (drive, 0.f); setReal (dryWet, 100.f);
     // 1.2: tre tilstande (24 / 48 / 96); 1.0 og 1.1 har to
     const int nModes = juce::jlimit (2, 3, mode->getNumSteps());
-    static const char* modeName[] = { "0 ms 24", "0 ms 48", "0 ms 96" };
+    static const char* modeName[] = { "24 dB/oct", "48 dB/oct", "96 dB/oct" };
     for (int m = 0; m < nModes; ++m)
     {
         setReal (mode, (float) m);

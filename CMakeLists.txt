@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 1.2.0)
+project(DopplerSat VERSION 1.3.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
@@ -18,7 +18,8 @@ juce_add_plugin(DopplerSat
     PLUGIN_MANUFACTURER_CODE Dtnv
     PLUGIN_CODE ${DS_PLUGIN_CODE}
     FORMATS VST3
-    PRODUCT_NAME "Doppler Saturator ${DS_VERSION_NAME}"
+    # 1.3: nyt navn "Pitch Bend Texture" (1.0-1.2 hed "Doppler Saturator"). Maal og mappe hedder stadig DopplerSat.
+    PRODUCT_NAME "Pitch Bend Texture ${DS_VERSION_NAME}"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
