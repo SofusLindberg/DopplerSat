@@ -4,6 +4,15 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (5) — Forklaret: niveausving / smøring ved 192, og hvad det koster at fjerne 4x oversampling
+
+- Brugeren skrev: "to kontraspørgsmål: 1) Hvad betyder: "Til gengæld svinger niveauet +5 til +11 dB, og bassen bliver smurt ud i op til 0,5 s."? 2) [...] Hvilken konsekvens har det at fjerne 4x oversampling?"
+- Forklaret ud fra målingerne i 2026-11-05 (2) og 1.1: niveauet stiger med pitchen (192: +5 dB ved 300 Hz, +11,3 dB ved 100 Hz); gruppeforsinkelsen ved båndets nederste kant (192: 88 ms ved 212–424 Hz, 466 ms ved 40–80 Hz) får bassen i fx en kick til at komme efter klikket.
+- 4x væk: 0 latens og ca. halv CPU (oversamplingen er ca. halvdelen), men de øverste delefiltre kan ikke over 20,7 kHz, så diskanten ændrer sig og pitchen holder op, når båndet ligger højt; bånd 2 og 3 ville også parkeres ved ca. 19–22 kHz i stedet for 77–86 kHz. Ingen aliasing-grund mere (ingen saturation siden 1.1). DAW'en udligner de 60 samples selv. Ikke målt i denne omgang.
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-08 (4) — Status fortalt
 
 - Brugeren skrev: "godt, fortæl mig, hvor vi kom til sidst".
