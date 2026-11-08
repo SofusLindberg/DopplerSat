@@ -4,6 +4,15 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 — Opstart: hvad er projektet, og kan Claude læse chathistorikken fra VS Code?
+
+- Brugeren skrev: "Fortæl mig hvad det her er, og kan du tilgå chathistorikken anvendt i Claude inde i Visual Studio code 2026?"
+- Første session i Claude-desktop-appen (Code-fanen). Fortalt brugeren, hvad Doppler Saturator er, og hvor vi kom til (1.2, se posten nedenfor).
+- **Chathistorikken:** Claude Code gemmer alle samtaler som `.jsonl` i `C:\Users\sofus\.claude\projects\<mappenavn>\`, uanset om de kom fra terminalen i VS Code, VS Code-udvidelsen eller desktop-appen. Claude kan læse dem. Der ligger 2 for DopplerSat (den store fra 2026-11-05), 30 for MultibandSat, 4 for `source\repos` og 2 for BudgetApp.
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-05 (3) — Gem og luk
 
 **Status ved lukning:**
