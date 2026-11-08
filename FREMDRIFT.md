@@ -4,6 +4,14 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (2) — Hele Programmering-mappen er tilføjet sessionen
+
+- Brugeren skrev: "Mappe Programmering tilføjet, så du har adgang til alt i mapperne til furure reference".
+- Claude kan nu læse og skrive i hele `C:\Users\sofus\Documents\Programmering`: `BudgetApp`, `DelayDirectionPlugin`, `DopplerSat`, `Ideer`, `JUCE` og `MultibandSat`. Arbejdsmappen er nu `Programmering`, men DopplerSat er stadig projektet, og logbogen er stadig denne fil.
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-08 — Opstart: hvad er projektet, og kan Claude læse chathistorikken fra VS Code?
 
 - Brugeren skrev: "Fortæl mig hvad det her er, og kan du tilgå chathistorikken anvendt i Claude inde i Visual Studio code 2026?"
