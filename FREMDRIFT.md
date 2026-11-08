@@ -4,6 +4,14 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (4) — Status fortalt
+
+- Brugeren skrev: "godt, fortæl mig, hvor vi kom til sidst".
+- Fortalt status fra "Gem og luk" 2026-11-05 (3): 1.2 installeret, ikke testet i DAW, de to åbne spørgsmål (192 dB/oct, latens).
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-08 (3) — Copilot-chats i VS Code findes ikke; udviklingen kan fortsætte i desktop-appen
 
 - Brugeren skrev: "ja gør det" (kig efter Claude-chats i VS Codes `workspaceStorage`) og derefter: "kan jeg fortsætte udviklinen af mit plugin her på samme vis som i Claude inde i Visual Studio code 2026?"
