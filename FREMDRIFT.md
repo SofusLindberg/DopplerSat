@@ -4,6 +4,14 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (6) — Anbefaling
+
+- Brugeren skrev: "hvad anbefaler du mig at gøre?"
+- Anbefalet: test 1.2 i en DAW først (aldrig gjort), vent med 192 dB/oct, behold 4x oversampling. Næste udviklingsskridt besluttes ud fra, hvad brugeren hører.
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-08 (5) — Forklaret: niveausving / smøring ved 192, og hvad det koster at fjerne 4x oversampling
 
 - Brugeren skrev: "to kontraspørgsmål: 1) Hvad betyder: "Til gengæld svinger niveauet +5 til +11 dB, og bassen bliver smurt ud i op til 0,5 s."? 2) [...] Hvilken konsekvens har det at fjerne 4x oversampling?"
