@@ -4,6 +4,15 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-08 (3) — Copilot-chats i VS Code findes ikke; udviklingen kan fortsætte i desktop-appen
+
+- Brugeren skrev: "ja gør det" (kig efter Claude-chats i VS Codes `workspaceStorage`) og derefter: "kan jeg fortsætte udviklinen af mit plugin her på samme vis som i Claude inde i Visual Studio code 2026?"
+- **Fundet:** VS Code (`%APPDATA%\Code`) blev kun åbnet én gang, 2025-10-11 kl. 14:23–14:25. Der er én tom chat (ingen beskeder), ingen udvidelser og ingen Copilot-historik. Alle rigtige Claude-samtaler ligger i `C:\Users\sofus\.claude\projects\` (terminal-Claude Code, "cli").
+- **Svar:** ja. Desktop-appen er samme Claude Code: den læser `CLAUDE.md`, `FREMDRIFT.md`, `KRAV.md` og hukommelsen, kan bygge, teste, installere, committe og pushe som før.
+- Ingen kodeændringer.
+
+---
+
 ## 2026-11-08 (2) — Hele Programmering-mappen er tilføjet sessionen
 
 - Brugeren skrev: "Mappe Programmering tilføjet, så du har adgang til alt i mapperne til furure reference".
