@@ -4,6 +4,23 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-09 (4) — Gem og luk
+
+**Status ved lukning:**
+- Brugeren skrev: "gem og luk og fortæl mig næste gang hvor vi kom til".
+- Seneste version er **Pitch Bend Texture 1.5**. Den er installeret og verificeret igen ved lukning: den installerede fil er identisk med buildet (`933573D3…`), og buildet (18:11:04) er nyere end sidste kildeændring (18:06:38). Doppler Saturator 1.0–1.2 og Pitch Bend Texture 1.3–1.4 ligger ved siden af.
+- Alt er committed og pushet. Arbejdsmappen er ren.
+- **Ikke testet i en DAW. Mac-buildet er ikke kørt.**
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart):** se punkterne under "NÆSTE GANG" i posten 2026-11-09 (3) nedenfor. Kort fortalt:
+1. Test 1.5 i Ableton / FL Studio (Sweep, Band Size, 96 dB/oct, automation, mono-spor).
+2. Se hjemmesiden (`website/index.html`): billede i 900 × 600 og købsboks til $10.
+3. Skal Mac-buildet startes på GitHub (Actions > "Mac build")? Har brugeren en Mac med Logic?
+4. Brugeren skal selv oprette en konto hos en betalingsudbyder og evt. et Apple Developer ID.
+5. Åbne spørgsmål: COMPANY_NAME "DitNavn" → "SoundSo"?, 192 dB/oct, latens, AAX.
+
+---
+
 ## 2026-11-09 (3) — Version 1.5: displays hedder Sweep / Band Size, klar til Mac (AU), webshop på hjemmesiden
 
 **NÆSTE GANG (fortæl brugeren dette ved opstart; brugeren bad selv om at blive mindet):**
