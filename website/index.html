@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SoundSo</title>
+<meta name="description" content="SoundSo makes small, focused audio plugins that put motion into sound. First product: Pitch Bend Texture.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* SoundSo - mockup (2026-11-09). Farverne er taget fra Pitch Bend Texture's editor (design 2A). */
+  :root {
+    color-scheme: dark;
+    --bg:        #16171a;
+    --bg-2:      #1d1f23;
+    --panel:     #24262b;
+    --panel-hi:  #2e3036;
+    --lcd:       #101113;
+    --line:      rgba(255, 255, 255, 0.08);
+    --line-hi:   rgba(255, 255, 255, 0.16);
+    --text:      #eceef3;
+    --muted:     #a2a7b1;
+    --dim:       #6f747e;
+    --green:     #5fe39a;
+    --cyan:      #72d6ee;
+    --amber:     #f2a93b;
+    --purple:    #b58cf5;
+    --radius:    10px;
+    --wrap:      1120px;
+    --font:      "Barlow", "Bahnschrift", "Segoe UI", system-ui, sans-serif;
+    --font-cond: "Barlow Semi Condensed", "Bahnschrift SemiCondensed", "Barlow", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+  .eyebrow {
+    font: 600 13px/1 var(--font-cond);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  h1, h2, h3 { margin: 0; line-height: 1.12; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(42px, 7vw, 76px); font-weight: 700; }
+  h2 { font-size: clamp(30px, 4.2vw, 44px); font-weight: 700; }
+  h3 { font-size: 19px; font-weight: 600; }
+  p { margin: 0; }
+  .lead { font-size: clamp(18px, 2vw, 21px); color: var(--muted); max-width: 40em; }
+
+  /* ---- mockup-strip og topbar */
+  .mock-strip {
+    background: repeating-linear-gradient(-45deg, #2a2412, #2a2412 12px, #2f2914 12px, #2f2914 24px);
+    color: var(--amber);
+    font: 500 13px/1.4 var(--font-cond);
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 7px 16px;
+  }
+  header.top {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(22, 23, 26, 0.86);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.top .wrap { display: flex; align-items: center; gap: 32px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; font-size: 21px; letter-spacing: 0.01em; }
+  .logo svg { width: 30px; height: 30px; }
+  nav.links { display: flex; gap: 26px; margin-left: auto; }
+  nav.links a { text-decoration: none; color: var(--muted); font-weight: 500; font-size: 15px; }
+  nav.links a:hover { color: var(--text); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px; border-radius: 8px;
+    font: 600 16px/1 var(--font); text-decoration: none; cursor: pointer;
+    border: 1px solid var(--line-hi); background: var(--panel-hi); color: var(--text);
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.28); }
+  .btn.primary { background: var(--green); color: #0d1a12; border-color: transparent; }
+  .btn.primary:hover { background: #79ecae; }
+  .btn.small { padding: 9px 16px; font-size: 14px; }
+
+  /* ---- hero (virksomheden) */
+  .hero { padding: 88px 0 72px; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(60% 70% at 78% 40%, rgba(95, 227, 154, 0.10), transparent 70%),
+                radial-gradient(40% 50% at 15% 10%, rgba(181, 140, 245, 0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; position: relative; }
+  .hero h1 span { color: var(--green); }
+  .hero .lead { margin-top: 22px; }
+  .hero .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+  .scope {
+    background: var(--lcd);
+    border: 1px solid #000;
+    box-shadow: 0 0 0 1px rgba(90, 94, 102, 0.45), 0 30px 60px -20px rgba(0, 0, 0, 0.7);
+    border-radius: 12px;
+    padding: 14px;
+    aspect-ratio: 16 / 10;
+  }
+  .scope svg { width: 100%; height: 100%; display: block; }
+  .band-move { animation: sweep 7s ease-in-out infinite alternate; }
+  .dot-move  { animation: dot 7s ease-in-out infinite alternate; }
+  @keyframes sweep { from { transform: translateX(-150px); } to { transform: translateX(150px); } }
+  @keyframes dot   { from { transform: translateX(-150px); } to { transform: translateX(150px); } }
+  @media (prefers-reduced-motion: reduce) { .band-move, .dot-move { animation: none; } }
+
+  /* ---- sektioner */
+  section { padding: 96px 0; }
+  section.alt { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .section-head { max-width: 46em; margin-bottom: 48px; }
+  .section-head h2 { margin-top: 14px; }
+  .section-head .lead { margin-top: 16px; }
+
+  /* ---- produkt */
+  .product { display: grid; grid-template-columns: 1.25fr 1fr; gap: 56px; align-items: center; }
+  .shot {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid #000;
+    box-shadow: 0 0 0 1px rgba(90, 94, 102, 0.5), 0 40px 80px -30px rgba(0, 0, 0, 0.85);
+  }
+  .tag { display: inline-block; font: 600 12px/1 var(--font-cond); letter-spacing: 0.12em; text-transform: uppercase;
+         padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line-hi); color: var(--muted); }
+  .tag.new { color: var(--green); border-color: rgba(95, 227, 154, 0.4); }
+  .product h2 { margin: 16px 0 8px; }
+  .product .tagline { font-size: 20px; color: var(--muted); }
+  .product ul.facts { list-style: none; padding: 0; margin: 26px 0 30px; display: grid; gap: 10px; }
+  .product ul.facts li { display: flex; gap: 12px; align-items: baseline; }
+  .product ul.facts li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+                                 box-shadow: 0 0 10px rgba(95, 227, 154, 0.8); transform: translateY(-1px); }
+  .price { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .price small { color: var(--dim); font-size: 14px; }
+
+  /* ---- features */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card {
+    background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 24px 24px;
+  }
+  .card .led { width: 10px; height: 10px; border-radius: 50%; margin-bottom: 18px; }
+  .card h3 { margin-bottom: 8px; }
+  .card p { color: var(--muted); font-size: 16px; }
+
+  /* ---- sadan virker det */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+  .step { background: var(--lcd); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .step .num { font: 600 13px/1 var(--font-cond); letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; }
+  .step svg { width: 100%; height: 110px; margin: 14px 0 16px; display: block; }
+  .step h3 { margin-bottom: 6px; }
+  .step p { color: var(--muted); font-size: 16px; }
+  .knobs { font: 600 13px/1.4 var(--font-cond); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-top: 12px; }
+
+  /* ---- lydeksempler */
+  .demos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .demo { display: flex; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line);
+          border-radius: var(--radius); padding: 18px; }
+  .play { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line-hi);
+          background: var(--panel-hi); display: grid; place-items: center; color: var(--dim); cursor: not-allowed; }
+  .demo h3 { font-size: 16px; }
+  .demo p { color: var(--dim); font-size: 14px; }
+
+  /* ---- specs */
+  .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; }
+  .specs dl { margin: 0; }
+  .specs .row { display: grid; grid-template-columns: 150px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .specs dt { color: var(--dim); font: 600 13px/1.6 var(--font-cond); letter-spacing: 0.1em; text-transform: uppercase; }
+  .specs dd { margin: 0; }
+
+  /* ---- om / nyhedsbrev */
+  .about { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .about p + p { margin-top: 16px; }
+  .about .lead { color: var(--text); }
+  .about .muted { color: var(--muted); }
+  .signup { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 30px; }
+  .signup h3 { font-size: 22px; margin-bottom: 8px; }
+  .signup p { color: var(--muted); font-size: 16px; }
+  .signup form { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .signup input {
+    flex: 1 1 220px; min-width: 0; padding: 12px 14px; border-radius: 8px;
+    border: 1px solid var(--line-hi); background: var(--lcd); color: var(--text); font: 16px var(--font);
+  }
+  .signup input:focus { outline: 2px solid rgba(95, 227, 154, 0.5); outline-offset: 1px; }
+  .signup .note { margin-top: 12px; font-size: 14px; color: var(--dim); min-height: 1.4em; }
+
+  footer { border-top: 1px solid var(--line); padding: 40px 0 56px; color: var(--dim); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; }
+  footer .logo { font-size: 17px; color: var(--muted); }
+  footer .logo svg { width: 24px; height: 24px; }
+  footer nav { display: flex; gap: 20px; }
+  footer nav a { text-decoration: none; }
+  footer nav a:hover { color: var(--text); }
+  footer .legal { flex-basis: 100%; }
+
+  /* ---- smalle skaerme */
+  @media (max-width: 900px) {
+    .hero .wrap, .product, .about { grid-template-columns: 1fr; gap: 40px; }
+    .grid, .steps, .demos { grid-template-columns: 1fr 1fr; }
+    .specs { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 16px; }
+    nav.links { display: none; }
+    header.top .btn { margin-left: auto; }
+    .hero { padding: 56px 0 48px; }
+    section { padding: 64px 0; }
+    .grid, .steps, .demos { grid-template-columns: 1fr; }
+    .specs .row { grid-template-columns: 1fr; gap: 4px; }
+    .signup { padding: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock-strip">Design mockup &middot; "SoundSo" is a working name &middot; text, prices and sounds are placeholders</div>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" fill="#101113" stroke="rgba(255,255,255,.18)"/>
+        <path d="M5 21 C 9 21, 9 10, 13 10 L 19 10 C 23 10, 23 21, 27 21" fill="none" stroke="#5fe39a" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="16" cy="25" r="1.8" fill="#72d6ee"/>
+      </svg>
+      SoundSo
+    </a>
+    <nav class="links">
+      <a href="#products">Products</a>
+      <a href="#how">How it works</a>
+      <a href="#specs">Specs</a>
+      <a href="#about">About</a>
+    </nav>
+    <a class="btn small primary" href="#signup">Get the beta</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- Virksomheden -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Audio tools by SoundSo</p>
+        <h1>Sound that <span>moves</span>.</h1>
+        <p class="lead">SoundSo makes small, focused audio plugins that put motion into your mixes. Each one does a single thing,
+          and you hear it the moment you turn a knob. Our first plugin bends pitch by sweeping a band across your sound.</p>
+        <div class="ctas">
+          <a class="btn primary" href="#products">Meet Pitch Bend Texture</a>
+          <a class="btn" href="#signup">Join the mailing list</a>
+        </div>
+      </div>
+
+      <!-- Baandet, der glider hen over et spektrum (som i pluginnets display) -->
+      <div class="scope" role="img" aria-label="A green band sweeping from side to side across a purple sound spectrum">
+        <svg viewBox="0 0 600 375" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="specFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#b58cf5" stop-opacity=".45"/>
+              <stop offset="1" stop-color="#b58cf5" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="bandFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#5fe39a" stop-opacity=".22"/>
+              <stop offset="1" stop-color="#5fe39a" stop-opacity=".04"/>
+            </linearGradient>
+          </defs>
+          <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+            <line x1="0" y1="75" x2="600" y2="75"/><line x1="0" y1="150" x2="600" y2="150"/>
+            <line x1="0" y1="225" x2="600" y2="225"/><line x1="0" y1="300" x2="600" y2="300"/>
+            <line x1="100" y1="0" x2="100" y2="375"/><line x1="200" y1="0" x2="200" y2="375"/>
+            <line x1="300" y1="0" x2="300" y2="375"/><line x1="400" y1="0" x2="400" y2="375"/>
+            <line x1="500" y1="0" x2="500" y2="375"/>
+          </g>
+          <path d="M0 240 L40 236 L80 226 L110 190 L130 120 L150 96 L170 128 L190 205 L215 222 L240 214 L262 200 L276 130 L284 110 L292 140 L304 214 L330 226 L360 220 L390 232 L420 224 L450 236 L480 228 L510 238 L540 230 L570 240 L600 234 L600 375 L0 375 Z"
+                fill="url(#specFill)"/>
+          <path d="M0 240 L40 236 L80 226 L110 190 L130 120 L150 96 L170 128 L190 205 L215 222 L240 214 L262 200 L276 130 L284 110 L292 140 L304 214 L330 226 L360 220 L390 232 L420 224 L450 236 L480 228 L510 238 L540 230 L570 240 L600 234"
+                fill="none" stroke="#b58cf5" stroke-width="2"/>
+          <g class="band-move">
+            <path d="M170 340 C 215 340, 225 150, 262 150 L 338 150 C 375 150, 385 340, 430 340 Z" fill="url(#bandFill)"/>
+            <path d="M120 340 L170 340 C 215 340, 225 150, 262 150 L 338 150 C 375 150, 385 340, 430 340 L480 340"
+                  fill="none" stroke="#5fe39a" stroke-width="2.5"/>
+            <line x1="240" y1="0" x2="240" y2="340" stroke="#5fe39a" stroke-opacity=".5"/>
+            <line x1="360" y1="0" x2="360" y2="340" stroke="#5fe39a" stroke-opacity=".5"/>
+          </g>
+          <line x1="0" y1="340" x2="600" y2="340" stroke="#5fe39a" stroke-opacity=".35"/>
+          <g class="dot-move"><path d="M293 352 L300 342 L307 352 Z" fill="#5fe39a"/></g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Det foerste produkt -->
+  <section id="products" class="alt">
+    <div class="wrap product">
+      <div class="shot">
+        <img src="assets/pitch-bend-texture.png" width="900" height="600"
+             alt="Pitch Bend Texture plugin window with spectrum display, LFO, Band, Edges and Output sections">
+      </div>
+      <div>
+        <span class="tag new">First product</span>
+        <h2>Pitch Bend Texture</h2>
+        <p class="tagline">A moving band that bends pitch as its edges sweep across your sound.</p>
+        <ul class="facts">
+          <li>Bass, pads, vocals and drums wobble, drift and bend: from slow seasick drift to fast warble</li>
+          <li>Free in Hz or locked to your song's tempo and bar</li>
+          <li>Three edge steepnesses: from gentle to strongest bend</li>
+          <li>Zero-latency edges, every control automatable</li>
+        </ul>
+        <div class="price">
+          <a class="btn primary" href="#signup">Get the free beta</a>
+          <small>VST3 &middot; Windows 64-bit &middot; Version 1.4</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Funktioner -->
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Pitch Bend Texture</p>
+        <h2>Simple to use. Strange in the best way.</h2>
+        <p class="lead">Few controls, each with one clear job, so you can find the sound by ear.</p>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="led" style="background:var(--green);box-shadow:0 0 12px var(--green)"></div>
+          <h3>Pitch that follows the motion</h3>
+          <p>The band's edges delay the sound a tiny bit. When they move, that delay changes and the pitch bends: the Doppler effect.</p>
+        </div>
+        <div class="card">
+          <div class="led" style="background:var(--cyan);box-shadow:0 0 12px var(--cyan)"></div>
+          <h3>Four LFO shapes</h3>
+          <p>Sine, Triangle, Square with soft edges (no clicks) and Random glide. Offset lets the band linger at the top or bottom.</p>
+        </div>
+        <div class="card">
+          <div class="led" style="background:var(--cyan);box-shadow:0 0 12px var(--cyan)"></div>
+          <h3>Locks to your tempo</h3>
+          <p>From 0.01 to 20 Hz, or synced from 8 bars down to 1/32, with dotted and triplet values. Locked to the bar while the song plays.</p>
+        </div>
+        <div class="card">
+          <div class="led" style="background:var(--amber);box-shadow:0 0 12px var(--amber)"></div>
+          <h3>24, 48 or 96 dB/oct</h3>
+          <p>Steeper edges bend more. 24 is gentle and smooth, 48 is clear and strong, 96 bends the most at slow rates.</p>
+        </div>
+        <div class="card">
+          <div class="led" style="background:var(--green);box-shadow:0 0 12px var(--green)"></div>
+          <h3>Sweep and Band Size</h3>
+          <p>Sweep sets how far the band travels. Band Size sets how wide the band itself is. The display shows both, live.</p>
+        </div>
+        <div class="card">
+          <div class="led" style="background:var(--purple);box-shadow:0 0 12px var(--purple)"></div>
+          <h3>Dry/Wet turns it into a phaser</h3>
+          <p>Blend in the dry signal and the moving phase cuts sweeping notches through the sound.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Saadan virker det -->
+  <section id="how" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Three steps to a moving sound</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="num">Step 1</div>
+          <svg viewBox="0 0 300 110" aria-hidden="true">
+            <line x1="0" y1="96" x2="300" y2="96" stroke="#5fe39a" stroke-opacity=".35"/>
+            <path d="M60 96 C 90 96, 95 30, 120 30 L 180 30 C 205 30, 210 96, 240 96 Z" fill="#5fe39a" fill-opacity=".12"/>
+            <path d="M20 96 L60 96 C 90 96, 95 30, 120 30 L 180 30 C 205 30, 210 96, 240 96 L280 96" fill="none" stroke="#5fe39a" stroke-width="2.2"/>
+            <path d="M104 14 L196 14" stroke="#eceef3" stroke-opacity=".6" stroke-width="1.5"/>
+            <path d="M104 9 L104 19 M196 9 L196 19" stroke="#eceef3" stroke-opacity=".6" stroke-width="1.5"/>
+            <path d="M150 104 L146 110 L154 110 Z" fill="#5fe39a"/>
+          </svg>
+          <h3>Place the band</h3>
+          <p>Choose where it sits and how wide it is. You can also drag it in the display.</p>
+          <p class="knobs">Frequency &middot; Band Size</p>
+        </div>
+        <div class="step">
+          <div class="num">Step 2</div>
+          <svg viewBox="0 0 300 110" aria-hidden="true">
+            <path d="M10 55 C 45 5, 80 5, 115 55 S 185 105, 220 55 S 290 5, 290 5" fill="none" stroke="#72d6ee" stroke-width="2.2"/>
+            <circle cx="220" cy="55" r="5" fill="#fff"/>
+            <path d="M30 100 L270 100" stroke="#5fe39a" stroke-opacity=".6" stroke-width="1.5"/>
+            <path d="M30 95 L30 105 M270 95 L270 105" stroke="#5fe39a" stroke-opacity=".6" stroke-width="1.5"/>
+          </svg>
+          <h3>Set it moving</h3>
+          <p>Pick a shape and a speed, and how far the band travels to each side.</p>
+          <p class="knobs">Sweep &middot; Rate / Sync &middot; Shape &middot; Offset</p>
+        </div>
+        <div class="step">
+          <div class="num">Step 3</div>
+          <svg viewBox="0 0 300 110" aria-hidden="true">
+            <path d="M20 22 L120 22 C 160 22, 175 60, 280 92" fill="none" stroke="#eceef3" stroke-opacity=".3" stroke-width="2"/>
+            <path d="M20 22 L120 22 C 145 22, 160 70, 200 100" fill="none" stroke="#eceef3" stroke-opacity=".5" stroke-width="2"/>
+            <path d="M20 22 L120 22 C 130 22, 140 80, 152 104" fill="none" stroke="#f2a93b" stroke-width="2.6"/>
+            <line x1="120" y1="10" x2="120" y2="108" stroke="#eceef3" stroke-opacity=".15" stroke-dasharray="3 4"/>
+          </svg>
+          <h3>Choose the edges</h3>
+          <p>Steeper edges give a stronger bend. Mix in the dry sound for a phaser.</p>
+          <p class="knobs">24 / 48 / 96 dB/oct &middot; Dry / Wet</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lydeksempler (pladsholdere) -->
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Listen</p>
+        <h2>Hear it on real sounds</h2>
+        <p class="lead">Before and after, no other effects. Audio examples are coming soon.</p>
+      </div>
+      <div class="demos">
+        <div class="demo">
+          <span class="play" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 2 L14 8 L4 14 Z" fill="currentColor"/></svg></span>
+          <div><h3>Bass &middot; slow drift</h3><p>96 dB/oct, Sine 0.25 Hz &middot; coming soon</p></div>
+        </div>
+        <div class="demo">
+          <span class="play" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 2 L14 8 L4 14 Z" fill="currentColor"/></svg></span>
+          <div><h3>Pad &middot; synced wobble</h3><p>48 dB/oct, Triangle 1/4 &middot; coming soon</p></div>
+        </div>
+        <div class="demo">
+          <span class="play" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 2 L14 8 L4 14 Z" fill="currentColor"/></svg></span>
+          <div><h3>Drums &middot; phaser</h3><p>24 dB/oct, Random, Dry/Wet 50 % &middot; coming soon</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Specifikationer -->
+  <section id="specs" class="alt">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Specs</p>
+        <h2>Works in your DAW</h2>
+      </div>
+      <div class="specs">
+        <dl>
+          <div class="row"><dt>Format</dt><dd>VST3, Windows 64-bit</dd></div>
+          <div class="row"><dt>Hosts</dt><dd>Ableton Live, FL Studio, Cubase, Studio One, Bitwig, Reaper and other VST3 hosts</dd></div>
+          <div class="row"><dt>Tracks</dt><dd>Stereo, mono, and mono to stereo</dd></div>
+          <div class="row"><dt>Sample rates</dt><dd>44.1 to 192 kHz</dd></div>
+        </dl>
+        <dl>
+          <div class="row"><dt>Automation</dt><dd>All 12 controls. Right-click any control to automate it</dd></div>
+          <div class="row"><dt>Latency</dt><dd>1.4 ms at 44.1 kHz, compensated by your DAW</dd></div>
+          <div class="row"><dt>CPU</dt><dd>Light: about 5 % of one core in our tests</dd></div>
+          <div class="row"><dt>Version</dt><dd>1.4 (public beta coming soon)</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Om virksomheden + nyhedsbrev -->
+  <section id="about">
+    <div class="wrap about">
+      <div>
+        <p class="eyebrow">About SoundSo</p>
+        <h2 style="margin:14px 0 22px">Small tools, big movement</h2>
+        <p class="lead">SoundSo is an independent audio software company. We build focused plugins that each do one thing well, and sound like nothing else.</p>
+        <p class="muted">Pitch Bend Texture is our first product. It grew out of a happy accident in a multiband saturator: when a band was dragged across the spectrum, the pitch bent. We liked it so much that it became its own plugin. More tools are on the way.</p>
+      </div>
+      <div class="signup" id="signup">
+        <h3>Get the beta first</h3>
+        <p>Join the mailing list to hear when Pitch Bend Texture is ready to download, and when the next SoundSo tool arrives.</p>
+        <form onsubmit="event.preventDefault(); document.getElementById('signup-note').textContent = 'Mockup: the form is not connected yet.';">
+          <input type="email" required placeholder="you@example.com" aria-label="Email address">
+          <button class="btn primary" type="submit">Notify me</button>
+        </form>
+        <p class="note" id="signup-note">No spam. Unsubscribe any time.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" fill="#101113" stroke="rgba(255,255,255,.18)"/>
+        <path d="M5 21 C 9 21, 9 10, 13 10 L 19 10 C 23 10, 23 21, 27 21" fill="none" stroke="#5fe39a" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="16" cy="25" r="1.8" fill="#72d6ee"/>
+      </svg>
+      SoundSo
+    </a>
+    <nav>
+      <a href="#products">Products</a>
+      <a href="#about">About</a>
+      <a href="#signup">Contact</a>
+      <a href="#">Privacy</a>
+    </nav>
+    <p class="legal">&copy; 2026 SoundSo. VST is a registered trademark of Steinberg Media Technologies GmbH.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -4,6 +4,27 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-09 (2) — Hjemmeside-mockup for SoundSo
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart; brugeren bad selv om at blive mindet):**
+- **Test pluginnet:** scan plugins igen i Ableton og FL Studio og prøv **Pitch Bend Texture 1.4**: Sweep og Band Size, 96 dB/oct med Sine 0,1–0,5 Hz på bas / pad, Bypass, automation (højreklik), gerne også på et mono-spor.
+- **Se hjemmesiden:** åbn `website/index.html` (eller kør `website/serve.ps1` og gå til http://localhost:8765/). Spørg, hvad der skal ændres: navn, tekster, farver, sektioner, sprog (nu engelsk).
+- Stadig åbent: 192 dB/oct, latensen, AAX til Pro Tools.
+
+**Status:**
+- Brugeren skrev (midt i 1.4): "Du skal også lave en hjemmeside til produktet. Hjemmesiden skal repræsentere den overordnede virksomhed, og pluginnet er det første produkt fra virksomhed. Kald virksomheden for SoundSo indtil videre. Lav et html mockup af hjemmesiden. Mind mig næste gang, at jeg skal teste pluginnet og se hjemmesiden".
+- **`website/index.html`**: én fil med indbygget CSS og et skærmbillede (`website/assets/pitch-bend-texture.png`, fra EditorShot 1.4). Mørk hardware-stil med pluginnets farver. Sektioner:
+  - virksomheden ("Sound that moves.") med et animeret bånd, der glider hen over et spektrum;
+  - første produkt, seks funktioner og "Three steps" med små tegninger;
+  - lydeksempler (pladsholdere), specs (VST3, mono/stereo, 44,1–192 kHz, 1,4 ms, automation) og om SoundSo;
+  - tilmelding til nyhedsbrev (ikke forbundet) og en strip øverst: "Design mockup".
+- Teksten er på engelsk og er pladsholdere. "About" nævner, at pluginnet kom fra en multiband saturator.
+- Tjekket i browseren ved 1280 × 800 og på mobil (375 px, ingen vandret rulning).
+- **`website/serve.ps1`** + `.claude/launch.json` ("soundso-website"): en lille lokal server på port 8765. Den skal angive `ContentLength64`, ellers går den ned ved første fil.
+- Ingen kodeændringer i pluginnet.
+
+---
+
 ## 2026-11-09 — Version 1.4: Sweep og Band Size, virker i alle DAW'er (mono, hale, DAW-test)
 
 **Status:**
