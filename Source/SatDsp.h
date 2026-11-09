@@ -20,10 +20,17 @@
 #include <complex>
 #include <condition_variable>
 #include <cstring>
-#include <emmintrin.h>
 #include <mutex>
 #include <thread>
 #include <vector>
+
+// Pitch Bend Texture 1.5: SSE2 kun paa Intel / AMD. Paa Apple Silicon (og med DS_FORCE_SIMD_SHIM=1) de samme
+// funktioner uden SSE2 (SimdShim.h, bit for bit samme lyd).
+#if (defined (_M_X64) || defined (__x86_64__) || defined (_M_IX86) || defined (__i386__)) && ! DS_FORCE_SIMD_SHIM
+ #include <emmintrin.h>
+#else
+ #include "SimdShim.h"
+#endif
 
 namespace satdsp
 {

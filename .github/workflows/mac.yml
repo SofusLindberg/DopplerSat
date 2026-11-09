@@ -1,0 +1,86 @@
+# Mac-build af Pitch Bend Texture: Audio Unit (Logic) + VST3, universal (Apple Silicon + Intel).
+# Startes i haanden: GitHub > Actions > "Mac build" > Run workflow (koster Actions-minutter; macOS taeller x10).
+#   1. bygger AU og VST3 med JUCE 9.0.3 (samme version som ../JUCE paa Windows)
+#   2. auval: Apples egen kontrol af Audio Units, den samme som Logic koerer, foer et plugin kan bruges
+#   3. HostSmoke paa AU'en (samme vej som Logic): roeg-test + DAW-test (automation, mono, samplerater, gem / hent)
+#   4. HostSmoke --compare AU mod VST3: skal lyde bit for bit ens
+#   5. EditorShot: billeder af editoren paa Mac (skrifterne er anderledes end paa Windows)
+# Pluginnet er IKKE signeret med et Apple Developer ID; det kraever en betalt Apple-konto (se FREMDRIFT.md).
+name: Mac build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mac:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: DopplerSat
+
+      - name: Hent JUCE 9.0.3
+        run: git clone --depth 1 --branch 9.0.3 https://github.com/juce-framework/JUCE.git JUCE
+
+      - name: Version og navn
+        working-directory: DopplerSat
+        run: |
+          MINOR=$(sed -n 's/^project(DopplerSat VERSION 1\.\([0-9]*\)\.0)/\1/p' CMakeLists.txt)
+          echo "DS_NAME=Pitch Bend Texture 1.$MINOR" >> "$GITHUB_ENV"
+          echo "DS_CODE=$(printf 'D1%02d' "$MINOR")" >> "$GITHUB_ENV"
+
+      - name: Byg AU + VST3
+        working-directory: DopplerSat
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          cmake --build build --config Release --target DopplerSat_AU DopplerSat_VST3 -j 4
+          ls build/DopplerSat_artefacts/Release/AU build/DopplerSat_artefacts/Release/VST3
+
+      - name: Byg testvaerktoejerne
+        working-directory: DopplerSat
+        run: |
+          cmake -S tests/host -B tests/host/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build tests/host/build --config Release -j 4
+
+      - name: Installer AU'en og koer auval (Logics kontrol)
+        working-directory: DopplerSat
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "build/DopplerSat_artefacts/Release/AU/$DS_NAME.component" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar || true
+          auval -a | grep -i Dtnv || true
+          auval -strict -v aufx "$DS_CODE" Dtnv
+
+      - name: HostSmoke paa AU'en (roeg-test + DAW-test)
+        working-directory: DopplerSat
+        run: tests/host/build/HostSmoke_artefacts/Release/HostSmoke "AU:$DS_NAME"
+
+      - name: AU og VST3 lyder ens
+        working-directory: DopplerSat
+        run: tests/host/build/HostSmoke_artefacts/Release/HostSmoke "AU:$DS_NAME" --compare "build/DopplerSat_artefacts/Release/VST3/$DS_NAME.vst3"
+
+      - name: HostSmoke paa VST3'en
+        working-directory: DopplerSat
+        run: tests/host/build/HostSmoke_artefacts/Release/HostSmoke "build/DopplerSat_artefacts/Release/VST3/$DS_NAME.vst3"
+
+      - name: Billeder af editoren
+        if: always()
+        working-directory: DopplerSat
+        run: tests/host/build/EditorShot_artefacts/Release/EditorShot "$GITHUB_WORKSPACE/shots" || true
+
+      - name: Pak pluginnerne
+        if: always()
+        working-directory: DopplerSat/build/DopplerSat_artefacts/Release
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          ditto -c -k --keepParent "AU/$DS_NAME.component" "$GITHUB_WORKSPACE/out/$DS_NAME (AU).zip" || true
+          ditto -c -k --keepParent "VST3/$DS_NAME.vst3" "$GITHUB_WORKSPACE/out/$DS_NAME (VST3 Mac).zip" || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-build
+          path: |
+            out
+            shots

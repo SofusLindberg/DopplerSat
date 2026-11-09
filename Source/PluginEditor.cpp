@@ -24,7 +24,15 @@ static const juce::Colour outputColour (0xffc77dff), bandColour (0xff50fa7b);
 
 static juce::Font hwFont (const juce::String& name, float size, const juce::String& style = "Regular", float spacing = 0.f)
 {
+   #if JUCE_MAC
+    // 1.5: Mac har hverken Bahnschrift eller Consolas (Windows-skrifter). Naermeste skrifter, der altid findes paa
+    // macOS: Avenir Next (har Regular / Demi Bold / Bold) og Menlo (fast bredde til displayene).
+    const juce::String macName  = name == "Bahnschrift" ? "Avenir Next" : name == "Consolas" ? "Menlo" : name;
+    const juce::String macStyle = (name == "Bahnschrift" && style == "SemiBold") ? "Demi Bold" : style;
+    juce::Font f (juce::FontOptions().withName (macName).withStyle (macStyle).withPointHeight (size));
+   #else
     juce::Font f (juce::FontOptions().withName (name).withStyle (style).withPointHeight (size));
+   #endif
     if (spacing != 0.f) f.setExtraKerningFactor (spacing / f.getHeight());
     return f;
 }
@@ -878,10 +886,10 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
-    rangeLcd->setTooltip ("The frequencies the LFO moves the band across (Frequency +/- Sweep, plus the Band Size).");
+    rangeLcd->setTooltip ("Sweep: the frequencies the LFO moves the band across (Frequency +/- Sweep, plus the Band Size).");
     addAndMakeVisible (*rangeLcd);
     nowLcd = std::make_unique<LcdText> (hw::green);
-    nowLcd->setTooltip ("Where the band is right now.");
+    nowLcd->setTooltip ("Band Size: where the band's edges are right now (they are Band Size apart, and the LFO moves them).");
     addAndMakeVisible (*nowLcd);
 
     // ---- LFO
@@ -917,7 +925,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     freqSlider.setTooltip ("The middle of the band's sweep. You can also drag left / right in the display.");
     styleKnob (amountSlider, " %",  hw::green);
     amountSlider.setTooltip ("Sweep: how far the LFO moves the band to each side of Frequency (100 % = 3 octaves each way). "
-                             "It only changes the area the band travels across (Sweep range), not the band itself. "
+                             "It only changes the area the band travels across (the Sweep display), not the band itself. "
                              "More travel = more pitch change.");
     styleKnob (widthSlider,  " oct", hw::green);
     widthSlider.setTooltip ("Band Size: how wide the band itself is, from edge to edge (0.1 - 6 octaves). "
@@ -1216,8 +1224,10 @@ void DopplerSatEditor::renderPlate()
     // faste labels
     const auto silkC = hw::silk.withAlpha (0.85f);
     silkText (g, "Shape", (float) L.mx[0] + 12.f, mY + 109.f, 9.5f, silkC);
-    silkText (g, "Sweep range", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
-    silkText (g, "Band now", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
+    // 1.5 (brugeren 2026-11-09): "Sørg for at de to displays, der viser range af frekvenser, har samme navn som de
+    // tilhørende knobs (Sweep og Band Size)" (foer "Sweep range" og "Band now")
+    silkText (g, "Sweep", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
+    silkText (g, "Band Size", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
     auto knobText = [&] (int mod, float fx, const juce::String& main, const juce::String& sub)
     {
         const float x = (float) L.mx[mod] + fx;

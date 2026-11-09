@@ -40,7 +40,8 @@
     font: 17px/1.6 var(--font);
     -webkit-font-smoothing: antialiased;
   }
-  img { max-width: 100%; display: block; }
+  /* height: auto: uden den holder width/height-attributterne hoejden fast, naar billedet bliver smallere (strakt) */
+  img { max-width: 100%; height: auto; display: block; }
   a { color: inherit; }
   .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
   .eyebrow {
@@ -124,12 +125,40 @@
   .section-head .lead { margin-top: 16px; }
 
   /* ---- produkt */
-  .product { display: grid; grid-template-columns: 1.25fr 1fr; gap: 56px; align-items: center; }
+  .product { display: grid; grid-template-columns: 1.15fr 1fr; gap: 56px; align-items: start; }
+  /* Skaermbilledet i pluginnets rigtige stoerrelse (900 x 600): aldrig stoerre, og paa smalle skaerme mindre i
+     samme forhold (3:2) */
   .shot {
+    width: fit-content; max-width: 100%; margin: 64px auto 0;
     border-radius: 12px; overflow: hidden;
     border: 1px solid #000;
     box-shadow: 0 0 0 1px rgba(90, 94, 102, 0.5), 0 40px 80px -30px rgba(0, 0, 0, 0.85);
   }
+  .shot img { width: 900px; aspect-ratio: 3 / 2; }
+  .shot-caption { text-align: center; color: var(--dim); font-size: 14px; margin-top: 14px; }
+
+  /* ---- koeb */
+  .buy {
+    background: linear-gradient(180deg, var(--panel-hi), var(--panel));
+    border: 1px solid var(--line-hi); border-radius: 14px; padding: 28px;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+  }
+  .buy .amount { display: flex; align-items: baseline; gap: 10px; }
+  .buy .amount strong { font-size: 54px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; }
+  .buy .amount span { color: var(--muted); }
+  .buy ul { list-style: none; padding: 0; margin: 20px 0 24px; display: grid; gap: 9px; font-size: 16px; color: var(--muted); }
+  .buy ul li::before { content: "\2713"; color: var(--green); margin-right: 10px; font-weight: 700; }
+  .buy .btn { width: 100%; padding: 15px 22px; font-size: 17px; }
+  .buy .secure { margin-top: 12px; text-align: center; font-size: 13px; color: var(--dim); }
+  dialog.checkout {
+    border: 1px solid var(--line-hi); border-radius: 14px; padding: 28px; max-width: 440px; width: calc(100% - 32px);
+    background: var(--panel); color: var(--text);
+  }
+  dialog.checkout::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
+  dialog.checkout h3 { font-size: 22px; margin-bottom: 10px; }
+  dialog.checkout p { color: var(--muted); font-size: 16px; }
+  dialog.checkout p + p { margin-top: 10px; }
+  dialog.checkout .row-end { display: flex; justify-content: flex-end; margin-top: 22px; }
   .tag { display: inline-block; font: 600 12px/1 var(--font-cond); letter-spacing: 0.12em; text-transform: uppercase;
          padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line-hi); color: var(--muted); }
   .tag.new { color: var(--green); border-color: rgba(95, 227, 154, 0.4); }
@@ -224,7 +253,7 @@
 </head>
 <body>
 
-<div class="mock-strip">Design mockup &middot; "SoundSo" is a working name &middot; text, prices and sounds are placeholders</div>
+<div class="mock-strip">Design mockup &middot; "SoundSo" is a working name &middot; text and sounds are placeholders &middot; checkout not connected yet</div>
 
 <header class="top">
   <div class="wrap">
@@ -242,7 +271,7 @@
       <a href="#specs">Specs</a>
       <a href="#about">About</a>
     </nav>
-    <a class="btn small primary" href="#signup">Get the beta</a>
+    <a class="btn small primary" href="#buy">Buy &middot; $10</a>
   </div>
 </header>
 
@@ -258,7 +287,7 @@
           and you hear it the moment you turn a knob. Our first plugin bends pitch by sweeping a band across your sound.</p>
         <div class="ctas">
           <a class="btn primary" href="#products">Meet Pitch Bend Texture</a>
-          <a class="btn" href="#signup">Join the mailing list</a>
+          <a class="btn" href="#buy">Buy it for $10</a>
         </div>
       </div>
 
@@ -302,26 +331,39 @@
 
   <!-- Det foerste produkt -->
   <section id="products" class="alt">
-    <div class="wrap product">
-      <div class="shot">
-        <img src="assets/pitch-bend-texture.png" width="900" height="600"
-             alt="Pitch Bend Texture plugin window with spectrum display, LFO, Band, Edges and Output sections">
-      </div>
-      <div>
-        <span class="tag new">First product</span>
-        <h2>Pitch Bend Texture</h2>
-        <p class="tagline">A moving band that bends pitch as its edges sweep across your sound.</p>
-        <ul class="facts">
-          <li>Bass, pads, vocals and drums wobble, drift and bend: from slow seasick drift to fast warble</li>
-          <li>Free in Hz or locked to your song's tempo and bar</li>
-          <li>Three edge steepnesses: from gentle to strongest bend</li>
-          <li>Zero-latency edges, every control automatable</li>
-        </ul>
-        <div class="price">
-          <a class="btn primary" href="#signup">Get the free beta</a>
-          <small>VST3 &middot; Windows 64-bit &middot; Version 1.4</small>
+    <div class="wrap">
+      <div class="product">
+        <div>
+          <span class="tag new">First product</span>
+          <h2>Pitch Bend Texture</h2>
+          <p class="tagline">A moving band that bends pitch as its edges sweep across your sound.</p>
+          <ul class="facts">
+            <li>Bass, pads, vocals and drums wobble, drift and bend: from slow seasick drift to fast warble</li>
+            <li>Free in Hz or locked to your song's tempo and bar</li>
+            <li>Three edge steepnesses: from gentle to strongest bend</li>
+            <li>Zero-latency edges, every control automatable</li>
+          </ul>
+        </div>
+
+        <!-- Koeb (webshop). Checkout-linket fra betalingsudbyderen saettes i CHECKOUT_URL nederst. -->
+        <div class="buy" id="buy">
+          <div class="amount"><strong>$10</strong><span>USD &middot; one-time</span></div>
+          <ul>
+            <li>Instant download and license key by email</li>
+            <li>All 1.x updates included</li>
+            <li>VST3 for Windows 64-bit</li>
+            <li>Mac (Audio Unit for Logic) in development</li>
+          </ul>
+          <button class="btn primary" type="button" data-buy>Buy Pitch Bend Texture &middot; $10</button>
+          <p class="secure">Secure checkout &middot; card, PayPal, Apple Pay &middot; taxes handled at checkout</p>
         </div>
       </div>
+
+      <figure class="shot" style="margin-bottom:0">
+        <img src="assets/pitch-bend-texture.png" width="900" height="600"
+             alt="Pitch Bend Texture plugin window with spectrum display, LFO, Band, Edges and Output sections">
+      </figure>
+      <p class="shot-caption">Actual size: the plugin window is 900 &times; 600 pixels.</p>
     </div>
   </section>
 
@@ -461,7 +503,7 @@
           <div class="row"><dt>Automation</dt><dd>All 12 controls. Right-click any control to automate it</dd></div>
           <div class="row"><dt>Latency</dt><dd>1.4 ms at 44.1 kHz, compensated by your DAW</dd></div>
           <div class="row"><dt>CPU</dt><dd>Light: about 5 % of one core in our tests</dd></div>
-          <div class="row"><dt>Version</dt><dd>1.4 (public beta coming soon)</dd></div>
+          <div class="row"><dt>Price</dt><dd>$10 USD, one-time. Version 1.5</dd></div>
         </dl>
       </div>
     </div>
@@ -477,8 +519,8 @@
         <p class="muted">Pitch Bend Texture is our first product. It grew out of a happy accident in a multiband saturator: when a band was dragged across the spectrum, the pitch bent. We liked it so much that it became its own plugin. More tools are on the way.</p>
       </div>
       <div class="signup" id="signup">
-        <h3>Get the beta first</h3>
-        <p>Join the mailing list to hear when Pitch Bend Texture is ready to download, and when the next SoundSo tool arrives.</p>
+        <h3>Stay in the loop</h3>
+        <p>Join the mailing list to hear about updates, the Mac version, and when the next SoundSo tool arrives.</p>
         <form onsubmit="event.preventDefault(); document.getElementById('signup-note').textContent = 'Mockup: the form is not connected yet.';">
           <input type="email" required placeholder="you@example.com" aria-label="Email address">
           <button class="btn primary" type="submit">Notify me</button>
@@ -509,6 +551,27 @@
     <p class="legal">&copy; 2026 SoundSo. VST is a registered trademark of Steinberg Media Technologies GmbH.</p>
   </div>
 </footer>
+
+<!-- Checkout. Naar SoundSo har en konto hos en betalingsudbyder (fx Lemon Squeezy, Paddle eller Gumroad), saettes
+     produktets checkout-link i CHECKOUT_URL, og knapperne aabner den rigtige betaling. Indtil da: en forklaring. -->
+<dialog class="checkout" id="checkout">
+  <h3>Checkout opens here</h3>
+  <p>This is a mockup. In the finished shop, this button opens the payment provider's secure checkout for
+     Pitch Bend Texture ($10 USD), with card, PayPal and Apple Pay.</p>
+  <p>After payment the buyer gets the download link and a license key by email. The provider handles VAT and sales tax.</p>
+  <div class="row-end"><button class="btn" type="button" id="checkout-close">Close</button></div>
+</dialog>
+<script>
+  const CHECKOUT_URL = "";   // fx "https://soundso.lemonsqueezy.com/checkout/buy/<produkt-id>"
+  const dlg = document.getElementById("checkout");
+  document.querySelectorAll("[data-buy]").forEach(b => b.addEventListener("click", () =>
+  {
+    if (CHECKOUT_URL) window.location.href = CHECKOUT_URL;
+    else dlg.showModal();
+  }));
+  document.getElementById("checkout-close").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+</script>
 
 </body>
 </html>

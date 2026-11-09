@@ -371,3 +371,6 @@ build/
 # DSP-test (bygges af tests/build-test.bat)
 tests/*.exe
 tests/host/build/
+
+# Test-build uden SSE2 (cmake -B build-shim -DDS_FORCE_SIMD_SHIM=ON)
+build-shim/

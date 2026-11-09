@@ -6,6 +6,10 @@ add_subdirectory(../../../JUCE JUCE)
 juce_add_console_app(HostSmoke PRODUCT_NAME "HostSmoke")
 target_sources(HostSmoke PRIVATE main.cpp)
 target_compile_definitions(HostSmoke PRIVATE JUCE_PLUGINHOST_VST3=1 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+if (APPLE)
+    # 1.5: paa Mac ogsaa Audio Units (HostSmoke "AU:Pitch Bend Texture 1.x"), samme vej som Logic
+    target_compile_definitions(HostSmoke PRIVATE JUCE_PLUGINHOST_AU=1)
+endif()
 target_link_libraries(HostSmoke PRIVATE juce::juce_audio_processors juce::juce_audio_utils juce::juce_recommended_config_flags)
 juce_generate_juce_header(HostSmoke)
 

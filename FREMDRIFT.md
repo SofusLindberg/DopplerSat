@@ -4,6 +4,42 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-09 (3) — Version 1.5: displays hedder Sweep / Band Size, klar til Mac (AU), webshop på hjemmesiden
+
+**NÆSTE GANG (fortæl brugeren dette ved opstart; brugeren bad selv om at blive mindet):**
+- **Test pluginnet:** scan plugins igen og prøv **Pitch Bend Texture 1.5** i Ableton og FL Studio: Sweep, Band Size, 96 dB/oct med Sine 0,1–0,5 Hz på bas / pad, Bypass, automation (højreklik), gerne et mono-spor.
+- **Se hjemmesiden:** `website/index.html` (eller `website/serve.ps1` → http://localhost:8765/). Tjek billedet (nu 900 × 600, ikke strakt) og købsboksen ($10).
+- **Mac / Logic:** Mac-buildet er ikke kørt. Spørg, om det skal startes (GitHub > Actions > "Mac build" > Run workflow), og om brugeren har en Mac med Logic til den endelige test.
+- **Brugeren skal selv oprette:** en konto hos en betalingsudbyder (Lemon Squeezy / Paddle) til webshoppen og et Apple Developer ID ($99/år) til at signere Mac-versionen.
+- Stadig åbent: 192 dB/oct, latensen, AAX til Pro Tools, COMPANY_NAME er stadig "DitNavn" (vises som producent i DAW'erne; skal det være "SoundSo"?).
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.5"** (D105). Ingen fejl eller advarsler.
+- **`HostSmoke --compare` mod 1.4:** bit-identisk ("SAMME LYD").
+- **Uden SSE2** (`build-shim`, `DS_FORCE_SIMD_SHIM=ON`, som på Apple Silicon) mod den almindelige 1.5: bit-identisk i alle 14 situationer.
+- **Røgtest + DAW-test:** alt OK. CPU målt skiftevis med `--bench`: 1.4 1,95 / 1,96 %, 1.5 1,93 / 1,91 % (en røgtest viste 9,3 %, men det var anden belastning på maskinen).
+- **EditorShot:** displayene hedder "SWEEP" og "BAND SIZE".
+- **Installeret og verificeret med filhash** (`933573D3…`, moduleinfo 1.5.0). 1.0–1.4 ligger uændret ved siden af.
+- **Ikke testet i en DAW. Mac-buildet er ikke kørt.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.5, webshop og Mac", brugerens ord): webshop til 10 USD, billedet er strakt, virker det i Logic på Mac, og (undervejs) displayene skal hedde som knapperne.
+
+**Lavet:**
+1. **Billedet strakt:** CSS gjorde det smallere, men `height="600"` holdt højden fast. Nu `height: auto`, og billedet vises i sin rigtige størrelse (900 × 600, målt i browseren) under købsboksen. På mobil skaleres det i forholdet 3:2 (342 × 228). Billedet er nyt fra 1.5.
+2. **Webshop (mockup):** købsboks med **$10 USD, one-time**, hvad man får, og knapper ("Buy · $10" øverst, "Buy it for $10" i toppen, "Buy Pitch Bend Texture · $10"). Knapperne åbner `CHECKOUT_URL`; den er tom, så en boks forklarer, at betalingsudbyderens checkout åbner her. Der er ingen falsk kortformular.
+   - Forslag til udbyder: en "merchant of record" (Lemon Squeezy eller Paddle). De sælger på SoundSo's vegne og klarer moms i EU og sales tax i USA, levering og licensnøgler. Stripe er billigere, men så skal SoundSo selv klare momsen.
+   - Licens: JUCE 9 har en gratis licens op til en vis omsætning. Det skal læses i JUCE 9-licensen, før der sælges.
+3. **Displays:** "Sweep range" → **"Sweep"**, "Band now" → **"Band Size"**, tooltips rettet.
+4. **Mac / Logic** (Logic kan kun Audio Units, og der er ingen Mac her):
+   - `Source/SimdShim.h`: SSE2 findes ikke på Apple Silicon, så de 13 SSE2-funktioner, motoren bruger, er skrevet uden SSE2 (samme regnestykker, bit for bit samme lyd, målt). `-ffp-contract=off` på Mac, så compileren ikke ændrer regningen (FMA).
+   - CMake: `FORMATS VST3 AU` på Apple (Windows uændret).
+   - Skrifter på Mac: Bahnschrift → Avenir Next, Consolas → Menlo (ikke set endnu).
+   - `HostSmoke "AU:<navn>"` indlæser Audio Units på Mac (samme vej som Logic).
+   - `.github/workflows/mac.yml` (startes kun i hånden): bygger AU + VST3 universal, auval (Logics kontrol), HostSmoke + DAW-test på AU'en, AU mod VST3 (skal være bit-identisk), EditorShot-billeder, og lægger de pakkede plugins op.
+   - `gh` (GitHub CLI) findes ikke her, så Claude kan ikke selv starte eller læse workflowen.
+
+---
+
 ## 2026-11-09 (2) — Hjemmeside-mockup for SoundSo
 
 **NÆSTE GANG (fortæl brugeren dette ved opstart; brugeren bad selv om at blive mindet):**

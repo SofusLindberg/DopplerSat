@@ -93,6 +93,19 @@ Det betyder:
 - Et HTML-mockup i `website/index.html` (en fil, kan åbnes direkte i browseren).
 - Ved næste opstart: mind brugeren om at teste pluginnet og se hjemmesiden.
 
+## Version 1.5, webshop og Mac (2026-11-09)
+
+Brugerens ord:
+> 1) kan vi integrere webshop på hjemmesiden, så man kan købe produktet for 10 USD? 2) Se billede 1: Billedet af pluginnet på hjemmesiden er strukket lidt. Sørg for at billedformaet direkte afspejler den rigtige størrelse af pluginnet (specielt kan jeg se, at ikonerne er strukket), 3) Kan du sørge for, at pluginnet og alle automations virker fuldt i i Logic til Mac også?
+>
+> (undervejs) 4) Billede 1: Sørg for at de to displays, der viser range af frekvenser, har samme navn som de tilhørende knobs (Sweep og Band Size)
+
+Det betyder:
+- **Webshop:** pluginnet koster **10 USD** (engangskøb). Hjemmesiden har en købsboks og købsknapper. Checkout kommer fra en betalingsudbyder (forslag: en "merchant of record" som Lemon Squeezy eller Paddle, der selv klarer moms). Brugeren skal selv oprette kontoen. Linket sættes i `CHECKOUT_URL` i `website/index.html`, og indtil da forklarer en boks, hvad der sker.
+- **Billedet af pluginnet** på hjemmesiden vises i pluginnets rigtige størrelse, 900 × 600, og aldrig strakt. På smalle skærme bliver det mindre i samme forhold (3:2).
+- **Displayene i Band-modulet hedder "Sweep" og "Band Size"** som knapperne (til og med 1.4: "Sweep range" og "Band now").
+- **Logic på Mac:** pluginnet skal også findes som Audio Unit, og alle parametre skal kunne automatiseres i Logic. Koden er gjort klar (1.5), og Mac-buildet laves i GitHub Actions (`.github/workflows/mac.yml`), som også kører auval (Logics egen kontrol) og DAW-testen på AU'en. Det er **ikke kørt endnu**. Udgivelse til andre Mac-brugere kræver et Apple Developer ID (betalt Apple-konto) til signering og notarisering. Brugeren skal selv oprette det.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
@@ -109,6 +122,7 @@ Det betyder:
   - **Frequency**: midten af området.
   - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
+  - **Displayene** over knapperne hedder **Sweep** (området, båndet bevæger sig hen over) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
 - **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)
@@ -117,6 +131,7 @@ Det betyder:
 - **Ableton:** installeren skriver selv `Options.txt` (som i Multiband Saturator 3.18). Pluginnet har kun 12 parametre, så det er ikke nødvendigt her, men det skader ikke.
 - **Hz / Sync** (1.3): begge tekster kan ses helt i knapperne.
 - **Alle DAW'er (1.4):** stereo-, mono- og mono-til-stereo-spor; samplerater 44,1–192 kHz; skiftende blokstørrelser (0–4096); alle 12 parametre kan automatiseres samtidig midt i lyden; gem / hent projekt giver samme værdier; pluginnet melder en hale på 2 s (længst målt 1,32 s), så DAW'er ikke klipper efterklangen af. `HostSmoke` tjekker det hele hver gang.
+- **Mac (1.5):** samme kode bygger som Audio Unit og VST3 på Mac (Apple Silicon og Intel), og lyden er bit for bit den samme som på Windows (målt med SSE2 slået fra på Windows). Mac-buildet tjekkes med auval og `HostSmoke` i GitHub Actions.
 - **Versioner:** hver version hedder "Pitch Bend Texture 1.x" (1.3 og frem; 1.0–1.2: "Doppler Saturator 1.x") og har sin egen plugin-kode (D1xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
 
 ## Arbejdsregler (som i Multiband Saturator)

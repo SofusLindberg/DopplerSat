@@ -52,6 +52,30 @@ static void setReal (juce::AudioProcessorParameter* p, float v)
 
 static std::unique_ptr<juce::AudioPluginInstance> load (const char* path)
 {
+   #if JUCE_PLUGINHOST_AU && JUCE_MAC
+    // 1.5: "AU:<navn>" indlaeser den installerede Audio Unit med det navn (samme vej som Logic), fx
+    // HostSmoke "AU:Pitch Bend Texture 1.5" --compare "<.vst3>" -> AU og VST3 skal lyde ens
+    if (juce::String (path).startsWith ("AU:"))
+    {
+        const auto name = juce::String (path).substring (3);
+        juce::AudioUnitPluginFormat au;
+        for (const auto& id : au.searchPathsForPlugins ({}, true, false))
+        {
+            juce::OwnedArray<juce::PluginDescription> found;
+            au.findAllTypesForFile (found, id);
+            for (auto* d : found)
+                if (d->name == name)
+                {
+                    juce::String err;
+                    auto inst = au.createInstanceFromDescription (*d, 44100.0, 512, err);
+                    if (inst == nullptr) std::printf ("FEJL: %s\n", err.toRawUTF8());
+                    return inst;
+                }
+        }
+        std::printf ("FEJL: fandt ingen Audio Unit ved navn %s\n", name.toRawUTF8());
+        return nullptr;
+    }
+   #endif
     juce::VST3PluginFormat fmt;
     juce::OwnedArray<juce::PluginDescription> descs;
     fmt.findAllTypesForFile (descs, juce::String (path));

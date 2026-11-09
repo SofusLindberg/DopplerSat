@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 1.4.0)
+project(DopplerSat VERSION 1.5.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
@@ -13,11 +13,19 @@ else()
     set(DS_PLUGIN_CODE "D${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}")
 endif()
 
+# 1.5: paa Mac ogsaa Audio Unit (Logic kan kun AU). Bygges paa en Mac eller i GitHub Actions
+# (.github/workflows/mac.yml); paa Windows kun VST3 som foer.
+if (APPLE)
+    set(DS_FORMATS VST3 AU)
+else()
+    set(DS_FORMATS VST3)
+endif()
+
 juce_add_plugin(DopplerSat
     COMPANY_NAME "DitNavn"
     PLUGIN_MANUFACTURER_CODE Dtnv
     PLUGIN_CODE ${DS_PLUGIN_CODE}
-    FORMATS VST3
+    FORMATS ${DS_FORMATS}
     # 1.3: nyt navn "Pitch Bend Texture" (1.0-1.2 hed "Doppler Saturator"). Maal og mappe hedder stadig DopplerSat.
     PRODUCT_NAME "Pitch Bend Texture ${DS_VERSION_NAME}"
     IS_SYNTH FALSE
@@ -34,6 +42,7 @@ target_sources(DopplerSat PRIVATE
     Source/PluginEditor.cpp
     Source/PluginEditor.h
     Source/SatDsp.h
+    Source/SimdShim.h
     Source/DopplerCore.h)
 
 target_compile_definitions(DopplerSat PUBLIC
@@ -41,6 +50,15 @@ target_compile_definitions(DopplerSat PUBLIC
 
 if (MSVC)
     target_compile_options(DopplerSat PRIVATE /utf-8)
+else()
+    # Ingen FMA (gange + plus i eet), saa SimdShim.h paa Apple Silicon regner bit for bit som SSE2 paa Windows
+    target_compile_options(DopplerSat PRIVATE -ffp-contract=off)
+endif()
+
+# Test: SimdShim.h i stedet for SSE2 ogsaa paa Windows (cmake -DDS_FORCE_SIMD_SHIM=ON), skal give samme lyd
+option(DS_FORCE_SIMD_SHIM "SatDsp.h uden SSE2 (som paa Apple Silicon)" OFF)
+if (DS_FORCE_SIMD_SHIM)
+    target_compile_definitions(DopplerSat PUBLIC DS_FORCE_SIMD_SHIM=1)
 endif()
 
 target_link_libraries(DopplerSat PRIVATE
