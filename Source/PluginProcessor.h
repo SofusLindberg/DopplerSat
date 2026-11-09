@@ -59,7 +59,9 @@ public:
     const juce::String getName() const override { return JucePlugin_Name; }
     bool acceptsMidi() const override  { return false; }
     bool producesMidi() const override { return false; }
-    double getTailLengthSeconds() const override { return 0.0; }
+    // 1.4: kanterne ringer efter (allpass). Laengst maalt 1.32 s til -80 dB (20 Hz, 0.1 okt, 96 dB/oct; HostSmoke).
+    // Siger pluginnet 0 s, klipper DAW'er, der stopper plugins ved stilhed eller bouncer, efterklangen af.
+    double getTailLengthSeconds() const override { return 2.0; }
 
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }

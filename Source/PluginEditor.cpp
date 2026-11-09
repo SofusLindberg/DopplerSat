@@ -878,7 +878,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
-    rangeLcd->setTooltip ("The frequencies the LFO moves the band across (Frequency +/- Amount, plus the band's width).");
+    rangeLcd->setTooltip ("The frequencies the LFO moves the band across (Frequency +/- Sweep, plus the Band Size).");
     addAndMakeVisible (*rangeLcd);
     nowLcd = std::make_unique<LcdText> (hw::green);
     nowLcd->setTooltip ("Where the band is right now.");
@@ -916,9 +916,12 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     styleKnob (freqSlider,   " Hz", hw::green);
     freqSlider.setTooltip ("The middle of the band's sweep. You can also drag left / right in the display.");
     styleKnob (amountSlider, " %",  hw::green);
-    amountSlider.setTooltip ("How far the LFO moves the band: 100 % = 3 octaves to each side. More movement = more pitch change.");
+    amountSlider.setTooltip ("Sweep: how far the LFO moves the band to each side of Frequency (100 % = 3 octaves each way). "
+                             "It only changes the area the band travels across (Sweep range), not the band itself. "
+                             "More travel = more pitch change.");
     styleKnob (widthSlider,  " oct", hw::green);
-    widthSlider.setTooltip ("The band's width in octaves.");
+    widthSlider.setTooltip ("Band Size: how wide the band itself is, from edge to edge (0.1 - 6 octaves). "
+                            "It does not change how far the band travels.");
 
     // ---- Edges (1.1: Drive og Distortion er fjernet; lyden er kun kanternes Doppler-effekt)
     static const char* modeTip[] = {
@@ -1025,7 +1028,7 @@ void DopplerSatEditor::showModeHelp()
             "All three bend the pitch while the band moves. 24 dB/oct is the gentlest and smoothest. 48 dB/oct "
             "bends about 3 times as much: a stronger, clearer wobble. 96 dB/oct bends the most: at slow rates "
             "almost 3 times as much as 48 dB/oct again.\n"
-            "With a large Amount the edges reach their top speed from about 2 Hz (24), 1 Hz (48) or 0.5 Hz (96). "
+            "With a large Sweep the edges reach their top speed from about 2 Hz (24), 1 Hz (48) or 0.5 Hz (96). "
             "Above that the difference gets smaller: each step then bends about 1.1-1.5 times as much as the one before.\n"
             "The steeper the edges, the more the level swells and dips along with the pitch, and the more a kick or bass "
             "right at the band's lower edge is smeared." },
@@ -1118,7 +1121,7 @@ void DopplerSatEditor::resized()
         placeKnob (syncRateSlider, (float) x + (float) w * 0.3f, mY + layout::knob, mY + layout::value);
         placeKnob (offsetSlider,   (float) x + (float) w * 0.7f, mY + layout::knob, mY + layout::value);
     }
-    // Baand: omraadet og baandet lige nu, Frequency / Amount / Width
+    // Baand: omraadet og baandet lige nu, Frequency / Sweep / Band Size (1.4; foer Amount / Width)
     {
         const int x = L.mx[1], w = L.mw[1];
         rangeLcd->setBounds (x + 12, y (42), w - 24, 22);
@@ -1226,7 +1229,8 @@ void DopplerSatEditor::renderPlate()
     knobText (0, (float) L.mw[0] * 0.7f, "Offset", "stay at top / bottom");
     for (int i = 0; i < 3; ++i)
     {
-        static const char* m[] = { "Frequency", "Amount", "Width" }, *sb[] = { "middle", "how far", "octaves" };
+        // 1.4: Amount -> Sweep (kun omraadet, baandet bevaeger sig hen over), Width -> Band Size (selve baandet)
+        static const char* m[] = { "Frequency", "Sweep", "Band Size" }, *sb[] = { "middle", "travel range", "the band itself" };
         knobText (1, 12.f + (float) (L.mw[1] - 24) / 3.f * ((float) i + 0.5f), m[i], sb[i]);
     }
     knobText (3, (float) L.mw[3] * 0.27f, "Dry / Wet", "");

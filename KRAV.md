@@ -74,6 +74,25 @@ Det betyder (punkterne nedenfor er rettet efter det):
 - **Hz / Sync:** teksten (og LED'en) står længere til venstre, så "Sync" kan ses helt. Knapperne har samme størrelse og plads.
 - **"0 ms" er fjernet** fra de tre knapper (og fra parameterens valg): alle tre er 0 ms, så det skilte dem ikke ad. Infoboksen siger kort, at ingen af dem giver forsinkelse, og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner.
 
+## Version 1.4 (2026-11-09)
+
+Brugerens ord:
+> 1) Width skal hedde noget andet. Det skal fremgå tydeligere, at det er selve kurven, der forlænges eller forkortes. Overvej samtidig Amount: Kan det gøres tydeligere i beskrivelsen, at det kun vedrører det område, som kurven bevæger sig henover? Hvis du kan finde et mere præcist ord for kurve, så brug det. 2) Sørg for, at pluginnet virker til Alle DAW's. Automations skal virke i alle DAWS. Er det muligt at lave det?
+
+Det betyder (punkterne nedenfor er rettet efter det):
+- **Width hedder "Band Size"** med underteksten "the band itself" ("bånd" er det præcise ord for kurven). **Amount hedder "Sweep"** med underteksten "travel range", og den passer til displayet "Sweep range" ovenover. Tooltips siger, at Sweep kun ændrer området, båndet bevæger sig hen over, og at Band Size kun ændrer selve båndet. Parameterne hedder det samme i DAW'erne. ID'erne er de samme.
+- **Alle DAW'er:** pluginnet virker i alle DAW'er på Windows, der kan VST3 (Ableton, FL Studio, Cubase, Studio One, Bitwig, Reaper m.fl.). Det testes af `HostSmoke`'s DAW-test (se Funktioner). Pro Tools kræver AAX-formatet (Avid-udviklerkonto og PACE-signering, som brugeren selv skal oprette), og Logic findes kun på Mac. Det er ikke lavet.
+
+## Hjemmeside (2026-11-09)
+
+Brugerens ord:
+> Du skal også lave en hjemmeside til produktet. Hjemmesiden skal repræsentere den overordnede virksomhed, og pluginnet er det første produkt fra virksomhed. Kald virksomheden for SoundSo indtil videre. Lav et html mockup af hjemmesiden. Mind mig næste gang, at jeg skal teste pluginnet og se hjemmesiden
+
+Det betyder:
+- Virksomheden hedder **SoundSo** (foreløbigt navn). Siden er virksomhedens, og Pitch Bend Texture er dens første produkt.
+- Et HTML-mockup i `website/index.html` (en fil, kan åbnes direkte i browseren).
+- Ved næste opstart: mind brugeren om at teste pluginnet og se hjemmesiden.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
@@ -88,8 +107,8 @@ Det betyder (punkterne nedenfor er rettet efter det):
   - **Offset** −100 til +100 %: kurven flyttes op eller ned og klippes ved top og bund, så båndet bliver længere tid i den ene ende (som i Abletons LFO).
 - **Band:**
   - **Frequency**: midten af området.
-  - **Amount**: hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side.
-  - **Width**: båndets bredde, 0,1–6 oktaver.
+  - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
+  - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
 - **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)
@@ -97,6 +116,7 @@ Det betyder (punkterne nedenfor er rettet efter det):
 - **Let at køre (1.1):** 2–3 gange mindre CPU end 1.0 med præcis samme lyd. Kun de filtre, man hører, regnes (`DopplerCore`). Latensen er 60 samples (1,4 ms ved 44,1 kHz) fra 4x-oversamplingen. DAW'en udligner den selv.
 - **Ableton:** installeren skriver selv `Options.txt` (som i Multiband Saturator 3.18). Pluginnet har kun 12 parametre, så det er ikke nødvendigt her, men det skader ikke.
 - **Hz / Sync** (1.3): begge tekster kan ses helt i knapperne.
+- **Alle DAW'er (1.4):** stereo-, mono- og mono-til-stereo-spor; samplerater 44,1–192 kHz; skiftende blokstørrelser (0–4096); alle 12 parametre kan automatiseres samtidig midt i lyden; gem / hent projekt giver samme værdier; pluginnet melder en hale på 2 s (længst målt 1,32 s), så DAW'er ikke klipper efterklangen af. `HostSmoke` tjekker det hele hver gang.
 - **Versioner:** hver version hedder "Pitch Bend Texture 1.x" (1.3 og frem; 1.0–1.2: "Doppler Saturator 1.x") og har sin egen plugin-kode (D1xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
 
 ## Arbejdsregler (som i Multiband Saturator)

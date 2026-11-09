@@ -4,6 +4,31 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-09 — Version 1.4: Sweep og Band Size, virker i alle DAW'er (mono, hale, DAW-test)
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.4"** (plugin-kode D104, stadig 12 parametre). Ingen fejl eller advarsler.
+- **`HostSmoke --compare` mod 1.3:** bit-identisk i alle 14 situationer ("SAMME LYD").
+- **Røgtest + ny DAW-test: alt OK** (se nedenfor). CPU 5,0 % af én kerne.
+- **EditorShot:** "SWEEP / travel range" og "BAND SIZE / the band itself" passer i Band-modulet.
+- **Installeret og verificeret med filhash** (`70BAE969…`, moduleinfo 1.4.0). Doppler Saturator 1.0–1.2 og Pitch Bend Texture 1.3 (`62F131FE…`) ligger uændret ved siden af.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.4", brugerens ord): nyt navn til Width (selve kurven forlænges/forkortes), tydeligere Amount, og virker det (og automation) i alle DAW'er?
+
+**Lavet:**
+1. **Width → "Band Size"** (undertekst "the band itself"), **Amount → "Sweep"** (undertekst "travel range", passer til "Sweep range"-displayet). "Bånd" er det præcise ord for kurven. Tooltips og "?"-teksten er rettet. ID'erne er de samme.
+2. **DAW-test i `HostSmoke`** (ny), først kørt mod 1.3:
+   - **Mono understøttedes ikke** (kun stereo → stereo). Nu også mono → mono og mono → stereo (Cubase, Studio One, Reaper, Bitwig har mono-spor). Mono kører den samme stereomotor med en kopi af venstre kanal; stereo er bit for bit som før.
+   - **Halen:** pluginnet sagde 0 s, men kanterne ringer op til 1,32 s efter (til −80 dB, 20 Hz, 0,1 okt, 96 dB/oct). DAW'er, der stopper plugins ved stilhed eller bouncer, ville klippe det af. Nu 2 s.
+   - Samplerater 44,1–192 kHz: samme pitch (195–196 cent), latens altid 60 samples. OK.
+   - Tilfældige blokke 0–4096: samme niveau og ingen spring. OK. (Blokke større end lovet ved start får JUCE's VST3-del til at gå ned; det er forbudt i VST3, så ingen rigtig DAW gør det.)
+   - Alle 12 parametre automatiseret på én gang midt i lyden: peak 0,50. Output Gain −12 dB via automation giver præcis × 0,251. OK.
+   - Gem / hent projekt: alle 12 værdier ens. OK.
+3. **Svar om "alle DAW'er":** VST3 dækker alle DAW'er på Windows undtagen Pro Tools (kræver AAX, Avid-konto og PACE-signering, som brugeren selv skal oprette). Logic findes kun på Mac.
+
+---
+
 ## 2026-11-08 (7) — Version 1.3: nyt navn "Pitch Bend Texture", "0 ms" fjernet, Sync-teksten kan ses helt
 
 **Status:**

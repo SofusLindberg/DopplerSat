@@ -106,14 +106,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     auto add = [&] (auto p) { params.push_back (std::move (p)); };
 
-    // Baandet: midten (Frequency), hvor langt LFO'en flytter det (Amount) og dets bredde (Width)
+    // Baandet: midten (Frequency), hvor langt LFO'en flytter det (Sweep) og dets egen stoerrelse (Band Size).
+    // 1.4 (brugeren 2026-11-09): "Width skal hedde noget andet. Det skal fremgå tydeligere, at det er selve kurven, der
+    // forlænges eller forkortes" -> "Band Size"; Amount -> "Sweep" (kun omraadet, baandet bevaeger sig hen over).
+    // Kun navnene er nye; ID'erne ("amount", "width") er de samme, saa automation og gemte projekter virker.
     add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "freq", 1 }, "Frequency",
          juce::NormalisableRange<float> (minFreq, maxFreq, 0.1f, 0.3f), 600.f));
-    add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "amount", 1 }, "Amount",
+    add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "amount", 1 }, "Sweep",
          juce::NormalisableRange<float> (0.f, 100.f, 0.1f), 50.f));
     juce::NormalisableRange<float> widthRange (0.1f, 6.f, 0.01f);
     widthRange.setSkewForCentre (1.f);
-    add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "width", 1 }, "Width", widthRange, 1.f));
+    add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID { "width", 1 }, "Band Size", widthRange, 1.f));
 
     // Kanternes stejlhed (0 ms-tilstandene; 1.2: 96 dB/oct er tilfoejet sidst, standard er stadig 48).
     // 1.1: Drive (fast 0 %) og Distortion er fjernet (brugeren 2026-11-04).
@@ -139,10 +142,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     return { params.begin(), params.end() };
 }
 
+// 1.4 (brugeren 2026-11-09: "Sørg for, at pluginnet virker til Alle DAW's"): ogsaa mono -> mono og mono -> stereo,
+// saa pluginnet kan saettes paa mono-spor (fx Cubase, Studio One, Reaper, Bitwig). Stereo lyder som foer.
 bool DopplerSatProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo()
-        && layouts.getMainInputChannelSet()  == juce::AudioChannelSet::stereo();
+    const auto in = layouts.getMainInputChannelSet(), out = layouts.getMainOutputChannelSet();
+    if (out == juce::AudioChannelSet::stereo())
+        return in == juce::AudioChannelSet::stereo() || in == juce::AudioChannelSet::mono();
+    return out == juce::AudioChannelSet::mono() && in == juce::AudioChannelSet::mono();
 }
 
 double DopplerSatProcessor::getProcessingRate() const
@@ -261,7 +268,13 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
 {
     juce::ScopedNoDenormals noDenormals;
     const int numSamples = buffer.getNumSamples();
-    if (numSamples == 0 || buffer.getNumChannels() < 2) return;
+    if (numSamples == 0 || buffer.getNumChannels() < 1) return;
+
+    // 1.4: mono. Mono -> stereo: hoejre kanal kommer ikke fra vaerten, saa den faar venstres lyd. Mono -> mono:
+    // motoren koerer stereo med samme lyd i begge kanaler (hoejre i en midlertidig buffer, der smides vaek).
+    if (getTotalNumInputChannels() == 1 && buffer.getNumChannels() >= 2)
+        buffer.copyFrom (1, 0, buffer, 0, 0, numSamples);
+    const bool mono = buffer.getNumChannels() < 2;
 
     updateLfoState (numSamples);
     const double fs      = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
@@ -276,7 +289,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms
     const float  newWet  = dryWetP->load() * 0.01f;
     float* L = buffer.getWritePointer (0);
-    float* R = buffer.getWritePointer (1);
+    float* R = mono ? nullptr : buffer.getWritePointer (1);
     double v = 0.0;
 
     for (int start = 0; start < numSamples; start += kChunk)
@@ -297,17 +310,24 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         lastHi = std::exp2 (curHiOct);
         core.setParams (buildEngineParams (lastLo, lastHi));
 
+        // Stykkets to kanaler (mono: hoejre er en kopi af venstre i monoR)
+        float monoR[kChunk];
+        float* cl = L + start;
+        float* cr = mono ? monoR : R + start;
+        if (mono) std::copy (cl, cl + len, monoR);
+
         // Det uroerte signal (til Dry/Wet), forsinket lige saa meget som oversamplingen
         float dryL[kChunk], dryR[kChunk];
         for (int i = 0; i < len; ++i)
         {
-            dryDelay.pushSample (0, L[start + i]);
-            dryDelay.pushSample (1, R[start + i]);
+            dryDelay.pushSample (0, cl[i]);
+            dryDelay.pushSample (1, cr[i]);
             dryL[i] = dryDelay.popSample (0);
             dryR[i] = dryDelay.popSample (1);
         }
 
-        juce::dsp::AudioBlock<float> block (buffer.getArrayOfWritePointers(), 2, (size_t) start, (size_t) len);
+        float* chans[2] = { cl, cr };
+        juce::dsp::AudioBlock<float> block (chans, 2, (size_t) len);
         auto up = oversampler->processSamplesUp (block);
         core.process (up.getChannelPointer (0), up.getChannelPointer (1), (int) up.getNumSamples());
         oversampler->processSamplesDown (block);
@@ -316,8 +336,8 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         {
             const float t = (float) (start + i) / (float) numSamples;
             const float w = lastDryWet + (newWet - lastDryWet) * t;
-            L[start + i] = dryL[i] + (L[start + i] - dryL[i]) * w;
-            R[start + i] = dryR[i] + (R[start + i] - dryR[i]) * w;
+            cl[i] = dryL[i] + (cl[i] - dryL[i]) * w;
+            cr[i] = dryR[i] + (cr[i] - dryR[i]) * w;
         }
 
         phase += lfoRate * (double) len / fs;
@@ -337,7 +357,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     lastOutGain = newGain;
 
     for (int i = 0; i < numSamples; ++i)
-        outAnalyzer.push (0.5f * (buffer.getSample (0, i) + buffer.getSample (1, i)));
+        outAnalyzer.push (mono ? L[i] : 0.5f * (L[i] + R[i]));
 }
 
 juce::AudioProcessorEditor* DopplerSatProcessor::createEditor()
