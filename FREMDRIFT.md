@@ -4,6 +4,18 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (4) — Version 1.6 installeret
+
+- Brugeren skrev: "godt. Installer 1.6".
+- **Installeret og verificeret med filhash** (`C4BDDB28…`, moduleinfo 1.6.0). Buildet (12:43:14) er nyere end sidste kildeændring (12:41:10). Doppler Saturator 1.0–1.2 og Pitch Bend Texture 1.3–1.5 ligger uændret ved siden af.
+- Indhold: se mockup-posten (2): Sweep-displayet og skraveringen viser midtens vej, og en Pause-knap. Lyden er bit for bit som 1.5 med Pause slukket.
+- KRAV ("Version 1.6") og CLAUDE.md er opdateret.
+- **Ikke testet i en DAW.**
+
+**NÆSTE GANG:** test **1.6** i Ableton / FL Studio (Sweep, Band Size, Pause, automation af Pause, 96 dB/oct), se hjemmesiden, og beslut om Mac-buildet (se 2026-11-09 (3)). Hjemmesidens billede er stadig fra 1.5 (uden Pause): skal det skiftes?
+
+---
+
 ## 2026-11-10 (3) — Bekræftet: mockuppet er netop det forslag
 
 - Brugeren spurgte, om forslaget "Sweep-displayet og den skraverede flade viser kun midtens vej (Frequency ± Sweep) [...] lyden er uændret" var det, der blev bygget ind i mockuppet. Svar: ja, præcis det (se posten nedenfor). Lyden er bit for bit som 1.5. Ingen kodeændringer.

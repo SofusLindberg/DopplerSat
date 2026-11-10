@@ -106,6 +106,17 @@ Det betyder:
 - **Displayene i Band-modulet hedder "Sweep" og "Band Size"** som knapperne (til og med 1.4: "Sweep range" og "Band now").
 - **Logic på Mac:** pluginnet skal også findes som Audio Unit, og alle parametre skal kunne automatiseres i Logic. Koden er gjort klar (1.5), og Mac-buildet laves i GitHub Actions (`.github/workflows/mac.yml`), som også kører auval (Logics egen kontrol) og DAW-testen på AU'en. Det er **ikke kørt endnu**. Udgivelse til andre Mac-brugere kræver et Apple Developer ID (betalt Apple-konto) til signering og notarisering. Brugeren skal selv oprette det.
 
+## Version 1.6 (2026-11-10)
+
+Brugerens ord:
+> for at gøre effekten lidt mere i overenstemmelse med knoben, så skal vi have: 'Band size' ændrer lige nu også på sweep (traven range). Vi skal kun have, at band size ændrer bredden af bandet, ikke sweep (travel range). Før du bygger, fortæl mig, om dette giver mening ift. det jeg ønsker, eller om jeg blot reagerer på noget misledende grafisk? 2) Vi skal have en pause-knap, hvor effekten stopper, bandet er er nået til. Dette skal hjælpe til, at brugeren kan aflæse det spektrum, som band size-diplayet viser.
+
+Claude svarede, at Band Size ikke ændrer båndets vej i lyden, kun i tegningen, og foreslog at rette tegningen. Brugeren: "lad mig se mock-up med dine anbefalinger for begge punkter", og derefter "godt. Installer 1.6".
+
+Det betyder:
+- **Sweep-displayet og det skraverede område** viser kun, hvor båndets midte bevæger sig hen (Frequency ± Sweep). Band Size ændrer dem ikke. Lyden er uændret (bit for bit som 1.5).
+- **Pause** (ny parameter, kan automatiseres): knap med gul LED i LFO-modulets titellinje. LFO'en og båndet står stille, så spektret og Band Size-displayet kan aflæses. Frequency og Band Size kan stadig flytte båndet. I Sync glider båndet tilbage til takten, når pausen slippes.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
@@ -122,7 +133,8 @@ Det betyder:
   - **Frequency**: midten af området.
   - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
-  - **Displayene** over knapperne hedder **Sweep** (området, båndet bevæger sig hen over) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
+  - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
+- **Pause** (1.6): LFO'en og båndet står stille. Knap i LFO-modulets titellinje, kan automatiseres.
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
 - **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)
