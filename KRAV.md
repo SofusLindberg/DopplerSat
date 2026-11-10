@@ -117,13 +117,24 @@ Det betyder:
 - **Sweep-displayet og det skraverede område** viser kun, hvor båndets midte bevæger sig hen (Frequency ± Sweep). Band Size ændrer dem ikke. Lyden er uændret (bit for bit som 1.5).
 - **Pause** (ny parameter, kan automatiseres): knap med gul LED i LFO-modulets titellinje. LFO'en og båndet står stille, så spektret og Band Size-displayet kan aflæses. Frequency og Band Size kan stadig flytte båndet. I Sync glider båndet tilbage til takten, når pausen slippes.
 
+## Version 1.7 (2026-11-10)
+
+Brugerens ord:
+> Hvis man skruer op for sweep (travel range) og skruer op for rate (speed), så når bandet ikke at bevæge sig ud i yderkanterne af travel range. Vi skal have: Bandet skal kunne nå helt ud i yderppunkterne af travel range, selv når rate (speed) er skruet helt op. Uanset rate (speed), skal båndet bevæge sig ud helt ud i kanterne af den valgte range.
+>
+> (undervejs) Ligesom du ser, at der sker her for Abletons LFO tool (se billede): Rate skrues op, men top og bund rammer stadig helt ud
+
+Det betyder:
+- Båndets midte når ud til Frequency ± Sweep ved alle Rate-værdier (0,01–20 Hz og alle Sync-værdier) for Sine, Triangle og Square. Random rammer som før tilfældige mål inden for området.
+- Lyden ved langsom Rate er (næsten) som før; ved hurtig Rate bøjer pitchen meget mere, og der kommer korte toppe i niveauet (målt op til ca. +9 dB i peak, gennemsnittet højst ca. +2 dB). Det er en del af effekten.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
 - **Spektrum: kun output** (fyldt, og kun "Output" i forklaringen; 1.1, brugeren: "Vis kun output på grafen og som forklaringstekst"), med båndet, der bevæger sig. Det skraverede område viser, hvor LFO'en flytter båndet hen. (1.0 viste også input som streg.)
 - **"?" ved Edges-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Den siger også (1.3), at ingen af de tre giver forsinkelse (0 ms), og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner. Under knapperne viser "Edge steepness" kanternes fald, og den valgte lyser.
 - **Edge Q er bestemt på forhånd** og kan ikke ændres: fra (et tydeligt bånd med 0 ms-tilstandens skrå kanter). Claude valgte det i 1.0, fordi Edge Q 50 % bredte saturationen ud over det meste af spektret. Doppler-effekten er den samme. Tegningen af båndet har samme form og højde som i 1.0 ved 100 % drive, men den viser kun, hvor båndet er.
-- **Kanterne flytter sig højst 40 (24 dB) / 20 (48 dB) / 10 (96 dB) oktaver i sekundet.** Hurtigere gav niveauhop (op til 8,8 i peak for en tone på 0,6). Ved hurtig Rate og stor Amount bliver bevægelsen derfor mindre.
+- **Båndet når altid helt ud i Sweep-områdets kanter, uanset Rate** (1.7, brugerens ønske 2026-11-10, se "Version 1.7"). Fartgrænsen er mindst LFO'ens egen topfart. Den gamle grænse, 40 (24 dB) / 20 (48 dB) / 10 (96 dB) oktaver i sekundet, gælder kun spring (Frequency, Pause, automation). Til og med 1.6 var den grænsen for alt, så bevægelsen blev mindre ved hurtig Rate. Båndets fire filtre er TPT-SVF, så hurtig bevægelse ikke giver niveauspring.
 - **LFO:**
   - **Rate** i Hz, fra 0,01 Hz (én gang hvert 100. sekund) til 20 Hz.
   - **Sync** til tempoet: 8 / 4 / 2 / 1 takt, 1/2., 1/2, 1/2T, 1/4., 1/4, 1/4T, 1/8., 1/8, 1/8T, 1/16., 1/16, 1/16T og 1/32 (. = punkteret, T = triol). Når sangen spiller, følger fasen værtens position, så LFO'en ligger fast i takten.

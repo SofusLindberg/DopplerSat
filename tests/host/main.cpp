@@ -603,14 +603,66 @@ int main (int argc, char** argv)
                     stepPeak = std::max (stepPeak, (double) std::abs (v));
                 }
         }
-        // Niveauet maa ikke hoppe (indgangen har peak 0.6): foer fartgraensen paa kanterne gav Square og 20 Hz op til 8.8
-        const bool levelOk = stepPeak < 1.25;
+        // Niveauet maa ikke eksplodere (indgangen har peak 0.6). Foer fartgraensen (1.0) gav biquads op til 8.8, og ved
+        // 160-1000 okt/s 4.8-27. 1.7: kanterne foelger LFO'en helt ud (TPT-SVF), og Doppler-effekten hæver niveauet,
+        // naar pitchen stiger (maalt op til ca. 1.4 ved 20 Hz) - det er effekten, ikke en fejl. Graensen er derfor 2.0.
+        const bool levelOk = stepPeak < 2.0;
         ok = ok && levelOk;
         std::printf ("  form %d, tilstand %d, offset %+d, %s %s: peak %.2f  %s\n", step % 4, (step / 4) % nModes,
                      step % 3 == 0 ? 60 : step % 3 == 1 ? -60 : 0, stepSync ? "sync" : "Hz", step % 2 ? "hurtig" : "langsom",
                      stepPeak, levelOk ? "OK" : "FEJL");
     }
     const double ms = juce::Time::getMillisecondCounterHiRes() - start;
+
+    // 1.7: niveauet ved fuld fart (Sweep 100 %, Frequency 600 Hz, Band Size 0.5 okt, to toner med peak 0.6):
+    // peak og RMS i forhold til indgangen, for hver stejlhed og form ved 6 og 20 Hz
+    {
+        std::printf ("  Niveau ved fuld fart (peak / RMS i dB i forhold til indgangen, Sweep 100 %%):\n");
+        std::printf ("    %-10s %-9s %14s %14s\n", "", "", "6 Hz", "20 Hz");
+        setReal (freq, 600.f); setReal (width, 0.5f); setReal (amount, 100.f); setReal (offset, 0.f);
+        setReal (sync, 0.f); setReal (dryWet, 100.f); setReal (bypass, 0.f);
+        static const char* sn[] = { "Sine", "Triangle", "Square", "Random" };
+        double worstPeak = 0.0;
+        for (int m = 0; m < nModes; ++m)
+            for (int sh = 0; sh < 4; ++sh)
+            {
+                setReal (mode, (float) m); setReal (shape, (float) sh);
+                double pk[2] = { 0, 0 }, rmsDb[2] = { 0, 0 };
+                int col = 0;
+                for (float r : { 6.f, 20.f })
+                {
+                    setReal (rate, r);
+                    double sumIn = 0.0, sumOut = 0.0, peakOut = 0.0;
+                    for (int blk = 0; blk < 200; ++blk)
+                    {
+                        for (int i = 0; i < 512; ++i, t += 1.0 / 44100.0)
+                        {
+                            const float s = (float) (0.4 * std::sin (2 * 3.14159265 * 200 * t) + 0.2 * std::sin (2 * 3.14159265 * 3000 * t));
+                            buf.setSample (0, i, s); buf.setSample (1, i, s);
+                            if (blk >= 40) sumIn += (double) s * s;
+                        }
+                        inst->processBlock (buf, midi);
+                        if (blk < 40) continue;
+                        for (int i = 0; i < 512; ++i)
+                        {
+                            const double v = buf.getSample (0, i);
+                            if (! std::isfinite (v)) bad = true;
+                            sumOut += v * v;
+                            peakOut = std::max (peakOut, std::abs (v));
+                        }
+                    }
+                    pk[col] = peakOut;
+                    rmsDb[col] = 10.0 * std::log10 (sumOut / std::max (sumIn, 1.0e-12));
+                    worstPeak = std::max (worstPeak, peakOut);
+                    ++col;
+                }
+                std::printf ("    %2d dB/oct  %-9s %+5.1f / %+4.1f  %+5.1f / %+4.1f\n", 24 << m, sn[sh],
+                             20.0 * std::log10 (pk[0] / 0.6), rmsDb[0], 20.0 * std::log10 (pk[1] / 0.6), rmsDb[1]);
+            }
+        const bool levelOk = worstPeak < 2.0;
+        ok = ok && levelOk;
+        std::printf ("    hoejeste peak %.2f (indgang 0.6)  %s\n", worstPeak, levelOk ? "OK" : "FEJL");
+    }
     std::printf ("  CPU: %.2f %% af een kerne (%.1f s lyd paa %.0f ms)\n", 100.0 * ms / (1000.0 * samples / 44100.0),
                  samples / 44100.0, ms);
 

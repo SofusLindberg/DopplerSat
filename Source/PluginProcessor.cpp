@@ -297,10 +297,21 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // lyd hoeres, mens filtrene varmes op, og saa fades der ind - som fasetilstandene i Multiband Saturator)
     const int mode = (int) std::lround (modeP->load());
     if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; }
-    const double maxSpeed = modeMaxSpeed (mode);
     const int    shape   = (int) std::lround (shapeP->load());
     const double offset  = (double) offsetP->load() * 0.01;
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms
+
+    // 1.7 (brugeren 2026-11-10): "Uanset rate (speed), skal båndet bevæge sig ud helt ud i kanterne af den valgte
+    // range" (som Abletons LFO Tool). Fartgraensen er derfor mindst LFO'ens egen topfart (+25 %), saa kanterne altid
+    // kan foelge den. Den gamle graense (40 / 20 / 10 okt/s) er tilbage som bund, saa spring (Frequency, Pause,
+    // automation) stadig glider. Det gaar, fordi baand 1's filtre nu er TPT-SVF (DopplerCore.h, ingen niveauspring).
+    const double sweepOct = (double) amountP->load() * 0.01 * kMaxSweepOct;     // oktaver til hver side
+    const double pi = juce::MathConstants<double>::pi;
+    const double lfoTopSpeed = shape == 1 ? 4.0 * sweepOct * lfoRate                       // Triangle
+                             : shape == 2 ? pi * sweepOct * lfoRate / squareW                // Square (overgangen)
+                             : shape == 3 ? pi * sweepOct * lfoRate                          // Random (cosinus-glid)
+                                          : 2.0 * pi * sweepOct * lfoRate;                   // Sine
+    const double maxSpeed = modeMaxSpeed (mode) + 1.25 * lfoTopSpeed;
     const float  newWet  = dryWetP->load() * 0.01f;
     const bool   paused  = pauseP->load() > 0.5f;
     float* L = buffer.getWritePointer (0);

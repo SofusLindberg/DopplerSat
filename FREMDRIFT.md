@@ -4,6 +4,34 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (5) — Version 1.7: båndet når helt ud i Sweep-området ved alle Rate-værdier
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.7"** (D107). Ingen fejl eller advarsler.
+- **Installeret og verificeret med filhash** (`D7967F77…`, moduleinfo 1.7.0). Buildet (16:57:47) er nyere end sidste kildeændring (16:57:40). 1.0–1.6 ligger uændret ved siden af.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.7", brugerens ord): ved høj Sweep og høj Rate nåede båndet ikke ud i kanterne; det skal det altid, som Abletons LFO Tool (billede).
+
+**Årsagen:** fartgrænsen på kanterne (40 / 20 / 10 okt/s). Ved Sweep 100 % og 20 Hz kræver Sine ca. 380 okt/s, Square ca. 1200 okt/s. Med de gamle biquads gav så hurtig bevægelse niveauspring (målt i 1.2).
+
+**Lavet:**
+1. **Båndets fire filtre er nu TPT-SVF-allpasser** (`SvfXover` i `DopplerCore.h`): det samme filter i ro, men stabilt ved hurtig bevægelse. Koefficienten glider sample for sample, så kanterne bevæger sig glat i stedet for i trin hver 32. sample.
+2. **Fartgrænsen er mindst LFO'ens egen topfart** (+25 %), beregnet for formen (Sine, Triangle, Square, Random). Den gamle grænse gælder kun spring (Frequency, Pause, automation).
+3. Tekster: Rate-tippet og "?"-boksen siger nu, at båndet altid når hele Sweep-området, og at hurtig Rate bøjer pitchen meget og giver korte toppe.
+4. Tests: `EditorShot <mappe> --reach` (rækkevidde) og en "Niveau ved fuld fart"-tabel i HostSmoke. HostSmoke's niveaugrænse er hævet fra 1,25 til 2,0 (ustabilitet gav 4,8–27).
+
+**Målt:**
+- **Rækkevidde** (600 Hz, Sweep 100 % = 75 Hz – 4,80 kHz): Sine, Triangle og Square når ud ved 1 og 20 Hz i alle tre stejlheder (Triangle 20 Hz: 75,1 Hz – 4,79 kHz). Random rammer tilfældige mål som før.
+- **Lyden ved langsom Rate:** næsten som 1.6 (Sine 0,5 Hz: største forskel 0,0095). Ikke længere bit-identisk.
+- **Pitch** (300 Hz, Sweep 100 %, 24 / 48 / 96): 1 Hz 64 / 201 / 558 cent (1.6: 64 / 201 / 295), 3 Hz 195 / 617 / 1389, 12 Hz 789 / 2335 / 2174.
+- **Niveau ved fuld fart** (peak / RMS i forhold til indgangen): op til +8,8 dB peak (96 dB, Random, 20 Hz), RMS højst +2,1 dB. 1.6: højst +3,1 dB peak.
+- Røgtest og DAW-test OK. CPU næsten som 1.6 (`--bench` skiftevis: 1.6 3,0 / 2,5 %, 1.7 3,1 / 2,8 %).
+
+**NÆSTE GANG:** test 1.7 i en DAW: høj Sweep + høj Rate (når båndet ud?), og er de korte niveautoppe o.k.? Ellers kan der laves en udjævning af toppene. Se også hjemmesiden og beslut om Mac-buildet.
+
+---
+
 ## 2026-11-10 (4) — Version 1.6 installeret
 
 - Brugeren skrev: "godt. Installer 1.6".

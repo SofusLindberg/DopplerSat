@@ -893,9 +893,10 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
 
     // ---- LFO
     styleKnob (rateSlider, " Hz", hw::lfo);
+    // 1.7: ingen fartgraense for LFO'en laengere: baandet naar altid helt ud i Sweep-omraadet
     rateSlider.setTooltip ("How fast the band moves: from very slow (0.01 Hz = once every 100 seconds) to very fast (20 Hz). "
-                           "The edges move at most 40 (24 dB), 20 (48 dB) or 10 (96 dB) octaves per second, so at fast rates the sweep "
-                           "gets smaller. Faster made the level jump.");
+                           "The band always travels the whole Sweep range, also at fast rates, so fast rates bend the pitch a lot "
+                           "and give short level peaks.");
     styleKnob (syncRateSlider, "", hw::lfo);
     syncRateSlider.setTooltip ("How fast the band moves, in note values at the song's tempo (bars, . = dotted, T = triplet).");
     styleKnob (offsetSlider, " %", hw::lfo);
@@ -1033,20 +1034,21 @@ void DopplerSatEditor::updateMode (int mode)
 // men forklaring om den lydlige kvalitet: Laver den ene mere pitch end den anden? Og så ultra kort og på
 // begynderniveau, hvad 24db vs 48 db rent teknisk betyder." Tallene er maalt med HostSmoke's pitch-tabel (1.1):
 // 48 / 24 = 3.0-3.2 ved 0.25-1 Hz og 1.25-1.4 ved 3-12 Hz (Amount 100 %, fartgraensen 40 / 20 okt/s).
-// 1.2 (96 dB/oct, fartgraense 10 okt/s): 96 / 48 = 2.7 ved 0.25 Hz og 1.1-1.5 ved 1-12 Hz. Kanterne naar
-// fartgraensen ved Amount 100 % fra 2.1 / 1.1 / 0.53 Hz (sinus: top-fart 18.85 * Rate okt/s).
+// 1.2 (96 dB/oct, fartgraense 10 okt/s): 96 / 48 = 2.7 ved 0.25 Hz og 1.1-1.5 ved 1-12 Hz.
+// 1.7 (ingen fartgraense for LFO'en, HostSmoke's pitch-tabel ved 300 Hz, Sweep 100 %): 48 / 24 = 3.0-3.4 ved alle
+// hastigheder; 96 / 48 = 2.7-2.8 ved 0.25-1 Hz, 2.3 ved 3 Hz, 1.3 ved 6 Hz og 0.9 ved 12 Hz (24 / 48 / 96: 789 /
+// 2335 / 2174 cent ved 12 Hz). Toppe op til ca. +9 dB ved hurtig Rate, RMS hoejst ca. +2 dB.
 void DopplerSatEditor::showModeHelp()
 {
     using S = HelpOverlay::Section;
     helpOverlay->show ("24, 48 or 96 dB/oct", {
         S { "How they sound",
             "All three bend the pitch while the band moves. 24 dB/oct is the gentlest and smoothest. 48 dB/oct "
-            "bends about 3 times as much: a stronger, clearer wobble. 96 dB/oct bends the most: at slow rates "
-            "almost 3 times as much as 48 dB/oct again.\n"
-            "With a large Sweep the edges reach their top speed from about 2 Hz (24), 1 Hz (48) or 0.5 Hz (96). "
-            "Above that the difference gets smaller: each step then bends about 1.1-1.5 times as much as the one before.\n"
-            "The steeper the edges, the more the level swells and dips along with the pitch, and the more a kick or bass "
-            "right at the band's lower edge is smeared." },
+            "bends about 3 times as much: a stronger, clearer wobble. 96 dB/oct bends the most at slow and medium "
+            "rates: up to almost 3 times as much as 48 dB/oct. At the fastest rates 48 and 96 bend about the same.\n"
+            "The band always travels the whole Sweep range, also at fast rates, so fast rates bend the pitch a lot.\n"
+            "The steeper the edges and the faster the rate, the more the level swells and dips along with the pitch "
+            "(short peaks), and the more a kick or bass right at the band's lower edge is smeared." },
         S { "What 24, 48 and 96 dB/oct mean",
             "The band's edges are filters, and the number is how steep they are. One octave past the edge, a 24 dB/oct "
             "filter has turned the sound down by 24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB: each is twice as "

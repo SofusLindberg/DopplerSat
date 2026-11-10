@@ -43,6 +43,73 @@ inline SeqCoefs designXoverAp (int n6, double fc, double fs)
     return ap;
 }
 
+// -----------------------------------------------------------------------------
+//  1.7: baand 1's fire crossovers som TPT-SVF-allpasser (Zavalishin, "The Art of VA Filter Design")
+// -----------------------------------------------------------------------------
+// Brugeren (2026-11-10): "Bandet skal kunne nå helt ud i yderppunkterne af travel range, selv når rate (speed) er
+// skruet helt op." Det kraever kanter, der flytter sig op til ca. 1200 oktaver i sekundet (Square, Sweep 100 %).
+// Biquads (direkte form) giver niveauspring, naar koefficienterne aendres saa hurtigt (maalt i 1.2: peaks 7-27 ved
+// 320-1000 okt/s); en TPT-SVF goer ikke (ca. 1.1-1.5). I ro er det det samme filter som designXoverAp (bilineaer med
+// forvraengning ved fc, samme Q'er, samme fortegn): forskellen er kun afrunding.
+// Koefficienten g = tan (pi fc / fs) glider lineaert sample for sample fra stykke til stykke, saa kanterne bevaeger
+// sig glat i stedet for i trin hver 32. sample.
+struct SvfXover
+{
+    // 2. orden: x = hp + 2R bp + lp, allpass = hp - 2R bp + lp = x - 4R bp (R = 1 / (2Q))
+    // 1. orden: allpass = lp - hp = 2 lp - x, samme som designAllpass1 ((1 - s) / (1 + s))
+    int    nSec = 0;
+    bool   onePole = false;
+    double R[8] = {};
+    __m128d s1[8], s2[8], z1 = _mm_setzero_pd();
+    double gNow = 0.0, gEnd = 0.0, gStep = 0.0;
+
+    void design (int n6, double fc, double fs, bool snap)
+    {
+        n6 = (int) clampd (n6, 1, 32);
+        const bool even = (n6 % 2) == 0;
+        const SectionInfo si = sectionInfo (even ? n6 / 2 : n6);
+        onePole = even && si.onePole;
+        nSec = 0;
+        for (int k = 0; k < si.nBiquad; ++k)                          // som designXoverAp
+            if (even || ((k + 1) % 2) == 1) R[nSec++] = 0.5 / si.q[k];
+        gEnd = std::tan (kPi * safeFreq (fc, fs) / fs);
+        if (snap) gNow = gEnd;
+    }
+    void reset()
+    {
+        for (int i = 0; i < 8; ++i) s1[i] = s2[i] = _mm_setzero_pd();
+        z1 = _mm_setzero_pd();
+    }
+    void beginBlock (int n) { gStep = n > 0 ? (gEnd - gNow) / (double) n : 0.0; }
+
+    inline __m128d process (__m128d x)
+    {
+        const double g = gNow;
+        gNow += gStep;
+        if (onePole)
+        {
+            const double G = g / (1.0 + g);
+            const __m128d v  = mul (_mm_sub_pd (x, z1), G);
+            const __m128d lp = _mm_add_pd (v, z1);
+            z1 = _mm_add_pd (lp, v);
+            x = _mm_sub_pd (mul (lp, 2.0), x);
+        }
+        for (int i = 0; i < nSec; ++i)
+        {
+            const double r2 = 2.0 * R[i], d = 1.0 / (1.0 + r2 * g + g * g);
+            const __m128d hp = mul (_mm_sub_pd (_mm_sub_pd (x, mul (s1[i], r2 + g)), s2[i]), d);
+            const __m128d gh = mul (hp, g);
+            const __m128d bp = _mm_add_pd (gh, s1[i]);
+            s1[i] = _mm_add_pd (gh, bp);
+            const __m128d gb = mul (bp, g);
+            const __m128d lp = _mm_add_pd (gb, s2[i]);
+            s2[i] = _mm_add_pd (gb, lp);
+            x = _mm_sub_pd (x, mul (bp, 2.0 * r2));
+        }
+        return x;
+    }
+};
+
 class DopplerCore
 {
 public:
@@ -87,11 +154,12 @@ public:
         // offset der klipper - er koefficienterne de samme som sidst)
         if (newBand)
         {
-            gch0.n = 4;
+            // 1.7: SVF-allpasser, der glider hen til de nye kanter i loebet af stykket (foerste gang: straks)
+            const bool snap = ! haveBand || p.phaseMode != bandMode;
             for (int k = 4; k < 8; ++k)
             {
                 const int side = k % 4;                              // som designEnd: mur (0, 3) eller fade-graense
-                gch0.ap[k - 4].set (designXoverAp ((side == 0 || side == 3) ? sp.wallN6 : sp.tailN6, L.end[k], fs));
+                band1[k - 4].design ((side == 0 || side == 3) ? sp.wallN6 : sp.tailN6, L.end[k], fs, snap);
             }
             haveBand = true;
             lastLo   = p.band[1].lo;
@@ -103,7 +171,12 @@ public:
 
     void process (float* left, float* right, int n)
     {
-        if (! treeOn) return;                      // Bypass: lyden er uroert (bit-identisk)
+        for (auto& b : band1) b.beginBlock (n);    // kanterne glider hen til stykkets nye position
+        if (! treeOn)                              // Bypass: lyden er uroert (bit-identisk)
+        {
+            for (auto& b : band1) b.gNow = b.gEnd;
+            return;
+        }
 
         for (int s = 0; s < n; ++s)
         {
@@ -112,7 +185,9 @@ public:
             if (warmLeft > 0) --warmLeft;
 
             const __m128d x = _mm_set_pd ((double) right[s], (double) left[s]);
-            const __m128d T = tch.process (gch0.process (h23.process (x)));
+            __m128d B = h23.process (x);
+            for (auto& b : band1) B = b.process (B);
+            const __m128d T = tch.process (B);
 
             alignas (16) double o[2];
             _mm_store_pd (o, _mm_add_pd (mul (x, 1.0 - tm), mul (T, tm)));
@@ -122,13 +197,14 @@ public:
             if (! treeWanted && tm <= 1.0e-6)
             {
                 treeOn = false;                    // faerdig: resten af blokken er uroert (dry)
+                for (auto& b : band1) b.gNow = b.gEnd;
                 return;
             }
         }
     }
 
 private:
-    void resetTree() { h23.reset(); gch0.reset(); tch.reset(); }
+    void resetTree() { h23.reset(); for (auto& b : band1) b.reset(); tch.reset(); }
 
     void setTree (const EngineParams& p)
     {
@@ -141,7 +217,8 @@ private:
         }
     }
 
-    ApChain2 h23, gch0, tch;                       // baand 2+3's, baand 1's og baand 0's allpasser
+    ApChain2 h23, tch;                             // baand 2+3's og baand 0's allpasser (staar stille)
+    SvfXover band1[4];                             // 1.7: baand 1's fire crossovers (flytter sig)
     Ramp     treeMix;
     double   fs = 176400.0;
     int      warmSamples = 10584, warmLeft = 0;

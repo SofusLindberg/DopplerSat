@@ -35,9 +35,48 @@ static void save (juce::Component& c, const juce::File& f)
     std::printf ("  %s\n", f.getFileName().toRawUTF8());
 }
 
+// 1.7: naar baandet helt ud i Sweep-omraadets kanter ved hoej Rate? (brugeren 2026-11-10: "Uanset rate (speed), skal
+// båndet bevæge sig ud helt ud i kanterne af den valgte range"). Baandets midte maales hvert stykke (32 samples).
+static bool reachTest()
+{
+    bool ok = true;
+    std::printf ("  raekkevidde (Frequency 600 Hz, Sweep 100 %% = 75 Hz - 4.80 kHz, Band Size 0.5 okt):\n");
+    for (int mode = 0; mode < 3; ++mode)
+        for (int shape = 0; shape < 4; ++shape)
+            for (float rate : { 1.f, 20.f })
+            {
+                DopplerSatProcessor p;
+                p.setPlayConfigDetails (2, 2, 44100.0, 32);
+                p.prepareToPlay (44100.0, 32);
+                setParam (p, "freq", 600.f); setParam (p, "amount", 100.f); setParam (p, "width", 0.5f);
+                setParam (p, "mode", (float) mode); setParam (p, "shape", (float) shape); setParam (p, "rate", rate);
+                juce::AudioBuffer<float> buf (2, 32);
+                juce::MidiBuffer midi;
+                double lo = 1.0e9, hi = 0.0;
+                const int blocks = (int) ((rate < 5.f ? 6.0 : 2.0) * 44100.0 / 32.0);
+                for (int b = 0; b < blocks; ++b)
+                {
+                    buf.clear();
+                    p.processBlock (buf, midi);
+                    if (b < blocks / 3) continue;                          // foerst en tredjedel opvarmning
+                    const double c = std::sqrt (p.bandLoNow.load() * p.bandHiNow.load());   // midten (geometrisk)
+                    lo = std::min (lo, c); hi = std::max (hi, c);
+                }
+                // Random naar sjaeldent helt ud (tilfaeldige maal); de andre skal naa inden for 0.1 oktav
+                const double loOct = std::log2 (lo / 75.0), hiOct = std::log2 (4800.0 / hi);
+                const bool pass = shape == 3 || (loOct < 0.1 && hiOct < 0.1);
+                ok = ok && pass;
+                static const char* sn[] = { "Sine", "Triangle", "Square", "Random" };
+                std::printf ("    %2d dB/oct %-8s %4.0f Hz: midten %6.1f Hz - %6.0f Hz  %s\n", 24 << mode, sn[shape], rate, lo, hi,
+                             pass ? "OK" : "NAAR IKKE UD");
+            }
+    return ok;
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI init;
+    if (argc > 2 && juce::String (argv[2]) == "--reach") return reachTest() ? 0 : 1;
     const juce::File dir (argc > 1 ? juce::String (argv[1]) : juce::File::getCurrentWorkingDirectory().getFullPathName());
     dir.createDirectory();
 
