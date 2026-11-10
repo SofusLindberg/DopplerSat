@@ -4,6 +4,20 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 — Spørgsmål: Band Size og Sweep, pause-knap (intet bygget endnu)
+
+- Brugeren skrev: "for at gøre effekten lidt mere i overenstemmelse med knoben, så skal vi have: 'Band size' ændrer lige nu også på sweep (traven range). Vi skal kun have, at band size ændrer bredden af bandet, ikke sweep (travel range). Før du bygger, fortæl mig, om dette giver mening ift. det jeg ønsker, eller om jeg blot reagerer på noget misledende grafisk? 2) Vi skal have en pause-knap, hvor effekten stopper, bandet er er nået til. Dette skal hjælpe til, at brugeren kan aflæse det spektrum, som band size-diplayet viser."
+- Fortalt status fra "Gem og luk" 2026-11-09 (4) og mindet om at teste 1.5 og se hjemmesiden.
+- **Svar 1 (målt i koden):** det er mest grafikken.
+  - I lyden flytter LFO'en båndets midte Frequency ± Sweep (`bandEdgesFor`: midten = log2(freq) + v · Sweep · 3 okt). Band Size ændrer ikke, hvor langt midten eller kanterne flytter sig, og dermed heller ikke pitchen.
+  - Men "Sweep"-displayet og det skraverede område tegnes fra laveste kant (v = −1) til højeste kant (v = +1), dvs. midtens vej **plus** Band Size. Derfor vokser de, når Band Size skrues op.
+  - Eneste undtagelse i lyden: når båndet er bredt og når 20 Hz / 20 kHz, bliver kanterne stoppet der, og så flytter de sig lidt mindre.
+  - Forslag: "Sweep"-displayet og det skraverede område viser kun midtens vej (Frequency ± Sweep). Lyden uændret (bit-identisk). Ikke anbefalet: at ændre lyden, så Band Size gør vejen kortere (så ville et bredere bånd give mindre pitch).
+- **Svar 2:** pause giver mening. Forslag: en ny parameter "Pause" (automatiserbar, ny ID sidst), en knap i LFO-modulet. LFO-prikken og båndet står stille, Band Size-displayet står stille, Frequency og Band Size kan stadig flytte båndet. Bemærk: et bånd, der står stille, bøjer ikke pitchen, så med Dry/Wet 100 % lyder det næsten som det rene signal (kun fasen er ændret); under 100 % står phaser-hullerne stille.
+- Venter på brugerens svar. Ingen kodeændringer.
+
+---
+
 ## 2026-11-09 (4) — Gem og luk
 
 **Status ved lukning:**
