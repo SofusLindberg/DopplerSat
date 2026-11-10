@@ -476,6 +476,29 @@ int main (int argc, char** argv)
                 }
                 std::printf ("  blok %4d, bypass %d: CPU %.2f %% af een kerne\n", block, byp, 100.0 * ms / 20000.0);
             }
+        // 1.8: med Smooth Peaks (reference-motoren koerer)
+        if (auto* sm = find (*inst, "Smooth Peaks"))
+        {
+            inst->releaseResources();
+            inst->setPlayConfigDetails (2, 2, 44100.0, 512);
+            inst->prepareToPlay (44100.0, 512);
+            setReal (find (*inst, "Bypass"), 0.f);
+            setReal (sm, 1.f);
+            juce::AudioBuffer<float> buf (2, 512);
+            juce::MidiBuffer midi;
+            juce::Random rng (3);
+            double ms = 0.0;
+            const int blocks = (int) (20.0 * 44100.0 / 512);
+            for (int b = 0; b < blocks; ++b)
+            {
+                for (int c = 0; c < 2; ++c)
+                    for (int i = 0; i < 512; ++i) buf.setSample (c, i, 0.3f * (rng.nextFloat() * 2.f - 1.f));
+                const auto t0 = juce::Time::getMillisecondCounterHiRes();
+                inst->processBlock (buf, midi);
+                ms += juce::Time::getMillisecondCounterHiRes() - t0;
+            }
+            std::printf ("  blok  512, Smooth Peaks: CPU %.2f %% af een kerne\n", 100.0 * ms / 20000.0);
+        }
         return 0;
     }
 
@@ -616,8 +639,13 @@ int main (int argc, char** argv)
 
     // 1.7: niveauet ved fuld fart (Sweep 100 %, Frequency 600 Hz, Band Size 0.5 okt, to toner med peak 0.6):
     // peak og RMS i forhold til indgangen, for hver stejlhed og form ved 6 og 20 Hz
+    // 1.8: baade uden og med Smooth Peaks (findes ikke foer 1.8)
+    auto* smoothPar = find (*inst, "Smooth Peaks");
+    for (int sm = 0; sm < (smoothPar != nullptr ? 2 : 1); ++sm)
     {
-        std::printf ("  Niveau ved fuld fart (peak / RMS i dB i forhold til indgangen, Sweep 100 %%):\n");
+        setReal (smoothPar, (float) sm);
+        std::printf ("  Niveau ved fuld fart%s (peak / RMS i dB i forhold til indgangen, Sweep 100 %%):\n",
+                     sm ? " MED Smooth Peaks" : "");
         std::printf ("    %-10s %-9s %14s %14s\n", "", "", "6 Hz", "20 Hz");
         setReal (freq, 600.f); setReal (width, 0.5f); setReal (amount, 100.f); setReal (offset, 0.f);
         setReal (sync, 0.f); setReal (dryWet, 100.f); setReal (bypass, 0.f);
@@ -662,6 +690,54 @@ int main (int argc, char** argv)
         const bool levelOk = worstPeak < 2.0;
         ok = ok && levelOk;
         std::printf ("    hoejeste peak %.2f (indgang 0.6)  %s\n", worstPeak, levelOk ? "OK" : "FEJL");
+    }
+    setReal (smoothPar, 0.f);
+
+    // 1.8: Smooth Peaks maa ikke roere lyden ved langsom Rate, heller ikke med en overtonerig kilde (savtak-agtig,
+    // 110 Hz med 12 overtoner): samme indgang med Smooth fra og til, Sine 0.25 Hz, Sweep 100 %, hver stejlhed
+    if (smoothPar != nullptr)
+    {
+        auto runSaw = [&] (std::vector<float>& out)
+        {
+            inst->releaseResources();
+            inst->setPlayConfigDetails (2, 2, 44100.0, 512);
+            inst->prepareToPlay (44100.0, 512);
+            double tt = 0.0;
+            for (int blk = 0; blk < 260; ++blk)
+            {
+                for (int i = 0; i < 512; ++i, tt += 1.0 / 44100.0)
+                {
+                    double s = 0.0;
+                    for (int h = 1; h <= 12; ++h) s += std::sin (2 * 3.14159265 * 110 * h * tt) / h;
+                    buf.setSample (0, i, (float) (0.3 * s)); buf.setSample (1, i, (float) (0.3 * s));
+                }
+                inst->processBlock (buf, midi);
+                for (int i = 0; i < 512; ++i) out.push_back (buf.getSample (0, i));
+            }
+        };
+        setReal (freq, 400.f); setReal (width, 1.f); setReal (amount, 100.f); setReal (rate, 0.25f); setReal (shape, 0.f);
+        for (int m = 0; m < nModes; ++m)
+        {
+            setReal (mode, (float) m);
+            std::vector<float> a, b;
+            setReal (smoothPar, 0.f); runSaw (a);
+            setReal (smoothPar, 1.f); runSaw (b);
+            double worst = 0.0, sig = 0.0, worstT = 0.0;
+            for (size_t i = (size_t) (0.5 * 44100); i < a.size(); ++i)
+            {
+                if (std::abs (a[i] - b[i]) > worst) { worst = std::abs (a[i] - b[i]); worstT = (double) i / 44100.0; }
+                sig = std::max (sig, (double) std::abs (a[i]));
+            }
+            const double db = 20.0 * std::log10 (std::max (worst, 1.0e-12) / sig);
+            const bool pass = db < -40.0;
+            ok = ok && pass;
+            std::printf ("  Smooth Peaks ved 0.25 Hz, savtak, %d dB/oct: stoerste forskel %.4f (%.0f dB under signalet, ved %.2f s)  %s\n",
+                         24 << m, worst, -db, worstT, pass ? "OK" : "FEJL");
+        }
+        setReal (smoothPar, 0.f);
+        inst->releaseResources();
+        inst->setPlayConfigDetails (2, 2, 44100.0, 512);
+        inst->prepareToPlay (44100.0, 512);
     }
     std::printf ("  CPU: %.2f %% af een kerne (%.1f s lyd paa %.0f ms)\n", 100.0 * ms / (1000.0 * samples / 44100.0),
                  samples / 44100.0, ms);

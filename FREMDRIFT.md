@@ -4,6 +4,29 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (7) — Version 1.8: Smooth Peaks-knap, mockup uden Edge steepness
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.8"** (D108, 14 parametre). Ingen fejl eller advarsler.
+- **Installeret og verificeret med filhash** (`8750F4B4…`, moduleinfo 1.8.0). Buildet (18:46:56) er nyere end sidste kildeændring (18:46:49). 1.0–1.7 ligger uændret ved siden af.
+- **`HostSmoke --compare` mod 1.7 (Smooth fra): "SAMME LYD"** (bit-identisk).
+- Røgtest, DAW-test og `EditorShot --reach`: OK.
+- **Ikke testet i en DAW, og Smooth Peaks er ikke lyttet til.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.8", brugerens ord): løsning 1 som en knap til A/B, og et mockup uden "Edge steepness"-tegningen.
+
+**Lavet:**
+1. **Smooth Peaks** (ny parameter `smooth`, sidst; knap med lilla LED under Bypass). Tre forsøg:
+   - Kort RMS (2 ms) mod det tørre signal: toppene faldt kun 0–2 dB (de er kortere end vinduet). Forkastet.
+   - Top mod det tørre signals top: toppene faldt til højst +5,6 dB, men en savtak ved 0,25 Hz blev ændret med op til −19 dB, fordi filtrene flytter rundt på overtonerne, også når båndet næsten står stille. Forkastet (et langsomt tophold af det våde signal hjalp ikke).
+   - **Valgt:** en ekstra motor (`refCore`), hvor båndet flytter sig med den gamle fartgrænse (som 1.6). Det våde signal må højst nå 3 dB over dens toppe. Kører kun, når knappen er tændt.
+   - Målt: savtakken ved 0,25 Hz er bit for bit uændret med Smooth tændt (alle tre stejlheder). Ved fuld fart: højeste peak 1,65 → 1,14 (indgang 0,6), dvs. +8,8 → +5,6 dB; RMS stort set uændret. CPU ved 512-blokke: 2,3 % fra, 3,8 % til.
+2. **Mockup uden Edge steepness:** `doppler8_mockup_no_slope.png` (EditorShot skjuler tegningen) er vist brugeren. Tegningen er stadig med i 1.8.
+
+**NÆSTE GANG:** test 1.8 i en DAW: A/B med Smooth Peaks ved høj Sweep og hurtig Rate (lyt efter forvrængning i dyb bas, dæmpningen går ned på 0,3 ms). Skal loftet være lavere end 3 dB? Skal Edge steepness fjernes? Se også hjemmesiden og beslut om Mac-buildet.
+
+---
+
 ## 2026-11-10 (6) — Spørgsmål: hvad sker der med lyden, hvis toppene udjævnes?
 
 - Brugeren skrev: "Hvad sker der med lyden, hvis du forsøger at udjævne?"

@@ -140,7 +140,16 @@ private:
     std::atomic<float> *modeP = nullptr, *freqP = nullptr, *amountP = nullptr, *widthP = nullptr,
                        *rateP = nullptr, *syncP = nullptr, *syncRateP = nullptr, *shapeP = nullptr,
                        *offsetP = nullptr, *dryWetP = nullptr, *outP = nullptr, *bypassP = nullptr,
-                       *pauseP = nullptr;
+                       *pauseP = nullptr, *smoothP = nullptr;
+
+    // 1.8 Smooth Peaks: det vaade signal maa hoejst naa kSmoothCeilDb over topniveauet af en reference-motor, hvor
+    // baandet flytter sig med den gamle fartgraense (som 1.6). Reference-motoren koerer kun, naar knappen er taendt.
+    static constexpr float kSmoothCeilDb = 3.f;
+    satdsp::DopplerCore refCore;
+    bool   refOn = false, haveRefEdges = false;
+    double refLoOct = 0.0, refHiOct = 0.0;
+    float  refEnv = 0.f, smoothGain = 1.f;                // reference-topniveau og forstaerkningen lige nu
+    float  aRefDown = 1.f, aGainDown = 1.f, aGainUp = 1.f;
 
     satdsp::DopplerCore core;        // = satdsp::Engine ved 0 % drive, uden alt det, der ikke kan hoeres
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;

@@ -881,6 +881,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     plot->onRightClick = [this] { showParamMenu ("freq"); };
     addAndMakeVisible (*plot);
     slopeView = std::make_unique<SlopeView>();
+    slopeView->setName ("Edge steepness");          // EditorShot skjuler den til mockuppet uden (2026-11-10)
     addAndMakeVisible (*slopeView);
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
@@ -963,7 +964,16 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     pauseButton.setTooltip ("Pause: the LFO stops and the band stays where it is, so you can read it in the display "
                             "and in Band Size. A band that stands still does not bend the pitch.");
 
-    juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton, &pauseButton,
+    // 1.8: Smooth Peaks (brugeren 2026-11-10: "prøv at gøre løsning A til en knap, så jeg kan teste mellem nuværende
+    // effekt og den nye")
+    smoothButton.setButtonText ("Smooth Peaks");
+    smoothButton.getProperties().set ("led", (juce::int64) hw::purple.getARGB());
+    smoothButton.setTooltip ("Smooth Peaks: the moving band may make the sound at most 3 dB louder than the dry sound, "
+                             "so the short level peaks at fast rates are tamed. Slow rates are not touched. "
+                             "Off = the full effect. Switch it on and off to compare.");
+
+    juce::Component* children[] = { &smoothButton,
+                                    &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton, &pauseButton,
                                     &freqSlider, &amountSlider, &widthSlider,
                                     &modeButtons[0], &modeButtons[1], &modeButtons[2], &dryWetSlider, &outSlider, &bypassButton };
     for (auto* c : children) addAndMakeVisible (*c);
@@ -976,7 +986,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     menuFor (freqSlider, "freq");    menuFor (amountSlider, "amount");     menuFor (widthSlider, "width");
     for (auto& b : modeButtons) menuFor (b, "mode");
     menuFor (dryWetSlider, "drywet"); menuFor (outSlider, "outgain");      menuFor (bypassButton, "bypass");
-    menuFor (pauseButton, "pause");
+    menuFor (pauseButton, "pause");                menuFor (smoothButton, "smooth");
 
     // "?" ved 0 ms-tilstandene. Overlayet tilfoejes sidst, saa det ligger oeverst.
     modeHelp = std::make_unique<HelpButton>();
@@ -1001,6 +1011,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     shapeAtt    = std::make_unique<ComboAtt>  (s, "shape",    shapeBox);
     bypassAtt   = std::make_unique<ButtonAtt> (s, "bypass",   bypassButton);
     pauseAtt    = std::make_unique<ButtonAtt> (s, "pause",    pauseButton);
+    smoothAtt   = std::make_unique<ButtonAtt> (s, "smooth",   smoothButton);
     syncAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("sync"), [this] (float v) { updateSync (v > 0.5f); });
     syncAtt->sendInitialUpdate();
     modeAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("mode"), [this] (float v) { updateMode ((int) std::lround (v)); });
@@ -1162,6 +1173,7 @@ void DopplerSatEditor::resized()
     {
         const int x = L.mx[3], w = L.mw[3], h = 22;
         bypassButton.setBounds (x + 12, modeButtons[0].getBounds().getCentreY() - h / 2, w - 24, h);
+        smoothButton.setBounds (x + 12, modeButtons[1].getBounds().getCentreY() - h / 2, w - 24, h);   // 1.8, under Bypass
         placeKnob (dryWetSlider, (float) x + (float) w * 0.27f, mY + layout::knob, mY + layout::value);
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }

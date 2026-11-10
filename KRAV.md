@@ -128,6 +128,15 @@ Det betyder:
 - Båndets midte når ud til Frequency ± Sweep ved alle Rate-værdier (0,01–20 Hz og alle Sync-værdier) for Sine, Triangle og Square. Random rammer som før tilfældige mål inden for området.
 - Lyden ved langsom Rate er (næsten) som før; ved hurtig Rate bøjer pitchen meget mere, og der kommer korte toppe i niveauet (målt op til ca. +9 dB i peak, gennemsnittet højst ca. +2 dB). Det er en del af effekten.
 
+## Version 1.8 (2026-11-10)
+
+Claude forklarede, hvad en udjævning af niveautoppene gør (løsning 1: et loft, så kun de korte toppe dæmpes). Brugerens ord:
+> 1) Ja, prøv at gøre løsning A til en knap, så jeg kan teste mellem nuværende effekt og den nye. 2) Lav et mockup, hvor vi fjerner illustrationen af edges. Brugeren ser jo alligevel forskellen på spektrogrammet, så den er lidt overflødig.
+
+Det betyder:
+- **Smooth Peaks** (ny parameter, kan automatiseres): en knap under Bypass i Output-modulet. Fra = effekten som i 1.7 (bit for bit). Til = det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten (båndet med den gamle fartgrænse, som 1.6). Langsom Rate røres ikke.
+- **Edge steepness-tegningen** i Edges-modulet: et mockup uden den er vist brugeren. Den er stadig med i pluginnet, indtil brugeren beslutter sig.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
@@ -146,6 +155,7 @@ Det betyder:
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
   - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
 - **Pause** (1.6): LFO'en og båndet står stille. Knap i LFO-modulets titellinje, kan automatiseres.
+- **Smooth Peaks** (1.8): knap under Bypass, kan automatiseres. Dæmper kun de korte niveautoppe ved hurtig Rate; fra = den fulde effekt.
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
 - **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)

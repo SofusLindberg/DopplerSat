@@ -108,6 +108,18 @@ int main (int argc, char** argv)
     save (*ed, dir.getChildFile ("doppler7_pause.png"));
     setParam (proc, "pause", 0.f);
 
+    // 1.8: Smooth Peaks taendt, og mockup uden "Edge steepness"-tegningen (brugeren 2026-11-10: "Lav et mockup, hvor
+    // vi fjerner illustrationen af edges")
+    setParam (proc, "smooth", 1.f);
+    run (proc, 0.3);
+    juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+    for (auto* c : ed->getChildren())
+        if (c->getName() == "Edge steepness") c->setVisible (false);
+    save (*ed, dir.getChildFile ("doppler8_mockup_no_slope.png"));
+    for (auto* c : ed->getChildren())
+        if (c->getName() == "Edge steepness") c->setVisible (true);
+    setParam (proc, "smooth", 0.f);
+
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
     setParam (proc, "mode", 0.f);   setParam (proc, "amount", 80.f);
     run (proc, 0.7);

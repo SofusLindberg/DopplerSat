@@ -98,6 +98,7 @@ DopplerSatProcessor::DopplerSatProcessor()
     outP      = apvts.getRawParameterValue ("outgain");
     bypassP   = apvts.getRawParameterValue ("bypass");
     pauseP    = apvts.getRawParameterValue ("pause");
+    smoothP   = apvts.getRawParameterValue ("smooth");
     newRandom();
     newRandom();
 }
@@ -144,6 +145,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     // brugeren kan aflæse det spektrum, som band size-displayet viser". LFO'en staar stille, baandet bliver, hvor det
     // er. Tilfoejet sidst, saa de andre parametres raekkefoelge er den samme.
     add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "pause", 1 }, "Pause", false));
+
+    // 1.8 (brugeren 2026-11-10: "prøv at gøre løsning A til en knap, så jeg kan teste mellem nuværende effekt og den
+    // nye"): Smooth Peaks daemper de korte niveautoppe ved hurtig Rate. Fra = effekten som i 1.7. Tilfoejet sidst.
+    add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "smooth", 1 }, "Smooth Peaks", false));
 
     return { params.begin(), params.end() };
 }
@@ -239,6 +244,15 @@ void DopplerSatProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     cycle = 0.0;
     wasPlaying = false;
     outAnalyzer.reset();
+
+    // 1.8 Smooth Peaks: tidskonstanter (et-polede filtre). Reference-topniveauet falder paa 100 ms (saa loftet holder
+    // mellem toppene); forstaerkningen gaar ned paa ca. 0.3 ms og op paa ca. 60 ms.
+    auto coef = [sampleRate] (double ms) { return (float) (1.0 - std::exp (-1.0 / (0.001 * ms * sampleRate))); };
+    aRefDown = coef (100.0);
+    aGainDown = coef (0.3);  aGainUp = coef (60.0);
+    refOn = false;
+    refEnv = 0.f;
+    smoothGain = 1.f;
 }
 
 void DopplerSatProcessor::updateLfoState (int)
@@ -296,7 +310,12 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // Skift mellem 24, 48 og 96 dB/oct: delefiltrene faar en anden opbygning, saa motoren startes forfra (den toerre
     // lyd hoeres, mens filtrene varmes op, og saa fades der ind - som fasetilstandene i Multiband Saturator)
     const int mode = (int) std::lround (modeP->load());
-    if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; }
+    if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; refOn = false; }
+
+    // 1.8 Smooth Peaks: reference-motoren startes, naar knappen taendes (og efter skift af 24 / 48 / 96)
+    const bool smooth = smoothP->load() > 0.5f;
+    if (smooth && ! refOn) { refCore.prepare (fs * 4.0); haveRefEdges = false; refEnv = 0.f; refOn = true; }
+    if (! smooth) refOn = false;
     const int    shape   = (int) std::lround (shapeP->load());
     const double offset  = (double) offsetP->load() * 0.01;
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms
@@ -336,6 +355,16 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         lastHi = std::exp2 (curHiOct);
         core.setParams (buildEngineParams (lastLo, lastHi));
 
+        // 1.8 Smooth Peaks: reference-baandet foelger samme maal, men med den gamle fartgraense (som 1.6)
+        if (refOn)
+        {
+            const double refStep = modeMaxSpeed (mode) * (double) len / fs;
+            if (! haveRefEdges) { refLoOct = curLoOct; refHiOct = curHiOct; haveRefEdges = true; }
+            refLoOct += juce::jlimit (-refStep, refStep, tLo - refLoOct);
+            refHiOct += juce::jlimit (-refStep, refStep, tHi - refHiOct);
+            refCore.setParams (buildEngineParams (std::exp2 (refLoOct), std::exp2 (refHiOct)));
+        }
+
         // Stykkets to kanaler (mono: hoejre er en kopi af venstre i monoR)
         float monoR[kChunk];
         float* cl = L + start;
@@ -355,8 +384,54 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         float* chans[2] = { cl, cr };
         juce::dsp::AudioBlock<float> block (chans, 2, (size_t) len);
         auto up = oversampler->processSamplesUp (block);
-        core.process (up.getChannelPointer (0), up.getChannelPointer (1), (int) up.getNumSamples());
+        const int nUp = (int) up.getNumSamples();
+
+        // 1.8 Smooth Peaks: reference-motoren faar samme oversamplede lyd; dens topniveau pr. vaerts-sample (stoerste
+        // af de 4 oversamplede samples, begge kanaler) er loftets grundlag
+        float refPeak[kChunk];
+        if (refOn)
+        {
+            float rl[kChunk * 4], rr[kChunk * 4];
+            std::copy (up.getChannelPointer (0), up.getChannelPointer (0) + nUp, rl);
+            std::copy (up.getChannelPointer (1), up.getChannelPointer (1) + nUp, rr);
+            refCore.process (rl, rr, nUp);
+            const int os = nUp / len;
+            for (int i = 0; i < len; ++i)
+            {
+                float pk = 0.f;
+                for (int j = i * os; j < (i + 1) * os; ++j) pk = std::max (pk, std::max (std::abs (rl[j]), std::abs (rr[j])));
+                refPeak[i] = pk;
+            }
+        }
+
+        core.process (up.getChannelPointer (0), up.getChannelPointer (1), nUp);
         oversampler->processSamplesDown (block);
+
+        // 1.8 Smooth Peaks: det vaade signal maa hoejst naa 3 dB over reference-motorens topniveau (baandet med den
+        // gamle fartgraense, som 1.6). Ved langsom Rate er de ens, saa intet sker; ved hurtig Rate daempes kun det, der
+        // stikker op over den rolige version. Proevet foerst (2026-11-10): kort RMS mod det toerre signal (toppene faldt
+        // kun 0-2 dB) og top mod det toerre signal (roerte en savtak ved 0.25 Hz med op til -19 dB, fordi filtrene
+        // flytter rundt paa overtonerne). Slaas den fra, glider forstaerkningen tilbage til 1; staar den paa 1 og er
+        // fra, roeres lyden ikke (som 1.7).
+        if (smooth || smoothGain != 1.f)
+        {
+            const float ceil = juce::Decibels::decibelsToGain (kSmoothCeilDb);
+            for (int i = 0; i < len; ++i)
+            {
+                const float aw = std::max (std::abs (cl[i]), std::abs (cr[i]));
+                float target = 1.f;
+                if (refOn)
+                {
+                    refEnv = refPeak[i] > refEnv ? refPeak[i] : refEnv + aRefDown * (refPeak[i] - refEnv);
+                    const float allowed = ceil * refEnv + 1.0e-3f;                       // gulv: -60 dBFS
+                    if (aw > allowed) target = allowed / aw;
+                }
+                smoothGain += (target < smoothGain ? aGainDown : aGainUp) * (target - smoothGain);
+                if (! smooth && smoothGain > 0.9999f) smoothGain = 1.f;
+                cl[i] *= smoothGain;
+                cr[i] *= smoothGain;
+            }
+        }
 
         for (int i = 0; i < len; ++i)
         {

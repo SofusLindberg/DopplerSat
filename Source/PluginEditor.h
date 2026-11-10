@@ -79,13 +79,14 @@ private:
     // Output
     PSlider dryWetSlider, outSlider;
     PToggle bypassButton;
+    PToggle smoothButton;                      // 1.8: Smooth Peaks (under Bypass)
 
     std::unique_ptr<HelpButton>  modeHelp;
     std::unique_ptr<HelpOverlay> helpOverlay;
 
     std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;
     std::unique_ptr<ComboAtt>  shapeAtt;
-    std::unique_ptr<ButtonAtt> bypassAtt, pauseAtt;
+    std::unique_ptr<ButtonAtt> bypassAtt, pauseAtt, smoothAtt;
     std::unique_ptr<juce::ParameterAttachment> syncAtt, modeAtt;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DopplerSatEditor)
