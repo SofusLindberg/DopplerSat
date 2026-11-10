@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (9) — Spørgsmål: bliver forsinkelsen større med Smooth Peaks altid til?
+
+- Brugeren skrev: "bliver forsinkelsen på pluginnet større, hvis smooth peaks altid er til?"
+- **Svar: nej.** Latensen meldes kun ud fra oversamplingen (`setLatencySamples` i `prepareToPlay`): 60 samples (1,4 ms ved 44,1 kHz) med og uden Smooth Peaks. Dæmpningen har intet lookahead. Den regnes sample for sample ud fra reference-motoren, som kører samtidig med den rigtige motor på det samme oversamplede signal. Intet bygget.
+
+---
+
 ## 2026-11-10 (8) — Spørgsmål om Smooth Peaks som standard, mockup med bedre balance
 
 - Brugeren skrev, at de ikke kan høre forskel med og uden Smooth Peaks. De spurgte, om den skal være fast til og knappen forsvinde. De bad også om et nyt mockup uden Edge steepness, hvor afstandene er mere balancerede. Se `KRAV.md` ("Efter 1.8").
