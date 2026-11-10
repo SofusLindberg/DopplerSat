@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (10) — Spørgsmål: er 3,8 % CPU meget for et plugin?
+
+- Brugeren skrev: "er 3,8 % cpu meget for et plugin?"
+- **Svar: nej, det er lavt til middel.** Tallet er procent af én kerne ved 44,1 kHz og 512-blokke (`HostSmoke --bench`). Ca. 25 instanser fylder én kerne, og DAW'en fordeler spor på flere kerner. Til sammenligning (groft, typiske tal): simple EQ'er under 1 %, kompressorer og saturatorer 1–5 %, reverbs og analog-modellering ofte 5–20 % eller mere. Ved 96 kHz og ved meget små buffere stiger det, ved 96 kHz ca. det dobbelte. Intet bygget.
+
+---
+
 ## 2026-11-10 (9) — Spørgsmål: bliver forsinkelsen større med Smooth Peaks altid til?
 
 - Brugeren skrev: "bliver forsinkelsen på pluginnet større, hvis smooth peaks altid er til?"
