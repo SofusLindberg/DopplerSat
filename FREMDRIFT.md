@@ -4,6 +4,17 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (8) — Spørgsmål om Smooth Peaks som standard, mockup med bedre balance
+
+- Brugeren skrev, at de ikke kan høre forskel med og uden Smooth Peaks. De spurgte, om den skal være fast til og knappen forsvinde. De bad også om et nyt mockup uden Edge steepness, hvor afstandene er mere balancerede. Se `KRAV.md` ("Efter 1.8").
+- **Svar (intet ændret i lyden):** ja, anbefalet. Toppene varer få ms og høres ikke som lydstyrke, men ses på peak-meteret og kan klippe efterfølgende plugins. Prisen er CPU 2,3 → 3,8 % hele tiden (måske mindre, hvis referencemotoren kun kører ved hurtig Rate; ikke målt), og hurtig Rate er ikke længere bit for bit som 1.7. Brugeren kan se forskellen på DAW'ens peak-meter: Rate 12–20 Hz, Sweep 100 %, knappen til og fra.
+- **Mockup:** `DopplerSatEditor::setMockupLayout (variant, withSmooth)` (kun EditorShot bruger det; pluginnet er uændret). Edges-modulet er væk, og de tre knapper (højde 20, midt for midt 25 px) ligger som en søjle i Band, til højre for de to displays. Der er en "Edges"-label og "?" øverst. Øverste og nederste knaps midte flugter med de to displays, og Bypass flugter stadig med den første knap. Bredder 0,33 / 0,41 / 0,26, så drejeknapperne ligger næsten lige langt fra hinanden i alle tre moduler (112 / 108 / 102 px). Billeder: `doppler9_mockup_balanced.png` (uden Smooth Peaks) og `doppler10_mockup_balanced_smooth.png` (med, i rækken under Bypass).
+  - Også prøvet: fire moduler med et smallere Edges-modul og knapperne fordelt over hele højden. Det gav store huller mellem knapperne og blev forkastet.
+
+**NÆSTE GANG:** Hvis brugeren siger ja, bygges 1.9: Smooth Peaks altid til (parameteren `smooth` fjernes; hver version har sin egen plugin-kode, så gamle projekter påvirkes ikke), layoutet fra mockuppet bliver det eneste, og `SlopeView` og mockup-koden fjernes.
+
+---
+
 ## 2026-11-10 (7) — Version 1.8: Smooth Peaks-knap, mockup uden Edge steepness
 
 **Status:**

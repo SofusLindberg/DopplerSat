@@ -2,6 +2,7 @@
 // Koerer lyd gennem processoren (saa spektrum og LFO bevaeger sig) og gemmer PNG'er i et par tilstande.
 #include <JuceHeader.h>
 #include "../../Source/PluginProcessor.h"
+#include "../../Source/PluginEditor.h"
 
 static void setParam (DopplerSatProcessor& p, const char* id, float v)
 {
@@ -119,6 +120,20 @@ int main (int argc, char** argv)
     for (auto* c : ed->getChildren())
         if (c->getName() == "Edge steepness") c->setVisible (true);
     setParam (proc, "smooth", 0.f);
+
+    // Mockups uden "Edge steepness" med bedre balance (brugeren 2026-11-10: "GUI [...] designet med henblik på at gøre
+    // spacing (efter illusatrionen er fjernet) mere balanceret"), vist uden Smooth Peaks-knappen (hvis den bliver fast)
+    if (auto* de = dynamic_cast<DopplerSatEditor*> (ed.get()))
+    {
+        const char* names[] = { "doppler9_mockup_balanced.png", "doppler10_mockup_balanced_smooth.png" };
+        for (int s = 0; s < 2; ++s)
+        {
+            de->setMockupLayout (1, s == 1);
+            juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+            save (*ed, dir.getChildFile (names[s]));
+        }
+        de->setMockupLayout (0, true);
+    }
 
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
     setParam (proc, "mode", 0.f);   setParam (proc, "amount", 80.f);

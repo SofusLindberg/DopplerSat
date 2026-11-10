@@ -137,6 +137,15 @@ Det betyder:
 - **Smooth Peaks** (ny parameter, kan automatiseres): en knap under Bypass i Output-modulet. Fra = effekten som i 1.7 (bit for bit). Til = det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten (båndet med den gamle fartgrænse, som 1.6). Langsom Rate røres ikke.
 - **Edge steepness-tegningen** i Edges-modulet: et mockup uden den er vist brugeren. Den er stadig med i pluginnet, indtil brugeren beslutter sig.
 
+## Efter 1.8 (2026-11-10, ikke besluttet endnu)
+
+Brugerens ord:
+> Svar før, at du begynder at kode: 1) jeg kan simpelthen ikke høre forskel på med og uden smooth peaks. Tænker du, at giver mening at gøre smooth peaks til default og erstatte nuværende, så smooth peaks-knappen også forsvinder. Den er som default bare sat til? 2) Lav samtidig endnu et mockup, hvor den grafiske illustration af edges er væk, men GUI tilgængeligt er designet med henblik på at gøre spacing (efter illusatrionen er fjernet) mere balanceret elementerne imellem.
+
+Foreløbig status (intet ændret i pluginnet):
+- **Smooth Peaks altid til, uden knap:** Claude anbefaler det. Venter på brugerens ja.
+- **Mockup uden Edge steepness, med bedre balance:** vist brugeren (`doppler9_mockup_balanced.png`, `doppler10_mockup_balanced_smooth.png`). Edges-modulet er væk, og de tre Edges-knapper ligger som en søjle i Band-modulet til højre for de to displays. Der er tre moduler (LFO, Band, Output) i stedet for fire. Venter på brugerens ja.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.

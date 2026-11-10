@@ -17,6 +17,10 @@ public:
 
     static constexpr int kWidth = 900, kHeight = 600;
 
+    // Mockup (brugeren 2026-11-10, kun til EditorShot): 0 = layoutet i 1.8, 1 = uden "Edge steepness", med Edges som
+    // en soejle inde i Band-modulet (tre moduler). withSmooth = false skjuler Smooth Peaks (som hvis den bliver fast).
+    void setMockupLayout (int variant, bool withSmooth);
+
     // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
     template <class Base>
     class ParamControl : public Base
@@ -61,6 +65,8 @@ private:
     DopplerSatProcessor& processor;
     juce::TooltipWindow tooltipWindow { this, 600 };
     juce::Image plate;
+    int  mockup = 0;
+    bool mockSmooth = true;
 
     std::unique_ptr<PlotArea>  plot;
     std::unique_ptr<LfoView>   lfoView;
