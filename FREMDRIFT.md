@@ -4,6 +4,46 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (11) — Version 1.9: Smooth Peaks altid til, nyt layout, mindre CPU
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.9"** (D109, 13 parametre). Ingen fejl eller advarsler.
+- **Installeret og verificeret med filhash** (`B0EB9272…`, moduleinfo 1.9.0). Buildet (20:44:30) er nyere end sidste kildeændring (20:43:00). 1.0–1.8 ligger uændret ved siden af.
+- **`HostSmoke --compare` mod 1.8 med Smooth Peaks tændt: "SAMME LYD", bit-identisk i alle 16 trin.** Der er to nye trin, "Square 1 Hz (spring, saa ro)" og "Sine 0,3 Hz efter spring", hvor motorerne skilles og fortsætter hver for sig.
+- Røgtest, DAW-test (alle 13 parametre, gem/hent, samplerater, blokke 0–4096, hale) og `EditorShot --reach`: OK.
+- **Mac-kodevejen** (`build-shim`, `-DDS_FORCE_SIMD_SHIM=ON`) bygger, og `--compare` mod det almindelige 1.9-build giver "SAMME LYD", bit-identisk i alle 16 trin.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.9", brugerens ord): Smooth Peaks som standard uden knap, layoutet fra mockuppet, og mindre CPU, hvis det på ingen måde påvirker lyden eller kan ses i pluginnet.
+
+**Lavet:**
+1. **Smooth Peaks altid til:** parameteren `smooth` er væk (13 parametre). Hver version har sin egen plugin-kode, så 1.8-projekter røres ikke.
+2. **Layout:** som `doppler9_mockup_balanced.png`. `layout::widths` = 0,33 / 0,41 / 0 / 0,26, og Edges-modulet har bredde 0. Edges-knapperne er en søjle i Band (`layout::edgeColW` 118, højde 20, midt for midt 25 px), med "Edges" og "?" øverst. `SlopeView`, Smooth Peaks-knappen og mockup-koden (`setMockupLayout`) er fjernet. Hjælpeteksten siger nu, at de korte toppe holdes højst 3 dB over en rolig version af effekten.
+3. **CPU, bit for bit samme lyd:**
+   - **Reference-motoren springes over, når den er ens med hovedmotoren** (`refSame`). Det gælder, når de har samme tilstand bit for bit og får de samme kanter, og så er dens lyd = hovedmotorens. Skilles de, kopieres hovedmotoren først (`refCore = core`), så reference-motoren fortsætter præcis, som hvis den havde kørt hele tiden. `DopplerCore::sameStateAs` tjekker hvert stykke med ens kanter, om de er blevet ens igen.
+   - **Fælles h23:** `DopplerCore::processPair` regner begge motorer i én løkke. Bånd 2+3's faste allpasser regnes kun én gang, fordi de får samme lyd ind, har samme koefficienter og nulstilles samtidig.
+   - **Målt** (`HostSmoke --benchone`, én måling pr. proces, 3 runder; senere målinger i samme proces kommer ud for højt, som DspBench-faldgruben):
+
+     | | 1.8 fra | 1.8 Smooth | 1.9 |
+     |---|---|---|---|
+     | Sine 0,5 Hz, Sweep 50 % | 2,25 % | 3,58 % | 2,29 % |
+     | samme efter Frequency-spring | – | 3,75 % | 2,79 % |
+     | Sine 12 Hz, Sweep 100 % | 2,36 % | 3,71 % | 2,75 % |
+
+   - **Hvornår springes den over?** (DspBench, de sidste 5 s)
+     - 100 %: ved langsom Sine (0,5 Hz, også Sweep 100 % ved 96 dB), og efter Bypass.
+     - 0 %: ved 2 Hz og 12 Hz, ved Square, efter et Frequency-spring, i Pause efter et spring, og efter 3 s stilhed.
+     - Efter et spring forbliver de to motorer forskellige på sidste decimal, så reference-motoren regnes, indtil Bypass, skift af 24/48/96 eller DAW'en starter pluginnet forfra. Det koster så ca. 0,5 procentpoint, mod 1,4 i 1.8.
+4. **Test:**
+   - `HostSmoke --compare` giver den gamle Smooth Peaks til, når den nye ikke har parameteren.
+   - Nye værktøjer: `--benchone <Rate> <Sweep> <Smooth> <spring>`. `--bench` måler nu også Sine 12 Hz, Sweep 100 %.
+   - DspBench viser, hvor tit reference-motoren springes over.
+   - EditorShot: doppler8–10-mockupperne er væk, og `doppler1` viser nu det nye layout.
+
+**NÆSTE GANG:** test 1.9 i en DAW (det nye layout, og at lyden er som 1.8 med Smooth Peaks). Se hjemmesiden (dens plugin-billede er stadig fra 1.5). Beslut om Mac-buildet.
+
+---
+
 ## 2026-11-10 (10) — Spørgsmål: er 3,8 % CPU meget for et plugin?
 
 - Brugeren skrev: "er 3,8 % cpu meget for et plugin?"

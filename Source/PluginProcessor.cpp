@@ -98,7 +98,6 @@ DopplerSatProcessor::DopplerSatProcessor()
     outP      = apvts.getRawParameterValue ("outgain");
     bypassP   = apvts.getRawParameterValue ("bypass");
     pauseP    = apvts.getRawParameterValue ("pause");
-    smoothP   = apvts.getRawParameterValue ("smooth");
     newRandom();
     newRandom();
 }
@@ -146,9 +145,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
     // er. Tilfoejet sidst, saa de andre parametres raekkefoelge er den samme.
     add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "pause", 1 }, "Pause", false));
 
-    // 1.8 (brugeren 2026-11-10: "prøv at gøre løsning A til en knap, så jeg kan teste mellem nuværende effekt og den
-    // nye"): Smooth Peaks daemper de korte niveautoppe ved hurtig Rate. Fra = effekten som i 1.7. Tilfoejet sidst.
-    add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "smooth", 1 }, "Smooth Peaks", false));
+    // 1.8 havde "smooth" (Smooth Peaks) her. 1.9 (brugeren 2026-11-10: "byg 1.9 med smooth peaks som default"): den
+    // er altid til og ikke laengere en parameter. Hver version har sin egen plugin-kode, saa 1.8-projekter roeres ikke.
 
     return { params.begin(), params.end() };
 }
@@ -245,13 +243,12 @@ void DopplerSatProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     wasPlaying = false;
     outAnalyzer.reset();
 
-    // 1.8 Smooth Peaks: tidskonstanter (et-polede filtre). Reference-topniveauet falder paa 100 ms (saa loftet holder
-    // mellem toppene); forstaerkningen gaar ned paa ca. 0.3 ms og op paa ca. 60 ms.
+    // Smooth Peaks (1.8, altid til fra 1.9): tidskonstanter (et-polede filtre). Reference-topniveauet falder paa 100 ms
+    // (saa loftet holder mellem toppene); forstaerkningen gaar ned paa ca. 0.3 ms og op paa ca. 60 ms.
     auto coef = [sampleRate] (double ms) { return (float) (1.0 - std::exp (-1.0 / (0.001 * ms * sampleRate))); };
     aRefDown = coef (100.0);
     aGainDown = coef (0.3);  aGainUp = coef (60.0);
-    refOn = false;
-    refEnv = 0.f;
+    startRef();
     smoothGain = 1.f;
 }
 
@@ -310,12 +307,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // Skift mellem 24, 48 og 96 dB/oct: delefiltrene faar en anden opbygning, saa motoren startes forfra (den toerre
     // lyd hoeres, mens filtrene varmes op, og saa fades der ind - som fasetilstandene i Multiband Saturator)
     const int mode = (int) std::lround (modeP->load());
-    if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; refOn = false; }
-
-    // 1.8 Smooth Peaks: reference-motoren startes, naar knappen taendes (og efter skift af 24 / 48 / 96)
-    const bool smooth = smoothP->load() > 0.5f;
-    if (smooth && ! refOn) { refCore.prepare (fs * 4.0); haveRefEdges = false; refEnv = 0.f; refOn = true; }
-    if (! smooth) refOn = false;
+    if (mode != lastMode) { core.prepare (fs * 4.0); lastMode = mode; startRef(); }   // reference-motoren med
     const int    shape   = (int) std::lround (shapeP->load());
     const double offset  = (double) offsetP->load() * 0.01;
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms
@@ -353,17 +345,20 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         curHiOct += juce::jlimit (-maxStep, maxStep, tHi - curHiOct);
         lastLo = std::exp2 (curLoOct);
         lastHi = std::exp2 (curHiOct);
-        core.setParams (buildEngineParams (lastLo, lastHi));
 
-        // 1.8 Smooth Peaks: reference-baandet foelger samme maal, men med den gamle fartgraense (som 1.6)
-        if (refOn)
-        {
-            const double refStep = modeMaxSpeed (mode) * (double) len / fs;
-            if (! haveRefEdges) { refLoOct = curLoOct; refHiOct = curHiOct; haveRefEdges = true; }
-            refLoOct += juce::jlimit (-refStep, refStep, tLo - refLoOct);
-            refHiOct += juce::jlimit (-refStep, refStep, tHi - refHiOct);
-            refCore.setParams (buildEngineParams (std::exp2 (refLoOct), std::exp2 (refHiOct)));
-        }
+        // Smooth Peaks: reference-baandet foelger samme maal, men med den gamle fartgraense (som 1.6)
+        const double refStep = modeMaxSpeed (mode) * (double) len / fs;
+        if (! haveRefEdges) { refLoOct = curLoOct; refHiOct = curHiOct; haveRefEdges = true; }
+        refLoOct += juce::jlimit (-refStep, refStep, tLo - refLoOct);
+        refHiOct += juce::jlimit (-refStep, refStep, tHi - refHiOct);
+
+        // 1.9 CPU: saa laenge de to motorer er ens bit for bit og faar de samme kanter (langsom Rate), er reference-
+        // motorens lyd = hovedmotorens, og den regnes ikke. Skilles de (hurtig Rate, et spring), kopieres hovedmotoren
+        // foerst, saa reference-motoren fortsaetter, praecis som hvis den havde koert hele tiden.
+        const bool sameEdges = refLoOct == curLoOct && refHiOct == curHiOct;
+        if (refSame && ! sameEdges) { refCore = core; refSame = false; }
+        core.setParams (buildEngineParams (lastLo, lastHi));
+        if (! refSame) refCore.setParams (buildEngineParams (std::exp2 (refLoOct), std::exp2 (refHiOct)));
 
         // Stykkets to kanaler (mono: hoejre er en kopi af venstre i monoR)
         float monoR[kChunk];
@@ -386,48 +381,51 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         auto up = oversampler->processSamplesUp (block);
         const int nUp = (int) up.getNumSamples();
 
-        // 1.8 Smooth Peaks: reference-motoren faar samme oversamplede lyd; dens topniveau pr. vaerts-sample (stoerste
-        // af de 4 oversamplede samples, begge kanaler) er loftets grundlag
-        float refPeak[kChunk];
-        if (refOn)
+        // Smooth Peaks: reference-motoren faar samme oversamplede lyd; dens topniveau pr. vaerts-sample (stoerste af de
+        // 4 oversamplede samples, begge kanaler) er loftets grundlag. Er motorerne ens, er det hovedmotorens lyd.
+        float* u0 = up.getChannelPointer (0);
+        float* u1 = up.getChannelPointer (1);
+        float rl[kChunk * 4], rr[kChunk * 4];
+        const float* pl = u0;
+        const float* pr = u1;
+        if (refSame)
         {
-            float rl[kChunk * 4], rr[kChunk * 4];
-            std::copy (up.getChannelPointer (0), up.getChannelPointer (0) + nUp, rl);
-            std::copy (up.getChannelPointer (1), up.getChannelPointer (1) + nUp, rr);
-            refCore.process (rl, rr, nUp);
-            const int os = nUp / len;
-            for (int i = 0; i < len; ++i)
-            {
-                float pk = 0.f;
-                for (int j = i * os; j < (i + 1) * os; ++j) pk = std::max (pk, std::max (std::abs (rl[j]), std::abs (rr[j])));
-                refPeak[i] = pk;
-            }
+            core.process (u0, u1, nUp);
+            ++refSkipped;
         }
-
-        core.process (up.getChannelPointer (0), up.getChannelPointer (1), nUp);
+        else
+        {
+            satdsp::DopplerCore::processPair (core, refCore, u0, u1, rl, rr, nUp);
+            pl = rl; pr = rr;
+            ++refRun;
+            // Er de blevet ens igen (samme kanter, og forskellen i filtrene er doet helt ud)? Saa springes den over igen.
+            if (sameEdges && refCore.sameStateAs (core)) refSame = true;
+        }
+        float refPeak[kChunk];
+        const int os = nUp / len;
+        for (int i = 0; i < len; ++i)
+        {
+            float pk = 0.f;
+            for (int j = i * os; j < (i + 1) * os; ++j) pk = std::max (pk, std::max (std::abs (pl[j]), std::abs (pr[j])));
+            refPeak[i] = pk;
+        }
         oversampler->processSamplesDown (block);
 
-        // 1.8 Smooth Peaks: det vaade signal maa hoejst naa 3 dB over reference-motorens topniveau (baandet med den
-        // gamle fartgraense, som 1.6). Ved langsom Rate er de ens, saa intet sker; ved hurtig Rate daempes kun det, der
-        // stikker op over den rolige version. Proevet foerst (2026-11-10): kort RMS mod det toerre signal (toppene faldt
-        // kun 0-2 dB) og top mod det toerre signal (roerte en savtak ved 0.25 Hz med op til -19 dB, fordi filtrene
-        // flytter rundt paa overtonerne). Slaas den fra, glider forstaerkningen tilbage til 1; staar den paa 1 og er
-        // fra, roeres lyden ikke (som 1.7).
-        if (smooth || smoothGain != 1.f)
+        // Smooth Peaks (1.8, altid til fra 1.9): det vaade signal maa hoejst naa 3 dB over reference-motorens
+        // topniveau (baandet med den gamle fartgraense, som 1.6). Ved langsom Rate er de ens, saa intet sker; ved hurtig
+        // Rate daempes kun det, der stikker op over den rolige version. Proevet foerst (2026-11-10): kort RMS mod det
+        // toerre signal (toppene faldt kun 0-2 dB) og top mod det toerre signal (roerte en savtak ved 0.25 Hz med op
+        // til -19 dB, fordi filtrene flytter rundt paa overtonerne).
         {
             const float ceil = juce::Decibels::decibelsToGain (kSmoothCeilDb);
             for (int i = 0; i < len; ++i)
             {
                 const float aw = std::max (std::abs (cl[i]), std::abs (cr[i]));
                 float target = 1.f;
-                if (refOn)
-                {
-                    refEnv = refPeak[i] > refEnv ? refPeak[i] : refEnv + aRefDown * (refPeak[i] - refEnv);
-                    const float allowed = ceil * refEnv + 1.0e-3f;                       // gulv: -60 dBFS
-                    if (aw > allowed) target = allowed / aw;
-                }
+                refEnv = refPeak[i] > refEnv ? refPeak[i] : refEnv + aRefDown * (refPeak[i] - refEnv);
+                const float allowed = ceil * refEnv + 1.0e-3f;                           // gulv: -60 dBFS
+                if (aw > allowed) target = allowed / aw;
                 smoothGain += (target < smoothGain ? aGainDown : aGainUp) * (target - smoothGain);
-                if (! smooth && smoothGain > 0.9999f) smoothGain = 1.f;
                 cl[i] *= smoothGain;
                 cr[i] *= smoothGain;
             }

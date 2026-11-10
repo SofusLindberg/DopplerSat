@@ -79,5 +79,43 @@ int main()
         std::printf ("   4x oversampling op + ned: %.2f %%,  DopplerCore (4x rate): %.2f %%,  setParams: %.2f %%\n",
                      pct (tOs), pct (tCore), pct (tSet));
     }
+
+    // 1.9: hvor tit springes Smooth Peaks' reference-motor over (den er bit for bit som hovedmotoren)? Andelen maales
+    // i de sidste `measure` sekunder; `jump` = Frequency 600 -> 2500 Hz efter 1 s (motorerne skilles og skal blive ens igen)
+    auto skipShare = [&] (const char* what, int shape, float rate, float sweep, int mode, bool jump, bool pause, double measure,
+                          bool silence = false, bool bypassBlip = false)
+    {
+        DopplerSatProcessor proc;
+        auto set = [&] (const char* id, float v) { if (auto* p = proc.apvts.getParameter (id)) p->setValueNotifyingHost (p->convertTo0to1 (v)); };
+        set ("shape", (float) shape); set ("rate", rate); set ("amount", sweep); set ("mode", (float) mode);
+        set ("pause", pause ? 1.f : 0.f);
+        proc.setPlayConfigDetails (2, 2, fs, block);
+        proc.prepareToPlay (fs, block);
+        const double total = 1.0 + 6.0 + measure;
+        juce::int64 s0 = 0, r0 = 0;
+        bool started = false;
+        for (int b = 0; b < (int) (total * fs / block); ++b)
+        {
+            const double t = b * (double) block / fs;
+            if (jump && t >= 1.0 && t < 1.0 + block / fs) set ("freq", 2500.f);
+            if (t >= total - measure && ! started) { s0 = proc.refSkipped; r0 = proc.refRun; started = true; }
+            fill();
+            if (silence && t >= 2.0 && t < 5.0) buf.clear();             // stilhed 2-5 s (fx afspilningen stoppet)
+            if (bypassBlip) set ("bypass", t >= 2.0 && t < 3.0 ? 1.f : 0.f);   // Bypass 2-3 s
+            proc.processBlock (buf, midi);
+        }
+        const double sk = (double) (proc.refSkipped - s0), rn = (double) (proc.refRun - r0);
+        std::printf ("  %-44s reference-motoren sprunget over i %5.1f %% af stykkerne\n", what, 100.0 * sk / std::max (1.0, sk + rn));
+    };
+    std::printf ("Smooth Peaks (1.9), de sidste 5 s:\n");
+    skipShare ("Sine 0,5 Hz, Sweep 50 % (standard)",          0,  0.5f,  50.f, 1, false, false, 5.0);
+    skipShare ("Sine 0,5 Hz, Sweep 100 %, 96 dB",             0,  0.5f, 100.f, 2, false, false, 5.0);
+    skipShare ("Sine 2 Hz, Sweep 100 %",                      0,  2.f,  100.f, 1, false, false, 5.0);
+    skipShare ("Sine 12 Hz, Sweep 100 %",                     0, 12.f,  100.f, 1, false, false, 5.0);
+    skipShare ("Square 0,5 Hz, Sweep 50 %",                   2,  0.5f,  50.f, 1, false, false, 5.0);
+    skipShare ("Sine 0,5 Hz, Frequency-spring efter 1 s",     0,  0.5f,  50.f, 1, true,  false, 5.0);
+    skipShare ("Pause, Frequency-spring efter 1 s",           0,  0.5f,  50.f, 1, true,  true,  5.0);
+    skipShare ("Frequency-spring efter 1 s, stilhed 2-5 s",   0,  0.5f,  50.f, 1, true,  false, 5.0, true);
+    skipShare ("Frequency-spring efter 1 s, Bypass 2-3 s",    0,  0.5f,  50.f, 1, true,  false, 5.0, false, true);
     return 0;
 }

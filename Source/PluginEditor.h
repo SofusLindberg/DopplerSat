@@ -17,10 +17,6 @@ public:
 
     static constexpr int kWidth = 900, kHeight = 600;
 
-    // Mockup (brugeren 2026-11-10, kun til EditorShot): 0 = layoutet i 1.8, 1 = uden "Edge steepness", med Edges som
-    // en soejle inde i Band-modulet (tre moduler). withSmooth = false skjuler Smooth Peaks (som hvis den bliver fast).
-    void setMockupLayout (int variant, bool withSmooth);
-
     // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
     template <class Base>
     class ParamControl : public Base
@@ -42,7 +38,6 @@ private:
     class PlotArea;
     class LfoView;
     class LcdText;
-    class SlopeView;
     class HelpButton;                          // lille rundt "?" (som i Multiband Saturator)
     class HelpOverlay;                         // forklaringsboksen oven paa hele editoren
 
@@ -65,13 +60,10 @@ private:
     DopplerSatProcessor& processor;
     juce::TooltipWindow tooltipWindow { this, 600 };
     juce::Image plate;
-    int  mockup = 0;
-    bool mockSmooth = true;
 
     std::unique_ptr<PlotArea>  plot;
     std::unique_ptr<LfoView>   lfoView;
     std::unique_ptr<LcdText>   rangeLcd, nowLcd;
-    std::unique_ptr<SlopeView> slopeView;
 
     // LFO
     PSlider rateSlider, syncRateSlider, offsetSlider;
@@ -80,19 +72,18 @@ private:
     PToggle pauseButton;                       // 1.6: LFO'en staar stille (i LFO-modulets titellinje)
     // Baand
     PSlider freqSlider, amountSlider, widthSlider;
-    // Edges (de tre 0 ms-tilstande, 1.2: 96 dB/oct)
+    // Edges (de tre 0 ms-tilstande, 1.2: 96 dB/oct; 1.9: en soejle i Band-modulet)
     PButton modeButtons[DopplerSatProcessor::kNumModes];
     // Output
     PSlider dryWetSlider, outSlider;
     PToggle bypassButton;
-    PToggle smoothButton;                      // 1.8: Smooth Peaks (under Bypass)
 
     std::unique_ptr<HelpButton>  modeHelp;
     std::unique_ptr<HelpOverlay> helpOverlay;
 
     std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;
     std::unique_ptr<ComboAtt>  shapeAtt;
-    std::unique_ptr<ButtonAtt> bypassAtt, pauseAtt, smoothAtt;
+    std::unique_ptr<ButtonAtt> bypassAtt, pauseAtt;
     std::unique_ptr<juce::ParameterAttachment> syncAtt, modeAtt;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DopplerSatEditor)

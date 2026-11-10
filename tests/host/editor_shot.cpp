@@ -2,7 +2,6 @@
 // Koerer lyd gennem processoren (saa spektrum og LFO bevaeger sig) og gemmer PNG'er i et par tilstande.
 #include <JuceHeader.h>
 #include "../../Source/PluginProcessor.h"
-#include "../../Source/PluginEditor.h"
 
 static void setParam (DopplerSatProcessor& p, const char* id, float v)
 {
@@ -109,31 +108,7 @@ int main (int argc, char** argv)
     save (*ed, dir.getChildFile ("doppler7_pause.png"));
     setParam (proc, "pause", 0.f);
 
-    // 1.8: Smooth Peaks taendt, og mockup uden "Edge steepness"-tegningen (brugeren 2026-11-10: "Lav et mockup, hvor
-    // vi fjerner illustrationen af edges")
-    setParam (proc, "smooth", 1.f);
-    run (proc, 0.3);
-    juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
-    for (auto* c : ed->getChildren())
-        if (c->getName() == "Edge steepness") c->setVisible (false);
-    save (*ed, dir.getChildFile ("doppler8_mockup_no_slope.png"));
-    for (auto* c : ed->getChildren())
-        if (c->getName() == "Edge steepness") c->setVisible (true);
-    setParam (proc, "smooth", 0.f);
-
-    // Mockups uden "Edge steepness" med bedre balance (brugeren 2026-11-10: "GUI [...] designet med henblik på at gøre
-    // spacing (efter illusatrionen er fjernet) mere balanceret"), vist uden Smooth Peaks-knappen (hvis den bliver fast)
-    if (auto* de = dynamic_cast<DopplerSatEditor*> (ed.get()))
-    {
-        const char* names[] = { "doppler9_mockup_balanced.png", "doppler10_mockup_balanced_smooth.png" };
-        for (int s = 0; s < 2; ++s)
-        {
-            de->setMockupLayout (1, s == 1);
-            juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
-            save (*ed, dir.getChildFile (names[s]));
-        }
-        de->setMockupLayout (0, true);
-    }
+    // 1.8's mockups (doppler8-10) er vaek: 1.9 har layoutet fra doppler9_mockup_balanced (doppler1 viser det)
 
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
     setParam (proc, "mode", 0.f);   setParam (proc, "amount", 80.f);

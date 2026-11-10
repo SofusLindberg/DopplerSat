@@ -137,20 +137,24 @@ Det betyder:
 - **Smooth Peaks** (ny parameter, kan automatiseres): en knap under Bypass i Output-modulet. Fra = effekten som i 1.7 (bit for bit). Til = det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten (båndet med den gamle fartgrænse, som 1.6). Langsom Rate røres ikke.
 - **Edge steepness-tegningen** i Edges-modulet: et mockup uden den er vist brugeren. Den er stadig med i pluginnet, indtil brugeren beslutter sig.
 
-## Efter 1.8 (2026-11-10, ikke besluttet endnu)
+## Version 1.9 (2026-11-10)
 
-Brugerens ord:
+Brugerens ord (efter 1.8):
 > Svar før, at du begynder at kode: 1) jeg kan simpelthen ikke høre forskel på med og uden smooth peaks. Tænker du, at giver mening at gøre smooth peaks til default og erstatte nuværende, så smooth peaks-knappen også forsvinder. Den er som default bare sat til? 2) Lav samtidig endnu et mockup, hvor den grafiske illustration af edges er væk, men GUI tilgængeligt er designet med henblik på at gøre spacing (efter illusatrionen er fjernet) mere balanceret elementerne imellem.
 
-Foreløbig status (intet ændret i pluginnet):
-- **Smooth Peaks altid til, uden knap:** Claude anbefaler det. Venter på brugerens ja.
-- **Mockup uden Edge steepness, med bedre balance:** vist brugeren (`doppler9_mockup_balanced.png`, `doppler10_mockup_balanced_smooth.png`). Edges-modulet er væk, og de tre Edges-knapper ligger som en søjle i Band-modulet til højre for de to displays. Der er tre moduler (LFO, Band, Output) i stedet for fire. Venter på brugerens ja.
+Claude anbefalede det og viste mockuppet (`doppler9_mockup_balanced.png`). Brugerens ord:
+> Ja, byg 1.9 med smooth peaks som default og det nye layout (se billede). Forsøg gerne at gøre cpu mindre, hvis det på ingen måder påvirker lyden eller på anden vis kan ses i pluginnet.
+
+Det betyder:
+- **Smooth Peaks er altid til**, og knappen og parameteren er væk. Lyden er bit for bit som 1.8 med Smooth Peaks tændt.
+- **Det nye layout:** tre moduler (LFO, Band, Output). De tre Edges-knapper ligger som en søjle i Band-modulet til højre for de to displays, med "Edges" og "?" øverst. **Edge steepness-tegningen er fjernet.**
+- **Mindre CPU, uden at lyden eller pluginnet ændrer sig:** målt bit for bit mod 1.8 med Smooth Peaks tændt.
 
 ## Funktioner der skal blive ved med at virke
 
-- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran). Der er ingen lineær fase.
+- **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran; fra 1.9 i Band-modulet). Der er ingen lineær fase.
 - **Spektrum: kun output** (fyldt, og kun "Output" i forklaringen; 1.1, brugeren: "Vis kun output på grafen og som forklaringstekst"), med båndet, der bevæger sig. Det skraverede område viser, hvor LFO'en flytter båndet hen. (1.0 viste også input som streg.)
-- **"?" ved Edges-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Den siger også (1.3), at ingen af de tre giver forsinkelse (0 ms), og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner. Under knapperne viser "Edge steepness" kanternes fald, og den valgte lyser.
+- **"?" ved Edges-knapperne** (1.1): en forklaringsboks med samme layout som i Multiband Saturator. Den fortæller kort, hvordan 24, 48 og 96 lyder (48 bøjer pitchen ca. 3 gange så meget som 24 ved langsom og middel Rate; 96 næsten 3 gange så meget som 48 ved langsom Rate; ved hurtig Rate 1,1–1,5 gange for hvert trin, målt), og på begynderniveau, hvad dB/oct betyder. Den siger også (1.3), at ingen af de tre giver forsinkelse (0 ms), og at pluginnet som helhed forsinker 1,4 ms, som DAW'en udligner. Til og med 1.8 viste "Edge steepness" under knapperne kanternes fald. Den er fjernet i 1.9 (brugerens ønske).
 - **Edge Q er bestemt på forhånd** og kan ikke ændres: fra (et tydeligt bånd med 0 ms-tilstandens skrå kanter). Claude valgte det i 1.0, fordi Edge Q 50 % bredte saturationen ud over det meste af spektret. Doppler-effekten er den samme. Tegningen af båndet har samme form og højde som i 1.0 ved 100 % drive, men den viser kun, hvor båndet er.
 - **Båndet når altid helt ud i Sweep-områdets kanter, uanset Rate** (1.7, brugerens ønske 2026-11-10, se "Version 1.7"). Fartgrænsen er mindst LFO'ens egen topfart. Den gamle grænse, 40 (24 dB) / 20 (48 dB) / 10 (96 dB) oktaver i sekundet, gælder kun spring (Frequency, Pause, automation). Til og med 1.6 var den grænsen for alt, så bevægelsen blev mindre ved hurtig Rate. Båndets fire filtre er TPT-SVF, så hurtig bevægelse ikke giver niveauspring.
 - **LFO:**
@@ -164,7 +168,9 @@ Foreløbig status (intet ændret i pluginnet):
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
   - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
 - **Pause** (1.6): LFO'en og båndet står stille. Knap i LFO-modulets titellinje, kan automatiseres.
-- **Smooth Peaks** (1.8): knap under Bypass, kan automatiseres. Dæmper kun de korte niveautoppe ved hurtig Rate; fra = den fulde effekt.
+- **Smooth Peaks** (1.8 som knap under Bypass; **1.9 altid til**, uden knap og parameter, brugerens ønske 2026-11-10). Dæmper kun de korte niveautoppe ved hurtig Rate: det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten. Langsom Rate røres ikke.
+- **Layout (1.9):** tre moduler, LFO, Band og Output. Edges-knapperne ligger som en søjle i Band, og Edge steepness-tegningen er væk (brugerens ønske 2026-11-10, efter mockuppet).
+- **CPU (1.9):** Smooth Peaks' rolige reference-motor regnes kun, når den kan give en forskel, og deler de faste filtre med hovedmotoren. Det må hverken ændre lyden eller kunne ses i pluginnet (brugeren 2026-11-10).
 - **Ingen saturation** (1.1): Drive er fast 0 %, og der er hverken Drive-knap eller Distortion-vælger (brugeren bad om at fjerne dem, 2026-11-04). Lyden er kun Doppler-effekten fra båndets kanter. (1.0 havde Drive 0–400 % og Distortion.)
 - **Output:** Dry/Wet (mellem dry og wet blandes de som en phaser), Output gain og Bypass. Bypass er også DAW'ens egen bypass-knap (1.1), så der kun er én. Bypass flugter med midten af den første Edges-knap, 24 dB/oct (1.2).
 - **Displayet:** træk til venstre / højre = Frequency. Dobbeltklik nulstiller den. (Op / ned var Drive og er fjernet med den.)

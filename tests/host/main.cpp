@@ -134,6 +134,12 @@ static int compare (juce::AudioPluginInstance& a, juce::AudioPluginInstance& b)
     juce::AudioPluginInstance* both[] = { &a, &b };
     auto setBoth = [&] (const char* name, float v) { for (auto* i : both) setReal (find (*i, name), v); };
     setReal (find (b, "Drive"), 0.f);                       // den gamle (1.0): Drive 0 %
+    // 1.9: Smooth Peaks er altid til og ingen parameter -> den gamle (1.8) faar Smooth Peaks til
+    if (find (a, "Smooth Peaks") == nullptr && find (b, "Smooth Peaks") != nullptr)
+    {
+        setReal (find (b, "Smooth Peaks"), 1.f);
+        std::printf ("  den gamle med Smooth Peaks til\n");
+    }
     for (auto* i : both)
     {
         i->setPlayConfigDetails (2, 2, 44100.0, 512);
@@ -157,6 +163,9 @@ static int compare (juce::AudioPluginInstance& a, juce::AudioPluginInstance& b)
         { "Bypass fra igen (opvarmning)",    400.f, 100.f, 1.5f, 0.3f, 0.f,   0.f, 1.f, 0.f, 100.f, 0.f, 0.f },
         { "hoejt baand (12 kHz, 6 okt)",   12000.f, 100.f, 6.f,  0.7f, 0.f,   0.f, 0.f, 0.f, 100.f, 0.f, 0.f },
         { "lavt baand (40 Hz)",               40.f, 100.f, 0.1f, 0.2f, 0.f,   0.f, 1.f, 0.f, 100.f, 0.f, 0.f },
+        // 1.9: spring efterfulgt af ro (reference-motoren skilles fra hovedmotoren og skal blive ens igen)
+        { "Square 1 Hz (spring, saa ro)",    700.f, 100.f, 1.f,  1.f,  2.f,   0.f, 2.f, 0.f, 100.f, 0.f, 0.f },
+        { "Sine 0,3 Hz efter spring",       2500.f,  60.f, 1.f,  0.3f, 0.f,   0.f, 2.f, 0.f, 100.f, 0.f, 0.f },
     };
 
     juce::AudioBuffer<float> ba (2, 512), bb (2, 512);
@@ -451,6 +460,33 @@ int main (int argc, char** argv)
     if (inst == nullptr) return 1;
     std::printf ("Indlaest: %s, %d parametre\n", inst->getName().toRawUTF8(), inst->getParameters().size());
 
+    // --benchone <Rate> <Sweep> <Smooth 0/1> <spring 0/1>: kun een maaling i processen (senere maalinger i samme proces
+    // kommer ud hoejere, se DspBench). spring = Frequency 600 -> 2500 Hz i foerste blok (Smooth Peaks' to motorer skilles).
+    if (argc >= 7 && juce::String (argv[2]) == "--benchone")
+    {
+        inst->setPlayConfigDetails (2, 2, 44100.0, 512);
+        inst->prepareToPlay (44100.0, 512);
+        setReal (find (*inst, "Smooth Peaks"), (float) std::atof (argv[5]));
+        setReal (find (*inst, "Rate"), (float) std::atof (argv[3]));
+        setReal (find (*inst, "Sweep"), (float) std::atof (argv[4]));
+        juce::AudioBuffer<float> buf (2, 512);
+        juce::MidiBuffer midi;
+        juce::Random rng (3);
+        double ms = 0.0;
+        const int blocks = (int) (20.0 * 44100.0 / 512);
+        for (int b = 0; b < blocks; ++b)
+        {
+            if (b == 1 && std::atoi (argv[6]) != 0) setReal (find (*inst, "Frequency"), 2500.f);
+            for (int c = 0; c < 2; ++c)
+                for (int i = 0; i < 512; ++i) buf.setSample (c, i, 0.3f * (rng.nextFloat() * 2.f - 1.f));
+            const auto t0 = juce::Time::getMillisecondCounterHiRes();
+            inst->processBlock (buf, midi);
+            ms += juce::Time::getMillisecondCounterHiRes() - t0;
+        }
+        std::printf ("CPU %.2f %%\n", 100.0 * ms / 20000.0);
+        return 0;
+    }
+
     // --bench: CPU ved standardindstillingerne, med Bypass og med 1024-blokke (hvad koster hvad?)
     if (argc >= 3 && juce::String (argv[2]) == "--bench")
     {
@@ -476,14 +512,16 @@ int main (int argc, char** argv)
                 }
                 std::printf ("  blok %4d, bypass %d: CPU %.2f %% af een kerne\n", block, byp, 100.0 * ms / 20000.0);
             }
-        // 1.8: med Smooth Peaks (reference-motoren koerer)
-        if (auto* sm = find (*inst, "Smooth Peaks"))
+        // 1.8: med Smooth Peaks (reference-motoren koerer). 1.9: altid til; ved hurtig Rate regnes den altid.
+        auto benchWith = [&] (const char* what, bool smoothOn, float rate, float sweep)
         {
             inst->releaseResources();
             inst->setPlayConfigDetails (2, 2, 44100.0, 512);
             inst->prepareToPlay (44100.0, 512);
             setReal (find (*inst, "Bypass"), 0.f);
-            setReal (sm, 1.f);
+            setReal (find (*inst, "Smooth Peaks"), smoothOn ? 1.f : 0.f);
+            setReal (find (*inst, "Rate"), rate);
+            setReal (find (*inst, "Sweep"), sweep);
             juce::AudioBuffer<float> buf (2, 512);
             juce::MidiBuffer midi;
             juce::Random rng (3);
@@ -497,8 +535,13 @@ int main (int argc, char** argv)
                 inst->processBlock (buf, midi);
                 ms += juce::Time::getMillisecondCounterHiRes() - t0;
             }
-            std::printf ("  blok  512, Smooth Peaks: CPU %.2f %% af een kerne\n", 100.0 * ms / 20000.0);
-        }
+            std::printf ("  blok  512, %s: CPU %.2f %% af een kerne\n", what, 100.0 * ms / 20000.0);
+        };
+        const bool hasSmooth = find (*inst, "Smooth Peaks") != nullptr;
+        if (hasSmooth) benchWith ("Smooth Peaks (Sine 0,5 Hz)", true, 0.5f, 50.f);
+        benchWith ("Sine 12 Hz, Sweep 100 %", false, 12.f, 100.f);
+        if (hasSmooth) benchWith ("Smooth Peaks, Sine 12 Hz, Sweep 100 %", true, 12.f, 100.f);
+        setReal (find (*inst, "Rate"), 0.5f); setReal (find (*inst, "Sweep"), 50.f);
         return 0;
     }
 

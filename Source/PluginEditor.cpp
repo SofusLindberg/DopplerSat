@@ -8,7 +8,12 @@ using P = DopplerSatProcessor;
 namespace layout
 {
     constexpr int   modH  = 234, gap = 8;
-    constexpr float widths[] = { 0.33f, 0.29f, 0.20f, 0.18f };    // LFO, Band, Edges, Output
+    // 1.9 (brugeren 2026-11-10, mockuppet): intet Edges-modul (bredde 0), Edges-knapperne ligger som en soejle i Band.
+    // Saa ligger drejeknapperne naesten lige langt fra hinanden i alle tre moduler (LFO 112, Band 108, Output 102 px).
+    // Til og med 1.8: 0.33 / 0.29 / 0.20 / 0.18 med Edges som eget modul og "Edge steepness"-tegningen.
+    constexpr float widths[] = { 0.33f, 0.41f, 0.f, 0.26f };      // LFO, Band, (Edges), Output
+    constexpr int   nMod = 3;
+    constexpr int   edgeColW = 118;                               // Edges-soejlen i Band (hoejre side)
     constexpr float title = 17;                                   // modultitlernes grundlinje
     constexpr float knobLabel = 131, knobSub = 142;               // knap-labels og deres undertekst
     constexpr float knob = 180, value = 210.5f;                   // drejeknappernes midte og tal-felternes top
@@ -612,78 +617,6 @@ private:
 };
 
 // =============================================================================
-//  SlopeView: hvad 24, 48 og 96 dB/oct betyder - kanternes fald, den valgte lyser (1.1, 96 i 1.2)
-// =============================================================================
-class DopplerSatEditor::SlopeView : public juce::Component, public juce::SettableTooltipClient
-{
-public:
-    SlopeView()
-    {
-        setTooltip ("How steep the band's edges are. One octave past the edge, 24 dB/oct has turned the sound down by "
-                    "24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB. Steeper edges bend the pitch more when the band moves.");
-    }
-
-    void setMode (int m) { if (m != mode) { mode = m; repaint(); } }
-
-    void paint (juce::Graphics& g) override
-    {
-        const auto R = getLocalBounds().toFloat();
-        drawLcd (g, R.reduced (0.5f));
-        const auto r = R.reduced (9.f, 8.f).withTrimmedTop (12.f).withTrimmedBottom (10.f);
-        // 1.2: aksen gaar til -110 dB (foer -60), saa -96 dB en oktav ude kan ses
-        constexpr float octL = -0.6f, octR = 2.1f, dbMin = -110.f;
-        auto xOf = [&] (float oct) { return r.getX() + r.getWidth() * (oct - octL) / (octR - octL); };
-        auto yOf = [&] (float db)  { return r.getY() + r.getHeight() * juce::jmin (db / dbMin, 1.2f); };
-
-        // kanten (0 oktav) og 1 oktav udenfor
-        g.setColour (hw::silkDim.withAlpha (0.35f));
-        g.drawVerticalLine (juce::roundToInt (xOf (0.f)), r.getY(), r.getBottom());
-        const float dash[] = { 2.f, 3.f };
-        g.drawDashedLine (juce::Line<float> (xOf (1.f), r.getY(), xOf (1.f), r.getBottom()), dash, 2, 1.f);
-        g.setFont (hwFont ("Consolas", 9.5f));
-        g.drawText ("edge", juce::Rectangle<float> (xOf (0.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
-        g.drawText ("+1 oct", juce::Rectangle<float> (xOf (1.f) - 30.f, r.getBottom() + 1.f, 60.f, 10.f), juce::Justification::centred);
-
-        // Linkwitz-Riley-kantens fald: 1 / (1 + (f / fc) ^ n), n = 4 (24 dB/oct), 8 (48 dB/oct) eller 16 (96 dB/oct)
-        static const char* labels[] = { "-24 dB", "-48 dB", "-96 dB" };
-        static const float labelDb[] = { -24.6f, -48.2f, -96.f };
-        for (int m = 0; m < DopplerSatProcessor::kNumModes; ++m)
-        {
-            const double n = 4.0 * (double) (1 << m);
-            // 1.2: kurverne slutter ved +1 oktav, saa hver ender lige ved sit tal (tre tal blev ellers krydset af kurverne)
-            juce::Path p;
-            for (int i = 0; i <= 120; ++i)
-            {
-                const float  oct = octL + (1.f - octL) * (float) i / 120.f;
-                const double db  = 20.0 * std::log10 (1.0 / (1.0 + std::pow (2.0, n * (double) oct)));
-                const float  x = xOf (oct), y = yOf ((float) db);
-                if (i == 0) p.startNewSubPath (x, y); else p.lineTo (x, y);
-            }
-            const bool on = (m == mode);
-            {
-                juce::Graphics::ScopedSaveState clip (g);            // kurven forsvinder ud af bunden (ingen flad streg)
-                g.reduceClipRegion (r.expanded (2.f, 1.f).toNearestInt());
-                g.setColour (hw::amber.withAlpha (on ? 0.18f : 0.f));
-                g.strokePath (p, juce::PathStrokeType (4.f));
-                g.setColour (on ? hw::amber : hw::silkDim.withAlpha (0.45f));
-                g.strokePath (p, juce::PathStrokeType (on ? 1.8f : 1.f));
-            }
-            const float yLab = yOf (labelDb[m]);
-            g.setFont (hwFont ("Consolas", 10.f));
-            g.drawText (labels[m], juce::Rectangle<float> (xOf (1.f) + 4.f, yLab - 6.f, 50.f, 12.f),
-                        juce::Justification::centredLeft);
-        }
-        g.setColour (hw::silkDim);
-        g.setFont (hwFont ("Bahnschrift", 9.5f));
-        g.drawText ("Edge steepness", juce::Rectangle<float> (R.getX() + 9.f, R.getY() + 5.f, R.getWidth() - 18.f, 12.f),
-                    juce::Justification::centredLeft);
-    }
-
-private:
-    int mode = 1;
-};
-
-// =============================================================================
 //  Hjaelp (som i Multiband Saturator): lille rundt "?" og en forklaringsboks, der ligger oven paa hele editoren.
 //  Klik udenfor boksen, paa krydset eller Esc lukker den.
 // =============================================================================
@@ -854,24 +787,18 @@ struct Layout
     int mx[4] {}, mw[4] {};
 };
 
-// Mockup (2026-11-10): intet Edges-modul (bredde 0), knapperne ligger som en soejle i Band. Saa er der tre moduler,
-// og drejeknapperne ligger naesten lige langt fra hinanden i alle tre (LFO 112, Band 108, Output 102 px)
-constexpr float mockWidths[4] = { 0.33f, 0.41f, 0.f, 0.26f };
-
-Layout makeLayout (int mockup = 0)
+Layout makeLayout()
 {
     Layout L;
     const int W = DopplerSatEditor::kWidth, H = DopplerSatEditor::kHeight;
     L.mY    = H - 12 - layout::modH;
     L.hintY = L.mY - 18;
     L.plot  = { 28, 50, W - 56, L.hintY - 8 - 50 };
-    const float* widths = mockup == 0 ? layout::widths : mockWidths;
-    const int nMod  = mockup == 0 ? 4 : 3;
-    const int avail = W - 32 - (nMod - 1) * layout::gap;
+    const int avail = W - 32 - (layout::nMod - 1) * layout::gap;
     int x = 16;
     for (int i = 0; i < 4; ++i)
     {
-        L.mw[i] = (int) std::floor ((float) avail * widths[i]);
+        L.mw[i] = (int) std::floor ((float) avail * layout::widths[i]);
         L.mx[i] = x;
         if (L.mw[i] > 0) x += L.mw[i] + layout::gap;
     }
@@ -886,9 +813,6 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     plot->setComponentID ("plot");
     plot->onRightClick = [this] { showParamMenu ("freq"); };
     addAndMakeVisible (*plot);
-    slopeView = std::make_unique<SlopeView>();
-    slopeView->setName ("Edge steepness");          // EditorShot skjuler den til mockuppet uden (2026-11-10)
-    addAndMakeVisible (*slopeView);
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
@@ -970,16 +894,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     pauseButton.setTooltip ("Pause: the LFO stops and the band stays where it is, so you can read it in the display "
                             "and in Band Size. A band that stands still does not bend the pitch.");
 
-    // 1.8: Smooth Peaks (brugeren 2026-11-10: "prøv at gøre løsning A til en knap, så jeg kan teste mellem nuværende
-    // effekt og den nye")
-    smoothButton.setButtonText ("Smooth Peaks");
-    smoothButton.getProperties().set ("led", (juce::int64) hw::purple.getARGB());
-    smoothButton.setTooltip ("Smooth Peaks: the moving band may make the sound at most 3 dB louder than the dry sound, "
-                             "so the short level peaks at fast rates are tamed. Slow rates are not touched. "
-                             "Off = the full effect. Switch it on and off to compare.");
-
-    juce::Component* children[] = { &smoothButton,
-                                    &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton, &pauseButton,
+    juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton, &pauseButton,
                                     &freqSlider, &amountSlider, &widthSlider,
                                     &modeButtons[0], &modeButtons[1], &modeButtons[2], &dryWetSlider, &outSlider, &bypassButton };
     for (auto* c : children) addAndMakeVisible (*c);
@@ -992,7 +907,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     menuFor (freqSlider, "freq");    menuFor (amountSlider, "amount");     menuFor (widthSlider, "width");
     for (auto& b : modeButtons) menuFor (b, "mode");
     menuFor (dryWetSlider, "drywet"); menuFor (outSlider, "outgain");      menuFor (bypassButton, "bypass");
-    menuFor (pauseButton, "pause");                menuFor (smoothButton, "smooth");
+    menuFor (pauseButton, "pause");
 
     // "?" ved 0 ms-tilstandene. Overlayet tilfoejes sidst, saa det ligger oeverst.
     modeHelp = std::make_unique<HelpButton>();
@@ -1017,7 +932,6 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     shapeAtt    = std::make_unique<ComboAtt>  (s, "shape",    shapeBox);
     bypassAtt   = std::make_unique<ButtonAtt> (s, "bypass",   bypassButton);
     pauseAtt    = std::make_unique<ButtonAtt> (s, "pause",    pauseButton);
-    smoothAtt   = std::make_unique<ButtonAtt> (s, "smooth",   smoothButton);
     syncAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("sync"), [this] (float v) { updateSync (v > 0.5f); });
     syncAtt->sendInitialUpdate();
     modeAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("mode"), [this] (float v) { updateMode ((int) std::lround (v)); });
@@ -1044,7 +958,6 @@ void DopplerSatEditor::updateSync (bool sync)
 void DopplerSatEditor::updateMode (int mode)
 {
     for (int i = 0; i < P::kNumModes; ++i) modeButtons[i].setToggleState (i == mode, juce::dontSendNotification);
-    if (slopeView != nullptr) slopeView->setMode (mode);
 }
 
 // "?" ved de to 0 ms-tilstande (brugeren 2026-11-04): "forklar helt kort, hvad forskellen er. Ikke noget teknisk,
@@ -1065,7 +978,8 @@ void DopplerSatEditor::showModeHelp()
             "rates: up to almost 3 times as much as 48 dB/oct. At the fastest rates 48 and 96 bend about the same.\n"
             "The band always travels the whole Sweep range, also at fast rates, so fast rates bend the pitch a lot.\n"
             "The steeper the edges and the faster the rate, the more the level swells and dips along with the pitch "
-            "(short peaks), and the more a kick or bass right at the band's lower edge is smeared." },
+            "(the short peaks are kept at most 3 dB above a calm version of the effect), and the more a kick or bass right "
+            "at the band's lower edge is smeared." },
         S { "What 24, 48 and 96 dB/oct mean",
             "The band's edges are filters, and the number is how steep they are. One octave past the edge, a 24 dB/oct "
             "filter has turned the sound down by 24 dB, 48 dB/oct by 48 dB and 96 dB/oct by 96 dB: each is twice as "
@@ -1137,23 +1051,11 @@ void DopplerSatEditor::timerCallback()
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
 }
 
-void DopplerSatEditor::setMockupLayout (int variant, bool withSmooth)
-{
-    mockup     = juce::jlimit (0, 1, variant);
-    mockSmooth = withSmooth;
-    slopeView->setVisible (mockup == 0);
-    smoothButton.setVisible (mockSmooth);
-    plate = {};                                   // pladen tegnes forfra med de nye moduler
-    resized();
-    repaint();
-}
-
 void DopplerSatEditor::resized()
 {
-    const auto L = makeLayout (mockup);
-    // Mockup: Edges-soejlen i Band-modulet, til hoejre for de to displays
-    constexpr int edgeColW = 118;
-    const int edgeColX = L.mx[1] + L.mw[1] - 12 - edgeColW;
+    const auto L = makeLayout();
+    // 1.9: Edges-soejlen i Band-modulet, til hoejre for de to displays
+    const int edgeColX = L.mx[1] + L.mw[1] - 12 - layout::edgeColW;
     const float mY = (float) L.mY;
     auto y = [&] (float v) { return juce::roundToInt (mY + v); };
     plot->setBounds (L.plot);
@@ -1173,36 +1075,23 @@ void DopplerSatEditor::resized()
     // Baand: omraadet og baandet lige nu, Frequency / Sweep / Band Size (1.4; foer Amount / Width)
     {
         const int x = L.mx[1], w = L.mw[1];
-        const int lcdW = mockup == 1 ? edgeColX - 14 - (x + 12) : w - 24;
+        const int lcdW = edgeColX - 14 - (x + 12);
         rangeLcd->setBounds (x + 12, y (42), lcdW, 22);
         nowLcd->setBounds (x + 12, y (92), lcdW, 22);
         for (int i = 0; i < 3; ++i)
             placeKnob (*std::array<juce::Slider*, 3> { &freqSlider, &amountSlider, &widthSlider }[(size_t) i],
                        (float) (x + 12) + (float) (w - 24) / 3.f * ((float) i + 0.5f), mY + layout::knob, mY + layout::value);
     }
-    // Edges: 0 ms-tilstandene, "?" ved titlen og kanternes fald. 1.2: 96 dB/oct under de to andre (de ligger, hvor de
-    // laa), og "Edge steepness" er blevet lavere.
-    // Mockup: midten af den oeverste og nederste knap flugter med midten af de to displays (y 53 og 103)
-    if (mockup == 1)
-    {
-        modeHelp->setBounds (edgeColX + edgeColW - 16, (int) mY + 25, 16, 16);
-        for (int i = 0; i < P::kNumModes; ++i)
-            modeButtons[i].setBounds (edgeColX, y (43.f + 25.f * (float) i), edgeColW, 20);
-    }
-    else
-    {
-        const int x = L.mx[2], w = L.mw[2];
-        modeHelp->setBounds (x + w - 28, (int) mY + 5, 16, 16);
-        for (int i = 0; i < P::kNumModes; ++i)
-            modeButtons[i].setBounds (x + 12, y (34.f + 30.f * (float) i), w - 24, 24);
-        slopeView->setBounds (x + 12, y (126), w - 24, 96);
-    }
+    // Edges (1.9: en soejle i Band med "Edges" og "?" oeverst; til og med 1.8 et eget modul med "Edge steepness"-
+    // tegningen). Midten af den oeverste og nederste knap flugter med midten af de to displays (y 53 og 103).
+    modeHelp->setBounds (edgeColX + layout::edgeColW - 16, (int) mY + 25, 16, 16);
+    for (int i = 0; i < P::kNumModes; ++i)
+        modeButtons[i].setBounds (edgeColX, y (43.f + 25.f * (float) i), layout::edgeColW, 20);
     // Output: Bypass, Dry / Wet og Output gain. Bypass flugter med midten af den foerste 0 ms-knap (brugeren 2026-11-05:
     // "Ryk bypass op, så den flugter med den første 0 - ms indstilling [...] gerne flugte lige med midten")
     {
         const int x = L.mx[3], w = L.mw[3], h = 22;
         bypassButton.setBounds (x + 12, modeButtons[0].getBounds().getCentreY() - h / 2, w - 24, h);
-        smoothButton.setBounds (x + 12, mockup == 0 ? modeButtons[1].getBounds().getCentreY() - h / 2 : y (92), w - 24, h);   // 1.8, under Bypass
         placeKnob (dryWetSlider, (float) x + (float) w * 0.27f, mY + layout::knob, mY + layout::value);
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }
@@ -1214,7 +1103,7 @@ void DopplerSatEditor::renderPlate()
     const int W = getWidth(), H = getHeight();
     plate = juce::Image (juce::Image::RGB, W, H, false);
     juce::Graphics g (plate);
-    const auto  L  = makeLayout (mockup);
+    const auto  L  = makeLayout();
     const float mY = (float) L.mY;
 
     g.setGradientFill (juce::ColourGradient (juce::Colour (0xff3a3d43), 0.f, 0.f, juce::Colour (0xff26282c), 0.f, (float) H, false));
@@ -1259,7 +1148,7 @@ void DopplerSatEditor::renderPlate()
     static const char* titles[] = { "LFO", "Band", "Edges", "Output" };
     for (int i = 0; i < 4; ++i)
     {
-        if (L.mw[i] <= 0) continue;                       // mockup: intet Edges-modul
+        if (L.mw[i] <= 0) continue;                       // 1.9: intet Edges-modul
         const juce::Rectangle<float> m ((float) L.mx[i], mY, (float) L.mw[i], (float) layout::modH);
         g.setColour (juce::Colour (0xff1c1e21).withAlpha (0.55f));
         g.fillRoundedRectangle (m, 5.f);
@@ -1269,9 +1158,9 @@ void DopplerSatEditor::renderPlate()
         g.drawRoundedRectangle (m.reduced (1.f), 4.f, 1.f);
         const juce::String t = titles[i];
         silkText (g, t, m.getX() + 12.f, mY + layout::title, 11.f, hw::silk);
-        // Linjen stopper foer "?" (Edges) og Pause (LFO, 1.6)
+        // Linjen stopper foer Pause (LFO, 1.6)
         const float x1 = m.getX() + 12.f + (float) t.length() * 7.4f + 8.f,
-                    x2 = m.getRight() - (i == 2 ? 34.f : i == 0 ? 92.f : 12.f);
+                    x2 = m.getRight() - (i == 0 ? 92.f : 12.f);
         if (x2 - x1 > 8.f) groove (g, x1, mY + 13.f, x2, mY + 13.f);
     }
 
@@ -1282,8 +1171,7 @@ void DopplerSatEditor::renderPlate()
     // tilhørende knobs (Sweep og Band Size)" (foer "Sweep range" og "Band now")
     silkText (g, "Sweep", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
     silkText (g, "Band Size", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
-    if (mockup == 1)
-        silkText (g, "Edges", (float) (L.mx[1] + L.mw[1] - 12 - 118), mY + 37.f, 9.5f, silkC);
+    silkText (g, "Edges", (float) (L.mx[1] + L.mw[1] - 12 - layout::edgeColW), mY + 37.f, 9.5f, silkC);   // 1.9
     auto knobText = [&] (int mod, float fx, const juce::String& main, const juce::String& sub)
     {
         const float x = (float) L.mx[mod] + fx;

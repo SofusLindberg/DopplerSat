@@ -203,6 +203,100 @@ public:
         }
     }
 
+    // 1.9 Smooth Peaks: hovedmotoren (a, l / r) og reference-motoren (b, ud i rl / rr) i een loekke, med samme lyd ind.
+    // Bit for bit det samme som a.process (l, r, n) og b.process paa en kopi af l / r, men baand 2+3's faste allpasser
+    // (h23) regnes kun een gang: de faar samme lyd ind, har samme koefficienter (afhaenger kun af raten og 24 / 48 / 96)
+    // og nulstilles samtidig i begge (prepare og Bypass), saa deres udgang er den samme. b's egen h23 bruges ikke.
+    // Kraever, at begge har faaet de samme prepare- og Bypass-kald (saa er treeOn, treeMix og warmLeft ens).
+    static void processPair (DopplerCore& a, DopplerCore& b, float* l, float* r, float* rl, float* rr, int n)
+    {
+        jassert (a.treeOn == b.treeOn && a.treeWanted == b.treeWanted && a.warmLeft == b.warmLeft);
+        for (auto& x : a.band1) x.beginBlock (n);
+        for (auto& x : b.band1) x.beginBlock (n);
+        if (! a.treeOn)                            // Bypass: begge uroerte
+        {
+            for (auto& x : a.band1) x.gNow = x.gEnd;
+            for (auto& x : b.band1) x.gNow = x.gEnd;
+            std::copy (l, l + n, rl);
+            std::copy (r, r + n, rr);
+            return;
+        }
+
+        for (int s = 0; s < n; ++s)
+        {
+            a.treeMix.target ((a.treeWanted && a.warmLeft == 0) ? 1.0 : 0.0);
+            const double tm = a.treeMix.next();
+            if (a.warmLeft > 0) --a.warmLeft;
+            b.treeMix.target ((b.treeWanted && b.warmLeft == 0) ? 1.0 : 0.0);
+            const double tmB = b.treeMix.next();
+            if (b.warmLeft > 0) --b.warmLeft;
+
+            const __m128d x = _mm_set_pd ((double) r[s], (double) l[s]);
+            const __m128d H = a.h23.process (x);
+            __m128d B = H, BB = H;
+            for (auto& q : a.band1) B  = q.process (B);
+            for (auto& q : b.band1) BB = q.process (BB);
+            const __m128d T = a.tch.process (B), TB = b.tch.process (BB);
+
+            alignas (16) double o[2], oB[2];
+            _mm_store_pd (o,  _mm_add_pd (mul (x, 1.0 - tm),  mul (T,  tm)));
+            _mm_store_pd (oB, _mm_add_pd (mul (x, 1.0 - tmB), mul (TB, tmB)));
+            l[s]  = (float) o[0];   r[s]  = (float) o[1];
+            rl[s] = (float) oB[0];  rr[s] = (float) oB[1];
+
+            if (! a.treeWanted && tm <= 1.0e-6)    // faerdig med at tone ud (sker samtidig i begge)
+            {
+                a.treeOn = b.treeOn = false;
+                for (auto& q : a.band1) q.gNow = q.gEnd;
+                for (auto& q : b.band1) q.gNow = q.gEnd;
+                std::copy (l + s + 1, l + n, rl + s + 1);
+                std::copy (r + s + 1, r + n, rr + s + 1);
+                return;
+            }
+        }
+    }
+
+    // 1.9: er alt, der bestemmer lyden fremover, det samme bit for bit (undtagen h23, som deles i processPair)? Saa
+    // giver de to motorer samme lyd, saa laenge de faar samme kanter, og reference-motoren behoever ikke regnes.
+    bool sameStateAs (const DopplerCore& o) const
+    {
+        auto eq = [] (__m128d a, __m128d b)
+        {
+            alignas (16) double x[2], y[2];
+            _mm_store_pd (x, a); _mm_store_pd (y, b);
+            return x[0] == y[0] && x[1] == y[1];
+        };
+        if (fs != o.fs || warmSamples != o.warmSamples || warmLeft != o.warmLeft || treeOn != o.treeOn
+             || treeWanted != o.treeWanted || haveStatic != o.haveStatic || haveBand != o.haveBand
+             || staticMode != o.staticMode || bandMode != o.bandMode || lastLo != o.lastLo || lastHi != o.lastHi
+             || treeMix.v != o.treeMix.v || treeMix.t != o.treeMix.t || treeMix.a != o.treeMix.a || tch.n != o.tch.n)
+            return false;
+        for (int k = 0; k < 4; ++k)
+        {
+            const auto& p = band1[k];
+            const auto& q = o.band1[k];
+            if (p.nSec != q.nSec || p.onePole != q.onePole || p.gNow != q.gNow || p.gEnd != q.gEnd) return false;
+            if (p.onePole && ! eq (p.z1, q.z1)) return false;
+            for (int i = 0; i < p.nSec; ++i)
+                if (p.R[i] != q.R[i] || ! eq (p.s1[i], q.s1[i]) || ! eq (p.s2[i], q.s2[i])) return false;
+        }
+        for (int i = 0; i < tch.n; ++i)
+        {
+            const auto& p = tch.ap[i];
+            const auto& q = o.tch.ap[i];
+            if (p.n != q.n) return false;
+            for (int j = 0; j < p.n; ++j)
+            {
+                const auto& u = p.s[j];
+                const auto& v = q.s[j];
+                if (! eq (u.z1, v.z1) || ! eq (u.z2, v.z2) || ! eq (u.b0, v.b0) || ! eq (u.b1, v.b1)
+                     || ! eq (u.b2, v.b2) || ! eq (u.a1, v.a1) || ! eq (u.a2, v.a2))
+                    return false;
+            }
+        }
+        return true;
+    }
+
 private:
     void resetTree() { h23.reset(); for (auto& b : band1) b.reset(); tch.reset(); }
 

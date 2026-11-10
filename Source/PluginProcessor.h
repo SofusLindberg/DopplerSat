@@ -132,6 +132,9 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
 
+    // 1.9, til test (DspBench): antal stykker, hvor reference-motoren blev sprunget over / regnet
+    juce::int64 refSkipped = 0, refRun = 0;
+
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
     void updateLfoState (int numSamples);            // fasen ved blokkens start (Sync: fra vaertens position)
@@ -140,13 +143,16 @@ private:
     std::atomic<float> *modeP = nullptr, *freqP = nullptr, *amountP = nullptr, *widthP = nullptr,
                        *rateP = nullptr, *syncP = nullptr, *syncRateP = nullptr, *shapeP = nullptr,
                        *offsetP = nullptr, *dryWetP = nullptr, *outP = nullptr, *bypassP = nullptr,
-                       *pauseP = nullptr, *smoothP = nullptr;
+                       *pauseP = nullptr;
 
-    // 1.8 Smooth Peaks: det vaade signal maa hoejst naa kSmoothCeilDb over topniveauet af en reference-motor, hvor
-    // baandet flytter sig med den gamle fartgraense (som 1.6). Reference-motoren koerer kun, naar knappen er taendt.
+    // Smooth Peaks (1.8 som knap, 1.9 altid til): det vaade signal maa hoejst naa kSmoothCeilDb over topniveauet af en
+    // reference-motor, hvor baandet flytter sig med den gamle fartgraense (som 1.6).
+    // 1.9 CPU: refSame = reference-motoren er bit for bit som hovedmotoren (samme tilstand og kanter), saa dens lyd er
+    // hovedmotorens, og den regnes ikke. refCore er da ikke opdateret; den kopieres fra core, naar de skilles.
     static constexpr float kSmoothCeilDb = 3.f;
     satdsp::DopplerCore refCore;
-    bool   refOn = false, haveRefEdges = false;
+    bool   refSame = true, haveRefEdges = false;
+    void   startRef() { refSame = true; haveRefEdges = false; refEnv = 0.f; }   // som 1.8, naar refCore blev startet
     double refLoOct = 0.0, refHiOct = 0.0;
     float  refEnv = 0.f, smoothGain = 1.f;                // reference-topniveau og forstaerkningen lige nu
     float  aRefDown = 1.f, aGainDown = 1.f, aGainUp = 1.f;
