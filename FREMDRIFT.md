@@ -4,6 +4,18 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (6) — Spørgsmål: hvad sker der med lyden, hvis toppene udjævnes?
+
+- Brugeren skrev: "Hvad sker der med lyden, hvis du forsøger at udjævne?"
+- Forklaret (intet bygget). Toppene i 1.7 er korte (peak op til +8,8 dB, RMS højst +2,1 dB) og kommer, når båndet farer forbi og presser lyden sammen (pitchen op). Muligheder:
+  1. **Relativt loft** (anbefalet, evt. som knap): vådt signal må højst ligge fx 3 dB over det tørre; kun toppene dæmpes. Ved langsom Rate rører det intet (svinget er ca. 1,5 dB). Koster lidt "kant" på de hurtigste sving; en meget hurtig dæmpning kan give lidt forvrængning i dyb bas.
+  2. **Fuld niveau-udligning:** både toppe og dyk glattes ud, så kun pitchen er tilbage. Effekten bliver fladere og mindre levende.
+  3. **Limiter på udgangen:** fanger alt over et fast niveau, også det tørre signal; mindre præcis.
+  4. Lavere fart: modsiger ønsket fra 1.7.
+- Ikke målt endnu, hvordan det lyder. Tilbudt at bygge en version med en knap, så brugeren kan sammenligne.
+
+---
+
 ## 2026-11-10 (5) — Version 1.7: båndet når helt ud i Sweep-området ved alle Rate-værdier
 
 **Status:**
