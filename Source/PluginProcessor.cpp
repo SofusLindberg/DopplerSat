@@ -97,6 +97,7 @@ DopplerSatProcessor::DopplerSatProcessor()
     dryWetP   = apvts.getRawParameterValue ("drywet");
     outP      = apvts.getRawParameterValue ("outgain");
     bypassP   = apvts.getRawParameterValue ("bypass");
+    pauseP    = apvts.getRawParameterValue ("pause");
     newRandom();
     newRandom();
 }
@@ -139,6 +140,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createL
          juce::NormalisableRange<float> (-24.f, 24.f, 0.01f), 0.f));
     add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "bypass", 1 }, "Bypass", false));
 
+    // 1.6 (brugeren 2026-11-10): "en pause-knap, hvor effekten stopper, bandet er nået til. Dette skal hjælpe til, at
+    // brugeren kan aflæse det spektrum, som band size-displayet viser". LFO'en staar stille, baandet bliver, hvor det
+    // er. Tilfoejet sidst, saa de andre parametres raekkefoelge er den samme.
+    add (std::make_unique<juce::AudioParameterBool>  (juce::ParameterID { "pause", 1 }, "Pause", false));
+
     return { params.begin(), params.end() };
 }
 
@@ -164,6 +170,12 @@ void DopplerSatProcessor::bandEdgesFor (double v, double& lo, double& hi) const
     lo = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre - half));
     hi = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre + half));
     if (hi < lo * 1.05) { if (lo * 1.05 <= maxFreq) hi = lo * 1.05; else lo = hi / 1.05; }
+}
+
+double DopplerSatProcessor::bandCentreFor (double v) const
+{
+    const double centre = std::log2 ((double) freqP->load()) + v * (double) amountP->load() * 0.01 * kMaxSweepOct;
+    return juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre));
 }
 
 satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double hi) const
@@ -248,7 +260,9 @@ void DopplerSatProcessor::updateLfoState (int)
     {
         const double beats = syncBeats ((int) std::lround (syncRateP->load()), barBeats);
         lfoRate = bpm / 60.0 / beats;
-        if (playing && havePpq)
+        // Pause (1.6): fasen foelger ikke vaerten, saa baandet bliver staaende. Naar pausen slippes, hopper fasen
+        // tilbage til takten, og fartgraensen lader kanterne glide derhen.
+        if (playing && havePpq && pauseP->load() < 0.5f)
         {
             // Fasen foelger vaertens position, saa LFO'en ligger fast i takten (samme sted hver gang)
             const double c = ppq / beats, whole = std::floor (c);
@@ -288,6 +302,7 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const double offset  = (double) offsetP->load() * 0.01;
     const double squareW = juce::jlimit (1.0e-4, 0.25, 0.008 * lfoRate);   // Square: overgang paa ca. 8 ms
     const float  newWet  = dryWetP->load() * 0.01f;
+    const bool   paused  = pauseP->load() > 0.5f;
     float* L = buffer.getWritePointer (0);
     float* R = mono ? nullptr : buffer.getWritePointer (1);
     double v = 0.0;
@@ -340,8 +355,11 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
             cr[i] = dryR[i] + (cr[i] - dryR[i]) * w;
         }
 
-        phase += lfoRate * (double) len / fs;
-        while (phase >= 1.0) { phase -= 1.0; cycle += 1.0; newRandom(); }
+        if (! paused)                                    // 1.6: Pause - LFO'en staar stille
+        {
+            phase += lfoRate * (double) len / fs;
+            while (phase >= 1.0) { phase -= 1.0; cycle += 1.0; newRandom(); }
+        }
     }
     lastDryWet = newWet;
 

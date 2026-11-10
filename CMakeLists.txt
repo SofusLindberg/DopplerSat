@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 1.5.0)
+project(DopplerSat VERSION 1.6.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)

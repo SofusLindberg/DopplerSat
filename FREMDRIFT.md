@@ -4,6 +4,18 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (2) — Mockup af 1.6: Sweep viser kun midtens vej, Pause-knap (bygget, IKKE installeret)
+
+- Brugeren skrev: "lad mig se mock-up med dine anbefalinger for begge punkter".
+- Lavet i koden (version 1.6 i CMakeLists, bygget men **ikke installeret**, venter på brugerens godkendelse):
+  1. **Sweep-displayet og det skraverede område** viser midtens vej, Frequency ± Sweep (`bandCentreFor`), ikke længere fra laveste til højeste kant. Standard (600 Hz, Sweep 50 %): "212 Hz - 1.70 kHz" (før "150 Hz - 2.40 kHz"). Med Band Size 4 okt er det stadig "212 Hz - 1.70 kHz" (før ville det have været ca. "53 Hz - 6.79 kHz"). Teksten under displayet: "Shaded: where the LFO moves the band's middle".
+  2. **Pause:** ny parameter `pause` (navn "Pause", tilføjet sidst, 13 parametre). Knap med gul LED i LFO-modulets titellinje (linjen stopper før den). LFO'ens fase står stille, og i Sync følger den ikke værten, mens Pause er tændt (bagefter glider kanterne tilbage til takten med fartgrænsen).
+- **Tjek:** `HostSmoke --compare` mod 1.5: "SAMME LYD" (Pause slukket). Røgtest + DAW-test OK med 13 parametre (alle automatiseret på én gang, gem / hent 0 af 13 forkerte). EditorShot: ny `doppler6_bandsize4.png` (Sweep uændret) og `doppler7_pause.png`; Pause målt: fase 0,8940 → 0,8940 og båndets bund 223,1 → 223,1 Hz efter 1 s.
+- Billederne er vist brugeren (før / efter / Band Size 4 / Pause).
+- Venter på godkendelse. Derefter: KRAV, installér 1.6 og verificér.
+
+---
+
 ## 2026-11-10 — Spørgsmål: Band Size og Sweep, pause-knap (intet bygget endnu)
 
 - Brugeren skrev: "for at gøre effekten lidt mere i overenstemmelse med knoben, så skal vi have: 'Band size' ændrer lige nu også på sweep (traven range). Vi skal kun have, at band size ændrer bredden af bandet, ikke sweep (travel range). Før du bygger, fortæl mig, om dette giver mening ift. det jeg ønsker, eller om jeg blot reagerer på noget misledende grafisk? 2) Vi skal have en pause-knap, hvor effekten stopper, bandet er er nået til. Dette skal hjælpe til, at brugeren kan aflæse det spektrum, som band size-diplayet viser."

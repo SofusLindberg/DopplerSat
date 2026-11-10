@@ -494,11 +494,10 @@ private:
     // Hvor LFO'en kan flytte baandet hen (med offset kan den ikke naa begge ender)
     void drawRange (juce::Graphics& g, juce::Rectangle<float> r) const
     {
+        // 1.6: midtens vej (Frequency +/- Sweep). Foer: fra laveste til hoejeste kant, saa Band Size gjorde den bredere.
         const double off = (double) getP ("offset") * 0.01;
-        double lo1, hi1, lo2, hi2;
-        proc.bandEdgesFor (juce::jlimit (-1.0, 1.0, -1.0 + off), lo1, hi1);
-        proc.bandEdgesFor (juce::jlimit (-1.0, 1.0,  1.0 + off), lo2, hi2);
-        const float x1 = freqToX (lo1), x2 = freqToX (hi2);
+        const float x1 = freqToX ((float) proc.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off))),
+                    x2 = freqToX ((float) proc.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off)));
         g.setColour (bandColour.withAlpha (0.06f));
         g.fillRect (juce::Rectangle<float> (x1, r.getY(), x2 - x1, r.getHeight()));
         g.setColour (bandColour.withAlpha (0.35f));
@@ -886,7 +885,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
-    rangeLcd->setTooltip ("Sweep: the frequencies the LFO moves the band across (Frequency +/- Sweep, plus the Band Size).");
+    rangeLcd->setTooltip ("Sweep: where the LFO moves the middle of the band (Frequency +/- Sweep). Band Size does not change it.");
     addAndMakeVisible (*rangeLcd);
     nowLcd = std::make_unique<LcdText> (hw::green);
     nowLcd->setTooltip ("Band Size: where the band's edges are right now (they are Band Size apart, and the LFO moves them).");
@@ -957,7 +956,13 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     outSlider.setTooltip ("Output level.");
     bypassButton.setTooltip ("Bypass: the untouched sound. This is also the DAW's own bypass for the plugin.");
 
-    juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton,
+    // 1.6: Pause (brugeren 2026-11-10: "en pause-knap, hvor effekten stopper, bandet er nået til")
+    pauseButton.setButtonText ("Pause");
+    pauseButton.getProperties().set ("led", (juce::int64) hw::amber.getARGB());
+    pauseButton.setTooltip ("Pause: the LFO stops and the band stays where it is, so you can read it in the display "
+                            "and in Band Size. A band that stands still does not bend the pitch.");
+
+    juce::Component* children[] = { &rateSlider, &syncRateSlider, &offsetSlider, &shapeBox, &hzButton, &syncButton, &pauseButton,
                                     &freqSlider, &amountSlider, &widthSlider,
                                     &modeButtons[0], &modeButtons[1], &modeButtons[2], &dryWetSlider, &outSlider, &bypassButton };
     for (auto* c : children) addAndMakeVisible (*c);
@@ -970,6 +975,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     menuFor (freqSlider, "freq");    menuFor (amountSlider, "amount");     menuFor (widthSlider, "width");
     for (auto& b : modeButtons) menuFor (b, "mode");
     menuFor (dryWetSlider, "drywet"); menuFor (outSlider, "outgain");      menuFor (bypassButton, "bypass");
+    menuFor (pauseButton, "pause");
 
     // "?" ved 0 ms-tilstandene. Overlayet tilfoejes sidst, saa det ligger oeverst.
     modeHelp = std::make_unique<HelpButton>();
@@ -993,6 +999,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     outAtt      = std::make_unique<SliderAtt> (s, "outgain",  outSlider);
     shapeAtt    = std::make_unique<ComboAtt>  (s, "shape",    shapeBox);
     bypassAtt   = std::make_unique<ButtonAtt> (s, "bypass",   bypassButton);
+    pauseAtt    = std::make_unique<ButtonAtt> (s, "pause",    pauseButton);
     syncAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("sync"), [this] (float v) { updateSync (v > 0.5f); });
     syncAtt->sendInitialUpdate();
     modeAtt = std::make_unique<juce::ParameterAttachment> (*s.getParameter ("mode"), [this] (float v) { updateMode ((int) std::lround (v)); });
@@ -1104,10 +1111,10 @@ void DopplerSatEditor::timerCallback()
     lfoView->sample();
     lfoView->repaint();
     const double off = (double) processor.apvts.getRawParameterValue ("offset")->load() * 0.01;
-    double lo1, hi1, lo2, hi2;
-    processor.bandEdgesFor (juce::jlimit (-1.0, 1.0, -1.0 + off), lo1, hi1);
-    processor.bandEdgesFor (juce::jlimit (-1.0, 1.0,  1.0 + off), lo2, hi2);
-    rangeLcd->setText (hzText (lo1) + " - " + hzText (hi2));
+    // 1.6: Sweep-displayet viser midtens vej (Frequency +/- Sweep); Band Size aendrer det ikke
+    const double c1 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off)),
+                 c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
+    rangeLcd->setText (hzText (c1) == hzText (c2) ? hzText (c1) : hzText (c1) + " - " + hzText (c2));
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
 }
 
@@ -1122,6 +1129,7 @@ void DopplerSatEditor::resized()
     {
         const int x = L.mx[0], w = L.mw[0];
         lfoView->setBounds (x + 12, y (28), w - 24, 58);
+        pauseButton.setBounds (x + w - 12 - 72, (int) mY + 2, 72, 22);     // titellinjen, midt paa linjen (y 13)
         shapeBox.setBounds (x + 60, y (94), 94, 22);
         hzButton.setBounds (x + w - 12 - 106, y (94), 48, 22);
         syncButton.setBounds (x + w - 12 - 54, y (94), 54, 22);
@@ -1203,7 +1211,7 @@ void DopplerSatEditor::renderPlate()
     g.setFont (hwFont ("Bahnschrift", 10.f));
     g.setColour (hw::silkDim);
     g.drawSingleLineText ("Drag left / right: Frequency  |  Double-click: reset  |  Right-click any control: automation  |  "
-                          "Shaded: where the LFO moves the band", W / 2, L.hintY + 12, juce::Justification::horizontallyCentred);
+                          "Shaded: where the LFO moves the band's middle", W / 2, L.hintY + 12, juce::Justification::horizontallyCentred);
 
     static const char* titles[] = { "LFO", "Band", "Edges", "Output" };
     for (int i = 0; i < 4; ++i)
@@ -1217,7 +1225,9 @@ void DopplerSatEditor::renderPlate()
         g.drawRoundedRectangle (m.reduced (1.f), 4.f, 1.f);
         const juce::String t = titles[i];
         silkText (g, t, m.getX() + 12.f, mY + layout::title, 11.f, hw::silk);
-        const float x1 = m.getX() + 12.f + (float) t.length() * 7.4f + 8.f, x2 = m.getRight() - (i == 2 ? 34.f : 12.f);
+        // Linjen stopper foer "?" (Edges) og Pause (LFO, 1.6)
+        const float x1 = m.getX() + 12.f + (float) t.length() * 7.4f + 8.f,
+                    x2 = m.getRight() - (i == 2 ? 34.f : i == 0 ? 92.f : 12.f);
         if (x2 - x1 > 8.f) groove (g, x1, mY + 13.f, x2, mY + 13.f);
     }
 

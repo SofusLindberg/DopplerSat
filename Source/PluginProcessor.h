@@ -119,6 +119,9 @@ public:
 
     // Baandets kanter for en LFO-vaerdi v (-1..1): midten flyttes v * Amount * 3 oktaver fra Frequency
     void bandEdgesFor (double v, double& lo, double& hi) const;
+    // 1.6: baandets midte for en LFO-vaerdi v (Hz, 20 Hz - 20 kHz). Sweep-displayet og det skraverede omraade viser
+    // midtens vej (Frequency +/- Sweep), saa Band Size ikke aendrer dem (brugeren 2026-11-10)
+    double bandCentreFor (double v) const;
     // Motorens parametre med baandet mellem lo og hi (faelles for lyden og tegningen)
     satdsp::EngineParams buildEngineParams (double lo, double hi) const;
     double getProcessingRate() const;                 // 4x vaertens rate (oversampling er altid til)
@@ -136,7 +139,8 @@ private:
 
     std::atomic<float> *modeP = nullptr, *freqP = nullptr, *amountP = nullptr, *widthP = nullptr,
                        *rateP = nullptr, *syncP = nullptr, *syncRateP = nullptr, *shapeP = nullptr,
-                       *offsetP = nullptr, *dryWetP = nullptr, *outP = nullptr, *bypassP = nullptr;
+                       *offsetP = nullptr, *dryWetP = nullptr, *outP = nullptr, *bypassP = nullptr,
+                       *pauseP = nullptr;
 
     satdsp::DopplerCore core;        // = satdsp::Engine ved 0 % drive, uden alt det, der ikke kan hoeres
     std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;

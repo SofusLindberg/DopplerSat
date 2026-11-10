@@ -50,6 +50,25 @@ int main (int argc, char** argv)
     juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
     save (*ed, dir.getChildFile ("doppler1.png"));
 
+    // 1.6: Band Size 4 okt -> Sweep-displayet og det skraverede omraade skal vaere de samme som i doppler1
+    setParam (proc, "width", 4.f);
+    run (proc, 0.5);
+    juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+    save (*ed, dir.getChildFile ("doppler6_bandsize4.png"));
+    setParam (proc, "width", 1.f);
+
+    // 1.6: Pause -> LFO'ens fase og baandet staar stille
+    setParam (proc, "pause", 1.f);
+    run (proc, 0.2);
+    const double ph0 = proc.lfoPhaseNow.load(), lo0 = proc.bandLoNow.load();
+    run (proc, 1.0);
+    juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+    const bool still = proc.lfoPhaseNow.load() == ph0 && proc.bandLoNow.load() == lo0;
+    std::printf ("  pause: fase %.4f -> %.4f, baandets bund %.1f -> %.1f Hz  %s\n", ph0, proc.lfoPhaseNow.load(), lo0,
+                 proc.bandLoNow.load(), still ? "staar stille OK" : "FEJL");
+    save (*ed, dir.getChildFile ("doppler7_pause.png"));
+    setParam (proc, "pause", 0.f);
+
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
     setParam (proc, "mode", 0.f);   setParam (proc, "amount", 80.f);
     run (proc, 0.7);

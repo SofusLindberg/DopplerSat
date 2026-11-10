@@ -71,6 +71,7 @@ private:
     PSlider rateSlider, syncRateSlider, offsetSlider;
     PCombo  shapeBox;
     PButton hzButton, syncButton;
+    PToggle pauseButton;                       // 1.6: LFO'en staar stille (i LFO-modulets titellinje)
     // Baand
     PSlider freqSlider, amountSlider, widthSlider;
     // Edges (de tre 0 ms-tilstande, 1.2: 96 dB/oct)
@@ -84,7 +85,7 @@ private:
 
     std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;
     std::unique_ptr<ComboAtt>  shapeAtt;
-    std::unique_ptr<ButtonAtt> bypassAtt;
+    std::unique_ptr<ButtonAtt> bypassAtt, pauseAtt;
     std::unique_ptr<juce::ParameterAttachment> syncAtt, modeAtt;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DopplerSatEditor)
