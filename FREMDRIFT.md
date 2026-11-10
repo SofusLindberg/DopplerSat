@@ -4,6 +4,12 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-10 (3) — Bekræftet: mockuppet er netop det forslag
+
+- Brugeren spurgte, om forslaget "Sweep-displayet og den skraverede flade viser kun midtens vej (Frequency ± Sweep) [...] lyden er uændret" var det, der blev bygget ind i mockuppet. Svar: ja, præcis det (se posten nedenfor). Lyden er bit for bit som 1.5. Ingen kodeændringer.
+
+---
+
 ## 2026-11-10 (2) — Mockup af 1.6: Sweep viser kun midtens vej, Pause-knap (bygget, IKKE installeret)
 
 - Brugeren skrev: "lad mig se mock-up med dine anbefalinger for begge punkter".
