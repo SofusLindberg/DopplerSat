@@ -303,12 +303,25 @@ public:
     void setText (const juce::String& t) { if (t != text) { text = t; repaint(); } }
     void setEditable (bool e) { setMouseCursor (e ? juce::MouseCursor::UpDownResizeCursor : juce::MouseCursor::NormalCursor); }
 
+    // Mockup (brugeren 2026-11-13, kun EditorShot): to linjer, toppen oeverst og bunden nederst
+    bool twoLine = false;
+
     void paint (juce::Graphics& g) override
     {
         const auto r = getLocalBounds().toFloat();
         drawLcd (g, r.reduced (0.5f));
         g.setColour (col);
         g.setFont (font());
+        const int sep = text.indexOf (" - ");
+        if (twoLine && sep >= 0)
+        {
+            const float h = r.getHeight();
+            g.drawText (text.substring (sep + 3), r.withHeight (h * 0.5f).translated (0.f, h * 0.02f), juce::Justification::centred, false);
+            g.drawText (text.substring (0, sep), r.withTrimmedTop (h * 0.5f).translated (0.f, -h * 0.02f), juce::Justification::centred, false);
+            g.setColour (col.withAlpha (0.25f));
+            g.drawHorizontalLine (juce::roundToInt (r.getCentreY()), r.getX() + r.getWidth() * 0.3f, r.getRight() - r.getWidth() * 0.3f);
+            return;
+        }
         g.drawText (text, r, juce::Justification::centred, false);
     }
 
@@ -1309,6 +1322,21 @@ void DopplerSatEditor::testSweepDrag (int part, float dyPixels, bool fine)
     rangeLcd->endDrag();
 }
 
+// Mockup-soejlerne i Band (over de tre knapper): venstre kant og bredde
+int DopplerSatEditor::mockColX (int x, int w, int i) { return juce::roundToInt ((float) (x + 12) + (float) (w - 24) / 3.f * (float) i) + 4; }
+int DopplerSatEditor::mockColW (int w)               { return juce::roundToInt ((float) (w - 24) / 3.f) - 8; }
+
+void DopplerSatEditor::setMockupLayout (int variant)
+{
+    mockup = juce::jlimit (0, 1, variant);
+    rangeLcd->twoLine = nowLcd->twoLine = mockup == 1;
+    rangeLcd->repaint();
+    nowLcd->repaint();
+    plate = {};                                   // pladen tegnes forfra med de nye labels
+    resized();
+    repaint();
+}
+
 void DopplerSatEditor::resized()
 {
     const auto L = makeLayout();
@@ -1347,6 +1375,18 @@ void DopplerSatEditor::resized()
     modeHelp->setBounds (edgeColX + layout::edgeColW - 16, (int) mY + 25, 16, 16);
     for (int i = 0; i < P::kNumModes; ++i)
         modeButtons[i].setBounds (edgeColX, y (43.f + 25.f * (float) i), layout::edgeColW, 20);
+    // Mockup (brugeren 2026-11-13: "Sweep knob står lige under Sweep display og Band size knob står lige under Band
+    // size display"): tre soejler over de tre knapper - Sweep-displayet, Band Size-displayet (to linjer: toppen
+    // oeverst) og Edges-knapperne over Frequency
+    if (mockup == 1)
+    {
+        const int x = L.mx[1], w = L.mw[1];
+        rangeLcd->setBounds (mockColX (x, w, 0), y (42), mockColW (w), 72);
+        nowLcd->setBounds   (mockColX (x, w, 1), y (42), mockColW (w), 72);
+        modeHelp->setBounds (mockColX (x, w, 2) + mockColW (w) - 16, (int) mY + 25, 16, 16);
+        for (int i = 0; i < P::kNumModes; ++i)
+            modeButtons[i].setBounds (mockColX (x, w, 2), y (43.f + 25.f * (float) i), mockColW (w), 20);
+    }
     // Output: Bypass, Dry / Wet og Output gain. Bypass flugter med midten af den foerste 0 ms-knap (brugeren 2026-11-05:
     // "Ryk bypass op, så den flugter med den første 0 - ms indstilling [...] gerne flugte lige med midten")
     {
@@ -1429,9 +1469,18 @@ void DopplerSatEditor::renderPlate()
     silkText (g, "Shape", (float) L.mx[0] + 12.f, mY + 109.f, 9.5f, silkC);
     // 1.5 (brugeren 2026-11-09): "Sørg for at de to displays, der viser range af frekvenser, har samme navn som de
     // tilhørende knobs (Sweep og Band Size)" (foer "Sweep range" og "Band now")
-    silkText (g, "Sweep", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
-    silkText (g, "Band Size", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
-    silkText (g, "Edges", (float) (L.mx[1] + L.mw[1] - 12 - layout::edgeColW), mY + 37.f, 9.5f, silkC);   // 1.9
+    if (mockup == 1)
+    {
+        silkText (g, "Sweep",     (float) mockColX (L.mx[1], L.mw[1], 0), mY + 37.f, 9.5f, silkC);
+        silkText (g, "Band Size", (float) mockColX (L.mx[1], L.mw[1], 1), mY + 37.f, 9.5f, silkC);
+        silkText (g, "Edges",     (float) mockColX (L.mx[1], L.mw[1], 2), mY + 37.f, 9.5f, silkC);
+    }
+    else
+    {
+        silkText (g, "Sweep", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);
+        silkText (g, "Band Size", (float) L.mx[1] + 12.f, mY + 87.f, 9.5f, silkC);
+        silkText (g, "Edges", (float) (L.mx[1] + L.mw[1] - 12 - layout::edgeColW), mY + 37.f, 9.5f, silkC);   // 1.9
+    }
     auto knobText = [&] (int mod, float fx, const juce::String& main, const juce::String& sub)
     {
         const float x = (float) L.mx[mod] + fx;

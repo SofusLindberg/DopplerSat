@@ -4,6 +4,21 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (8) — Versionsnavne (spørgsmål) og mockup: displayene lige over deres knapper
+
+- Brugeren skrev: "Ja, og sorter også tidligere versioner efter den nye talrække i versionerne. Så du starter fra 1.10. 2) Lav et mockup af GUI, hvor Sweep knob står lige under Sweep display og Band size knob står lige under Band size display."
+- **Versionsnavne: ikke omdøbt eller installeret endnu, spurgt.** "Starter fra 1.10" kan forstås på to måder:
+  - **A (min læsning):** de versioner, der sorterer forkert (1.10–1.14), får den nye række, 2.01–2.05, og den byggede version bliver 2.06. 1.0–1.9 sorterer allerede rigtigt og beholder navnene.
+  - **B:** 1.0–1.9 får to cifre (1.00–1.09), og den byggede bliver 1.16.
+  - Begge kræver, at de gamle versioner bygges igen fra git med det nye navn, men med samme plugin-kode (D110 osv.). VST3-id'et laves af producent- og plugin-koden, så gemte projekter finder dem stadig.
+  - 1.11's kode (versionen med 7 decimaler) er ikke gemt som commit. Den kan genskabes som 1.12's kode uden én-decimals-teksten.
+  - De gamle mapper i VST3-mappen erstattes. Det er brugerens eget ønske, så reglen om aldrig at slette gamle versioner viger her.
+- **Mockup:** `DopplerSatEditor::setMockupLayout (1)` (kun EditorShot) og `LcdText::twoLine`. Tre søjler i Band over de tre knapper: Sweep-display, Band Size-display (to linjer: toppen øverst, bunden nederst, en svag streg imellem) og Edges-knapperne over Frequency. Overskrifterne Sweep / Band Size / Edges står på samme linje (y 37), og displayene er 72 px høje som Edges-søjlen. Billede: `doppler10_mockup_columns.png`. Pluginnet er uændret.
+
+**NÆSTE GANG:** brugerens svar på A / B. Derefter omdøb og installér, og byg mockuppet, hvis brugeren siger ja.
+
+---
+
 ## 2026-11-13 (7) — Version 1.15 bygget (knapperne byttet, frame rate), IKKE installeret: spørgsmål om versionsnavne
 
 **Status:**

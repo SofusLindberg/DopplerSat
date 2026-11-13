@@ -220,6 +220,13 @@ Det betyder:
 - **Frame rate:** et træk eller et skrevet tal i Sweep-displayet opdaterer nu kun tallet med det samme. Resten af displayet tegnes som altid 30 gange i sekundet. I 1.10–1.14 blev hele displayet tegnet ved hver musebevægelse, og Random-sporet løb hurtigere.
 - **Versionsnavne:** se FREMDRIFT 2026-11-13 (7). Brugeren vælger.
 
+Brugerens ord (svar på forslaget om 2.01):
+> 1) [...] Ja, og sorter også tidligere versioner efter den nye talrække i versionerne. Så du starter fra 1.10. 2) Lav et mockup af GUI, hvor Sweep knob står lige under Sweep display og Band size knob står lige under Band size display.
+
+Foreløbig status:
+- **Versionsnavne:** to måder at forstå "starter fra 1.10" på. Spurgt (FREMDRIFT 2026-11-13 (8)); intet omdøbt eller installeret endnu.
+- **Mockup:** `doppler10_mockup_columns.png`. Tre søjler i Band: Sweep-displayet over Sweep-knappen, Band Size-displayet over Band Size-knappen (begge på to linjer, toppen øverst) og Edges over Frequency. Venter på brugerens ja.
+
 ## Efter 1.15 (2026-11-13, ikke bygget endnu)
 
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
