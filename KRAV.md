@@ -234,14 +234,16 @@ Det betyder:
 - **Versionsnavne (løsning A):** 1.10–1.14 er bygget igen fra deres commits som **2.01–2.05** med deres gamle plugin-koder (D110–D114), så gemte projekter finder dem. 1.10–1.14 er fjernet fra VST3-mappen (brugerens ønske). Den nye version er **2.06** (D206). Fra nu af: 2.07, 2.08 ... (to cifre efter punktummet). 1.0–1.9 beholder deres navne.
 - **Displayene** står som før (mockuppet bygges ikke). **Knapperne** i Band: Sweep, Band Size, Frequency (som i 1.15).
 
-## Efter 2.06 (2026-11-13, ikke bygget endnu)
+## Version 2.07 (2026-11-13)
 
 Brugerens ord (med billede af Shape / Hz / Sync, Band Size-displayet og 96 dB/oct):
 > vi skal arbejde en lille smule med, at elementerne i GUI er lidt mere parallelle med hinanden. Det er få pixels, det drejer sig om. Hvis du f.eks. ser elementerne på billedet, kunne de godt være en lille smule mere på samme "linje". Lav et mockup, hvor du tager højde for dette i placeringen af elementerne på GUI. Umiddelbart er elementerne på billedet det største problem.
 
-Claudes mockup (venter på brugerens ja), `doppler11_mockup_aligned.png` og `align_compare.png` (før / efter):
+Claudes mockup, `doppler11_mockup_aligned.png` og `align_compare.png` (før / efter). Brugeren: "Ja, byg 2.07". Bygget i 2.07:
 - Alle elementer i de to rækker har samme top, bund og højde (20 px). Øverste række (top 43): Sweep-displayet, 24 dB/oct og Bypass. Nederste række (top 93): Shape, Hz, Sync, Band Size-displayet og 96 dB/oct. Før lå Shape-rækken 2 px lavere end Band Size-displayet, og displayene og Shape-rækken var 22 px høje, Edges-knapperne 20.
 - "SHAPE" står midt på sin række, og underteksten øverst til højre står på samme grundlinje som titlen.
+
+## Efter 2.07 (2026-11-13, ikke bygget endnu)
 
 Band Size-displayet (skriv i det) venter stadig.
 

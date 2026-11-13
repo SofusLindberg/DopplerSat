@@ -4,6 +4,28 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (11) — Version 2.07: elementerne på fælles linjer
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 2.07"** (D207, moduleinfo 2.7.0), uden fejl eller advarsler. **Installeret og verificeret med filhash** (`B1D4EC23…`). Buildet (15:48:43) er nyere end sidste kildeændring (15:47:37). 1.0–1.9 og 2.01–2.06 ligger uændret ved siden af.
+- `--compare` mod 2.06: "SAMME LYD", 16/16 bit-identisk (kun editoren er ændret). Røgtest, DAW-test og EditorShot: OK.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** brugeren sagde "Ja, byg 2.07" til mockuppet (10).
+
+**Lavet:**
+- `namespace rows { a = 43, b = 93, h = 20 }` i PluginEditor.cpp:
+  - Række A: Sweep-display, 24 dB/oct og Bypass.
+  - Række B: Shape, Hz, Sync, Band Size-display og 96 dB/oct.
+  - Edges-knapperne ligger på a, a + 25 og b.
+- "SHAPE" står på grundlinje 106,5, og underteksten øverst på 28 som titlen. Mockup-koden er fjernet.
+- Band Size-displayet hedder nu "Band Size display" (`setName`).
+- EditorShot tjekker, at hver række har samme top og højde: A y 397 h 20, B y 447 h 20.
+
+**NÆSTE GANG:** test 2.07 i en DAW. Band Size-displayet (skriv i det) venter.
+
+---
+
 ## 2026-11-13 (10) — Mockup: elementerne på fælles linjer (få pixels)
 
 - Brugeren skrev, at elementerne skal være "lidt mere parallelle med hinanden", fx Shape / Hz / Sync, Band Size-displayet og 96 dB/oct. Se `KRAV.md` ("Efter 2.06").

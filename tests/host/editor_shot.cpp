@@ -336,17 +336,29 @@ int main (int argc, char** argv)
         save (*ed, dir.getChildFile ("doppler9_sweep_typed.png"));
         setParam (proc, "freq", 600.f); setParam (proc, "amount", 50.f);
 
-        // Mockup (brugeren 2026-11-13): "elementerne i GUI er lidt mere parallelle med hinanden [...] Lav et mockup".
-        // Foer og efter i samme tilstand (doppler10_align_before / doppler11_mockup_aligned)
-        setParam (proc, "amount", 30.f);
-        run (proc, 0.3);
-        juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
-        save (*ed, dir.getChildFile ("doppler10_align_before.png"));
-        de->setMockupLayout (1);
-        juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
-        save (*ed, dir.getChildFile ("doppler11_mockup_aligned.png"));
-        de->setMockupLayout (0);
-        setParam (proc, "amount", 50.f);
+        // 2.07 (brugeren 2026-11-13: "elementerne i GUI er lidt mere parallelle med hinanden"): raekke A (Sweep-display,
+        // 24 dB/oct, Bypass) og raekke B (Shape, Hz, Sync, Band Size-display, 96 dB/oct) har samme top og hoejde
+        auto boundsOf = [&] (std::function<bool (juce::Component&)> is)
+        {
+            for (auto* c : ed->getChildren()) if (is (*c)) return c->getBounds();
+            return juce::Rectangle<int>();
+        };
+        auto byName = [&] (const char* n) { return boundsOf ([n] (juce::Component& c) { return c.getName() == n; }); };
+        auto byText = [&] (const char* t) { return boundsOf ([t] (juce::Component& c)
+                         { auto* b = dynamic_cast<juce::Button*> (&c); return b != nullptr && b->getButtonText() == t; }); };
+        auto combo  = boundsOf ([] (juce::Component& c) { return dynamic_cast<juce::ComboBox*> (&c) != nullptr; });
+        const juce::Rectangle<int> rowA[] = { byName ("Sweep display"), byText ("24 dB/oct"), byText ("Bypass") };
+        const juce::Rectangle<int> rowB[] = { combo, byText ("Hz"), byText ("Sync"), byName ("Band Size display"), byText ("96 dB/oct") };
+        auto same = [] (const juce::Rectangle<int>* r, int n)
+        {
+            for (int i = 0; i < n; ++i)
+                if (r[i].isEmpty() || r[i].getY() != r[0].getY() || r[i].getHeight() != r[0].getHeight()) return false;
+            return true;
+        };
+        const bool alignOk = same (rowA, 3) && same (rowB, 5);
+        std::printf ("  raekker paa faelles linjer: A y %d h %d, B y %d h %d  %s\n", rowA[0].getY(), rowA[0].getHeight(),
+                     rowB[0].getY(), rowB[0].getHeight(), alignOk ? "OK" : "FEJL");
+        typeOk = typeOk && alignOk;
     }
 
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
