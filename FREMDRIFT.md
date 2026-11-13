@@ -4,6 +4,34 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (2) — Version 1.10: skriv Sweeps bund og top ind i displayet
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.10"** (D110, 13 parametre). Ingen fejl eller advarsler.
+- **Installeret og verificeret med filhash** (`DFF6A954…`, moduleinfo 1.10.0). Buildet (11:55:53) er nyere end sidste kildeændring (11:54:56). 1.0–1.9 ligger uændret ved siden af.
+- **`HostSmoke --compare` mod 1.9: "SAMME LYD"**, bit-identisk i alle 16 trin. Kun editoren er ændret.
+- Røgtest og DAW-test: OK. EditorShot med den nye skrivetest: OK.
+- **Ikke testet i en DAW.** Det er især værd at tjekke, at tastaturet når feltet: nogle DAW'er tager tasterne selv.
+
+**Ønsket:** se `KRAV.md` ("Version 1.10"). Brugeren skrev: "vi tager lige én ting ad gangen. Prøv denne", og valgte bud 1 (Sweep-displayet). Band Size-displayet og Sweep 100 % venter ("Efter 1.10").
+
+**Lavet:**
+1. **`LcdText` kan skrives i** (`onTyped`, `setEditable`, `beginEdit`). Et klik på et tal (venstre for midten af " - " = bunden) åbner et `juce::TextEditor` over netop det tal, med teksten markeret. Enter bruger tallet, Esc fortryder, og Tab (`Field::keyPressed`) bruger det og åbner det andet. Fokus væk eller et nyt klik på displayet bruger det også. Uændret tekst gør intet, så det afrundede tal ikke flytter enden. Feltet slettes asynkront. Musen er en tekstmarkør over Sweep-displayet, og tooltippen forklarer det.
+2. **`parseHz`:** "180", "180 Hz", "1.2k", "1,2 kHz" (komma = punktum, k = tusind).
+3. **`DopplerSatProcessor::sweepForEnds`:** midtens vej er log2 F + v·A for v fra v1 = max(−1, offset−1) til v2 = min(1, offset+1). A = (log2 top − log2 bund)/(v2 − v1) rundes til Sweeps trin (0,1 %), og F regnes fra den ende, der skal stå. Bliver A over 3 oktaver, regnes F fra den skrevne ende, og den anden flyttes. Bund ≥ top giver false. Bevist: F holder sig inden for 20 Hz–20 kHz.
+4. **`DopplerSatEditor::applySweepText`:** bruger displayets ender, som de vises (Offset regnet med, og klippet til 20 Hz–20 kHz, så det viste tal står stille). Viser displayet kun ét tal (Sweep 0), er et lavere tal en ny bund og et højere en ny top. Frequency og Sweep sættes som én gestus (begin/endChangeGesture).
+5. **Test (EditorShot):**
+   - 170 tilfælde (Offset 0 / +40 / −60 / +100, seks indstillinger, bund og top, fire faktorer): den anden ende står inden for 0,3 %, og den skrevne nås inden for 0,5 %.
+   - For bredt (bund 20 Hz ved 212 Hz–1,70 kHz) giver 20 Hz–1280 Hz.
+   - Bund over top og "abc" afvises.
+   - "1,2 kHz" og "2.5k" virker.
+   - Den rigtige vej gennem feltet (Enter): bund 212,1 → 180,4 Hz, top 1697,1 → 1697,2 Hz.
+   - Billeder: `doppler8_sweep_edit.png` (feltet åbent med "180") og `doppler9_sweep_typed.png` (bagefter).
+
+**NÆSTE GANG:** test 1.10 i en DAW: klik, skriv, Enter / Tab / Esc, og automation-optagelse af Frequency + Sweep. Derefter næste ønske: Band Size-displayet eller Sweep 100 % = hele spektret.
+
+---
+
 ## 2026-11-13 (1) — Ønske: skriv Sweep-områdets bund og top ind i displayet (bud, intet bygget)
 
 - Brugeren vil kunne klikke på Sweep-displayet og skrive bund og top ind. De spurgte først, hvad vi gør, hvis man kun vil rette den ene ende, når Sweep-knappen i dag flytter begge. Se `KRAV.md` ("Efter 1.9").

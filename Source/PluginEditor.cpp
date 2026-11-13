@@ -281,24 +281,144 @@ public:
 
 // =============================================================================
 //  LcdText: et LCD-felt med en linje tekst (opdateres af editorens timer)
+//  1.10: med onTyped kan tallene skrives om (Sweep-displayet, brugeren 2026-11-13: "Brugeren skal kunne skrive
+//  grænserne af top og bund ind ved at klikke på displayet"). Teksten er "bund - top" (eller eet tal); klik paa et
+//  tal aabner et felt over netop det tal. Enter = brug, Esc = fortryd, Tab = brug og skriv det andet tal, klik
+//  udenfor feltet (paa displayet) = brug.
 // =============================================================================
 class DopplerSatEditor::LcdText : public juce::Component, public juce::SettableTooltipClient
 {
 public:
+    // part: 0 = venstre tal (bund), 1 = hoejre tal (top), -1 = displayet viser kun eet tal
+    std::function<void (int part, const juce::String& typed)> onTyped;
+
     explicit LcdText (juce::Colour c) : col (c) {}
+    ~LcdText() override { if (field != nullptr) removeChildComponent (field.get()); }
+
     void setText (const juce::String& t) { if (t != text) { text = t; repaint(); } }
+    void setEditable (bool e) { setMouseCursor (e ? juce::MouseCursor::IBeamCursor : juce::MouseCursor::NormalCursor); }
+
     void paint (juce::Graphics& g) override
     {
         const auto r = getLocalBounds().toFloat();
         drawLcd (g, r.reduced (0.5f));
         g.setColour (col);
-        g.setFont (hwFont ("Consolas", 12.f));
+        g.setFont (font());
         g.drawText (text, r, juce::Justification::centred, false);
     }
+
+    void mouseDown (const juce::MouseEvent& e) override
+    {
+        if (! onTyped || e.mods.isPopupMenu()) return;
+        if (field != nullptr) endEdit (true, false);
+        beginEdit (partAt ((float) e.x));
+    }
+
+    // Aabner feltet over et tal (ogsaa til EditorShot)
+    void beginEdit (int part)
+    {
+        if (field != nullptr) endEdit (false, false);
+        const int sep = text.indexOf (" - ");
+        if (sep < 0) part = -1;
+        else if (part < 0) part = 0;
+        const auto f   = font();
+        const float w  = (float) getWidth();
+        const float x0 = 0.5f * (w - juce::GlyphArrangement::getStringWidth (f, text));
+        juce::Rectangle<int> box;
+        juce::String num = text;
+        if (part == 0)
+        {
+            num = text.substring (0, sep);
+            box = { 3, 2, juce::roundToInt (x0 + juce::GlyphArrangement::getStringWidth (f, text.substring (0, sep + 1))) - 3, getHeight() - 4 };
+        }
+        else if (part == 1)
+        {
+            num = text.substring (sep + 3);
+            const int left = juce::roundToInt (x0 + juce::GlyphArrangement::getStringWidth (f, text.substring (0, sep + 2)));
+            box = { left, 2, getWidth() - 3 - left, getHeight() - 4 };
+        }
+        else
+        {
+            box = getLocalBounds().reduced (3, 2);
+        }
+        editPart = part;
+        startText = num;
+        field = std::make_unique<Field> (*this);
+        field->setFont (f);
+        field->setJustification (juce::Justification::centred);
+        field->setIndents (2, juce::jmax (0, (box.getHeight() - (int) f.getHeight()) / 2));
+        field->setColour (juce::TextEditor::textColourId, col);
+        field->setInputRestrictions (16, "0123456789.,kKhHzZ ");
+        field->setText (num, false);
+        field->setBounds (box);
+        field->onReturnKey = [this] { endEdit (true, false); };
+        field->onEscapeKey = [this] { endEdit (false, false); };
+        field->onFocusLost = [this] { endEdit (true, false); };
+        addAndMakeVisible (*field);
+        field->grabKeyboardFocus();
+        field->selectAll();
+    }
+
+    bool isEditing() const { return field != nullptr; }
+
 private:
+    // Tab = brug tallet og skriv det andet
+    struct Field : public juce::TextEditor
+    {
+        explicit Field (LcdText& o) : owner (o) {}
+        bool keyPressed (const juce::KeyPress& k) override
+        {
+            if (k == juce::KeyPress::tabKey) { owner.endEdit (true, true); return true; }
+            return juce::TextEditor::keyPressed (k);
+        }
+        LcdText& owner;
+    };
+
+    static juce::Font font() { return hwFont ("Consolas", 12.f); }
+
+    // Hvilket tal ligger x i? Venstre for midten af " - " = bunden.
+    int partAt (float x) const
+    {
+        const int sep = text.indexOf (" - ");
+        if (sep < 0) return -1;
+        const auto f = font();
+        const float x0 = 0.5f * ((float) getWidth() - juce::GlyphArrangement::getStringWidth (f, text));
+        return x < x0 + juce::GlyphArrangement::getStringWidth (f, text.substring (0, sep + 2)) ? 0 : 1;
+    }
+
+    void endEdit (bool apply, bool thenOther)
+    {
+        if (field == nullptr) return;
+        const juce::String typed = field->getText().trim();
+        const int part = editPart;
+        // Feltet slettes foerst bagefter (vi kan vaere inde i dets egen tastatur- eller fokus-kald)
+        auto* old = field.release();
+        removeChildComponent (old);
+        juce::MessageManager::callAsync ([old] { delete old; });
+        // Uaendret tekst = ingenting (ellers ville det afrundede tal flytte enden en smule)
+        if (apply && typed.isNotEmpty() && typed != startText && onTyped) onTyped (part, typed);
+        if (thenOther && part >= 0)
+        {
+            juce::Component::SafePointer<LcdText> safe (this);
+            juce::MessageManager::callAsync ([safe, part] { if (safe != nullptr) safe->beginEdit (1 - part); });
+        }
+    }
+
     juce::Colour col;
-    juce::String text;
+    juce::String text, startText;
+    std::unique_ptr<Field> field;
+    int editPart = 0;
 };
+
+// 1.10: et skrevet tal i Hz: "180", "180 Hz", "1.2k", "1,2 kHz" (komma = punktum, k = tusind). -1 = ikke et tal.
+static double parseHz (juce::String s)
+{
+    s = s.toLowerCase().replaceCharacter (',', '.').removeCharacters (" \t");
+    const auto num = s.initialSectionContainingOnly ("0123456789.");
+    if (! num.containsAnyOf ("0123456789")) return -1.0;
+    const double v = num.getDoubleValue() * (s.containsChar ('k') ? 1000.0 : 1.0);
+    return v > 0.0 ? v : -1.0;
+}
 
 // =============================================================================
 //  LfoView: LFO'ens kurve (med offset) og en prik, der viser, hvor den er lige nu (som i Abletons LFO)
@@ -816,7 +936,12 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     lfoView = std::make_unique<LfoView> (processor);
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
-    rangeLcd->setTooltip ("Sweep: where the LFO moves the middle of the band (Frequency +/- Sweep). Band Size does not change it.");
+    rangeLcd->setTooltip ("Sweep: where the LFO moves the middle of the band (Frequency +/- Sweep). Band Size does not change it.\n"
+                          "Click the low or the high number to type it (e.g. 180, 1.2k). The other number stays where it is, "
+                          "and Frequency and Sweep follow.");
+    rangeLcd->setName ("Sweep display");
+    rangeLcd->setEditable (true);
+    rangeLcd->onTyped = [this] (int part, const juce::String& typed) { applySweepText (part, typed); };
     addAndMakeVisible (*rangeLcd);
     nowLcd = std::make_unique<LcdText> (hw::green);
     nowLcd->setTooltip ("Band Size: where the band's edges are right now (they are Band Size apart, and the LFO moves them).");
@@ -1049,6 +1174,45 @@ void DopplerSatEditor::timerCallback()
                  c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
     rangeLcd->setText (hzText (c1) == hzText (c2) ? hzText (c1) : hzText (c1) + " - " + hzText (c2));
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
+}
+
+// 1.10 (brugeren 2026-11-13): et skrevet tal i Sweep-displayet. part 0 = bunden, 1 = toppen, -1 = displayet viser
+// kun eet tal (Sweep 0): et lavere tal er saa en ny bund, et hoejere en ny top. Den anden ende bliver staaende (som
+// displayet viser den nu), og Frequency og Sweep regnes ud (DopplerSatProcessor::sweepForEnds) og saettes som een
+// aendring (begge kan automatiseres som foer).
+bool DopplerSatEditor::applySweepText (int part, const juce::String& typed)
+{
+    const double hz = parseHz (typed);
+    if (hz <= 0.0) return false;
+    auto& s = processor.apvts;
+    const double off = (double) s.getRawParameterValue ("offset")->load() * 0.01;
+    const double c1 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off)),
+                 c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
+    bool top = part == 1;
+    if (part < 0)
+    {
+        if (hz == c1) return false;
+        top = hz > c1;
+    }
+    double freq = 0.0, sweep = 0.0;
+    if (! P::sweepForEnds (top ? c1 : hz, top ? hz : c2, top, off, freq, sweep)) return false;
+
+    auto* fp = s.getParameter ("freq");
+    auto* ap = s.getParameter ("amount");
+    fp->beginChangeGesture();
+    ap->beginChangeGesture();
+    fp->setValueNotifyingHost (fp->convertTo0to1 ((float) freq));
+    ap->setValueNotifyingHost (ap->convertTo0to1 ((float) sweep));
+    ap->endChangeGesture();
+    fp->endChangeGesture();
+    timerCallback();                                 // displayet viser det nye med det samme
+    return true;
+}
+
+void DopplerSatEditor::testBeginSweepEdit (int part, const juce::String& shownText)
+{
+    rangeLcd->beginEdit (part);
+    if (auto* te = dynamic_cast<juce::TextEditor*> (rangeLcd->getChildComponent (0))) te->setText (shownText, false);
 }
 
 void DopplerSatEditor::resized()

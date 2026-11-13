@@ -150,16 +150,24 @@ Det betyder:
 - **Det nye layout:** tre moduler (LFO, Band, Output). De tre Edges-knapper ligger som en søjle i Band-modulet til højre for de to displays, med "Edges" og "?" øverst. **Edge steepness-tegningen er fjernet.**
 - **Mindre CPU, uden at lyden eller pluginnet ændrer sig:** målt bit for bit mod 1.8 med Smooth Peaks tændt.
 
-## Efter 1.9 (2026-11-13, ikke bygget endnu)
+## Version 1.10 (2026-11-13)
 
 Brugerens ord (med billede af Sweep-displayet):
 > SWEEP display: Brugeren skal kunne skrive grænserne af top og bund ind ved at klikke på displayet (Før du bygger, så giv mig et bud på, hvad vi gør, hvis brugeren kun vil rette den ene ekstrem ind (top eller bund), fordi både top og bund justeres lige nu ved at dreje på Sweep-knoben?)
 
-Claudes bud (venter på brugerens ja):
-- Man klikker på det tal, man vil rette (bund eller top). Kun det tal kan skrives om, og det andet bliver stående.
-- Pluginnet regner selv Frequency og Sweep ud, så displayet viser præcis det skrevne. Ingen nye parametre, og lyden ændres ikke.
+Claude gav tre bud (Sweep-displayet, Band Size-displayet og Sweep 100 %). Brugerens ord:
+> vi tager lige én ting ad gangen. Prøv denne: "1) Skriv Sweeps bund og top ind i displayet. Klik på det tal, du vil rette. Det andet tal bliver stående. [...] Retter du toppen, regner pluginnet en ny Frequency og Sweep ud, så bunden står helt stille, og begge knapper drejer med. Der kommer ingen nye parametre, og automation virker som før. Bagefter virker knapperne som nu."
 
-Undervejs, brugerens ord:
+Det betyder:
+- **Klik på et af Sweep-displayets tal** (bund eller top), og et felt åbner over netop det tal. Man kan skrive fx `180`, `1.2k` eller `1,2 kHz`. Enter bruger tallet, Esc fortryder, og Tab bruger det og går til det andet tal.
+- **Det andet tal bliver stående.** Frequency og Sweep regnes ud og drejer med, så det er én ændring i DAW'en. Der er ingen nye parametre, og lyden ændres ikke.
+- Er området bredere, end Sweep 100 % kan nå, gælder det skrevne tal, og det andet flyttes kun så meget, som det er nødvendigt. En bund over toppen (eller noget, der ikke er et tal) afvises.
+
+## Efter 1.10 (2026-11-13, ikke bygget endnu)
+
+Brugeren vil tage én ting ad gangen. De to andre ønsker venter.
+
+Brugerens ord:
 > Band size skal også kunne justeres ved, at brugeren kan skrive i displayet.
 
 Claudes bud (venter på brugerens ja):
@@ -190,6 +198,7 @@ Claudes bud (venter på brugerens ja):
   - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
   - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
+  - **Sweep-displayets tal kan skrives ind** (1.10): klik på bunden eller toppen og skriv. Det andet tal bliver stående, og Frequency og Sweep følger med.
 - **Pause** (1.6): LFO'en og båndet står stille. Knap i LFO-modulets titellinje, kan automatiseres.
 - **Smooth Peaks** (1.8 som knap under Bypass; **1.9 altid til**, uden knap og parameter, brugerens ønske 2026-11-10). Dæmper kun de korte niveautoppe ved hurtig Rate: det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten. Langsom Rate røres ikke.
 - **Layout (1.9):** tre moduler, LFO, Band og Output. Edges-knapperne ligger som en søjle i Band, og Edge steepness-tegningen er væk (brugerens ønske 2026-11-10, efter mockuppet).

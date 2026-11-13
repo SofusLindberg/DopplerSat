@@ -181,6 +181,25 @@ double DopplerSatProcessor::bandCentreFor (double v) const
     return juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre));
 }
 
+bool DopplerSatProcessor::sweepForEnds (double lo, double hi, bool typedTop, double off, double& freqHz, double& sweepPct)
+{
+    lo = juce::jlimit ((double) minFreq, (double) maxFreq, lo);
+    hi = juce::jlimit ((double) minFreq, (double) maxFreq, hi);
+    if (! (hi > lo)) return false;                                   // bund over (eller lig med) top: afvist
+    off = juce::jlimit (-1.0, 1.0, off);
+    const double v1 = juce::jmax (-1.0, off - 1.0), v2 = juce::jmin (1.0, off + 1.0);   // v2 - v1 >= 1
+    const double L = std::log2 (lo), H = std::log2 (hi);
+    const double wanted = (H - L) / (v2 - v1);                      // A i oktaver
+    const bool   tooWide = wanted > kMaxSweepOct;
+    // Sweep i parameterens trin (0.1 %): den skrevne ende kan flytte sig lidt (hoejst ca. 0.2 %), den anden staar
+    sweepPct = juce::jlimit (0.0, 100.0, std::round (wanted / kMaxSweepOct * 1000.0) / 10.0);
+    const double A = sweepPct * 0.01 * kMaxSweepOct;
+    // Frequency regnes fra den ende, der skal staa: den uroerte - eller den skrevne, hvis omraadet er for bredt
+    const bool fromLo = tooWide ? ! typedTop : typedTop;
+    freqHz = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (fromLo ? L - v1 * A : H - v2 * A));
+    return true;
+}
+
 satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double hi) const
 {
     satdsp::EngineParams p;

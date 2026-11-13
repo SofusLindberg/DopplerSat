@@ -122,6 +122,12 @@ public:
     // 1.6: baandets midte for en LFO-vaerdi v (Hz, 20 Hz - 20 kHz). Sweep-displayet og det skraverede omraade viser
     // midtens vej (Frequency +/- Sweep), saa Band Size ikke aendrer dem (brugeren 2026-11-10)
     double bandCentreFor (double v) const;
+    // 1.10 (brugeren 2026-11-13): Sweep-displayets bund og top kan skrives ind. Midtens vej er log2 (Frequency) + v * A
+    // for v fra v1 = max (-1, offset - 1) til v2 = min (1, offset + 1), A = Sweep * 3 okt. lo / hi = de nye ender (Hz),
+    // typedTop = brugeren skrev toppen (ellers bunden); den anden ende bliver staaende. Er omraadet bredere end Sweep
+    // 100 % kan naa, gaelder det skrevne tal, og den anden ende flyttes kun saa meget, som det er noedvendigt.
+    // Giver Frequency (Hz) og Sweep (%); false = afvist (bunden er ikke under toppen).
+    static bool sweepForEnds (double lo, double hi, bool typedTop, double offset01, double& freqHz, double& sweepPct);
     // Motorens parametre med baandet mellem lo og hi (faelles for lyden og tegningen)
     satdsp::EngineParams buildEngineParams (double lo, double hi) const;
     double getProcessingRate() const;                 // 4x vaertens rate (oversampling er altid til)

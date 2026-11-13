@@ -17,6 +17,12 @@ public:
 
     static constexpr int kWidth = 900, kHeight = 600;
 
+    // 1.10: et skrevet tal i Sweep-displayet (part 0 = bund, 1 = top, -1 = eet tal vist). Samme vej som naar brugeren
+    // klikker og trykker Enter; offentlig, saa EditorShot kan teste den. false = afvist (intet tal, bund over top).
+    bool applySweepText (int part, const juce::String& typed);
+    // Til EditorShot: aabn feltet over et tal med en bestemt tekst i (til billedet)
+    void testBeginSweepEdit (int part, const juce::String& shownText);
+
     // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
     template <class Base>
     class ParamControl : public Base
