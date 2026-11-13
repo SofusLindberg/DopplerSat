@@ -183,7 +183,15 @@ Brugerens ord:
 
 Claudes bud (venter på brugerens ja):
 - Sweep bestemmer områdets samlede bredde (100 % = hele spektret), og området ligger symmetrisk om Frequency. Rammer det en ende af spektret, skubbes hele området ind, så bredden holdes. Så står pilen i midten, når det kan lade sig gøre, og båndet har samme fart begge veje. 100 % er stadig 20 Hz – 20 kHz, og standard 30 % giver som før ca. 213 Hz – 1,69 kHz ved 600 Hz.
-- Muligt (brugerens valg): at båndets yderste kant i stedet for midten når præcis ud til 20 Hz / 20 kHz ved Sweep 100 %, så båndet ikke klippes og ikke ser ud til at gå i stå ved enderne.
+- Muligt (brugerens valg): at båndets yderste kant i stedet for midten når præcis ud til 20 Hz / 20 kHz ved Sweep 100 %, så båndet ikke klippes og ikke ser ud til at gå i stå ved enderne. (Erstattet af buddet til punkt 3 nedenfor.)
+
+Undervejs, brugerens ord:
+> 3) Selvom den ene kant af Sweep travel range rører ved en ende af spektrummet, så skal bevægelsen mellem de to punkter i travel range stadig ske, som hvis ikke den ende kant rører ved en ende af spektrummet
+
+Claudes bud (venter på brugerens ja):
+- Rammer Sweep-området en ende af spektret, skubbes det ind i stedet for at blive klippet (punkt 1), så bevægelsen mellem de to punkter er den samme som altid.
+- Båndet må glide ud over spektrets ende, som om spektret fortsatte. Den del uden for 20 Hz – 20 kHz kan hverken ses eller høres. Hidtil stoppede båndets yderste kant ved 20 Hz / 20 kHz.
+- Ikke "kant-stop": det ville gøre Sweep-området afhængigt af Band Size og gå imod ønsket fra 1.6.
 
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 

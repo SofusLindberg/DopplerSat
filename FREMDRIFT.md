@@ -17,6 +17,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
   - **Kunstigt i 1.11/1.12:** forskellig fart på de to sider og et brat skift ved Frequency. Det forsvinder med buddet.
   - **Kunstigt:** `bandEdgesFor` klipper kanterne ved 20 Hz / 20 kHz, så ved Sweep 100 % står den yderste kant stille, mens midten fortsætter. Med Sine og Band Size 1 okt sker det ca. 30 % af tiden (|sin| > 0,9). Mulig løsning: midten stopper en halv Band Size før enden. Så viser Sweep-displayet fx 28 Hz – 14 kHz ved Band Size 1 okt.
   - Fartgrænsen (mindst 1,25 × LFO'ens topfart) og Smooth Peaks bremser ikke.
+- Undervejs, punkt 3: "Selvom den ene kant af Sweep travel range rører ved en ende af spektrummet, så skal bevægelsen mellem de to punkter i travel range stadig ske, som hvis ikke den ende kant rører ved en ende af spektrummet".
+- **Bud for punkt 3:**
+  - Området skubbes ind i stedet for at blive klippet (punkt 1).
+  - Båndets kanter må gå ud over 20 Hz / 20 kHz, som om spektret fortsatte: `bandEdgesFor` klipper i stedet ved ca. 13 Hz (over bånd 0's 10–12 Hz) og ca. 0,3 × den oversamplede rate (≥ 53 kHz; bånd 2 starter ved 0,40).
+  - Det kan motoren: `makeLayout` lægger murene ned til 5 Hz og op til 0,47 · fs, og `bandEdges` klipper bånd 1 ved bånd 0's top. Det uden for spektret ses og høres ikke, så bevægelsen ser og lyder som midt i spektret.
+  - Band Size-displayet viser de rigtige kanter (fx 14 Hz).
+  - "Kant-stop" er fravalgt: Sweep-området ville afhænge af Band Size, imod KRAV 1.6.
 
 ---
 
