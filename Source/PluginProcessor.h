@@ -24,12 +24,18 @@ public:
     static constexpr float  maxFreq     = 20000.f;
     static constexpr float  minDb       = -80.f;
     // Til og med 1.10: Sweep 100 % = baandets midte flyttes +/- 3 oktaver fra Frequency (kMaxSweepOct = 3).
-    // 1.11 (brugeren 2026-11-13: "100% travel range går helt ud til kanterne (dybeste og lyseste frekvens)"): Sweep er
-    // en andel af vejen fra Frequency ud til hver ende af spektret, saa 100 % = 20 Hz - 20 kHz uanset Frequency.
-    // LFO-vaerdier under 0 bruger den nedre side, over 0 den oevre: midten = log2 F + v * s * (log2 F - log2 20) for
-    // v < 0 og log2 F + v * s * (log2 20000 - log2 F) for v >= 0 (s = Sweep 0..1). Frequency er stadig midten (v = 0).
+    // 1.11-1.12: Sweep = en andel af vejen fra Frequency ud til hver ende (siderne kunne vaere forskellige).
+    // 1.13 (brugeren 2026-11-13: "Pilen, der indikerer Frequency Middle skal være i midten af de to yderkanter i alle
+    // tilfælde, hvor det er muligt" og "Selvom den ene kant af Sweep travel range rører ved en ende af spektrummet, så
+    // skal bevægelsen mellem de to punkter i travel range stadig ske, som hvis ikke [...]"): Sweep = omraadets samlede
+    // bredde W = s * log2 (1000) oktaver (100 % = hele spektret), symmetrisk om Frequency. Rammer det en ende, skubbes
+    // hele omraadet ind (midten c = Frequency klippet til [log2 20 + W/2, log2 20000 - W/2]), saa bredden og
+    // bevaegelsen er den samme. Midten for LFO-vaerdien v er c + v * W / 2.
     static double centreOctFor (double freqHz, double sweepPct, double v);   // log2 af midten (Hz)
-    static double maxSideOct (double freqHz, double sweepPct);               // den laengste side i oktaver (til fartgraensen)
+    static double maxSideOct (double freqHz, double sweepPct);               // W / 2 i oktaver (til fartgraensen)
+    // 1.13: baandets kanter maa gaa ud over 20 Hz / 20 kHz (som om spektret fortsatte), men ikke ned i det parkerede
+    // baand 0 (10-12 Hz) eller op i baand 2 (0.40 af den oversamplede rate)
+    static constexpr double kEdgeMinHz = 13.0, kEdgeMaxOfProc = 0.30;
     static constexpr int    kBand       = 1;       // motorens baand, der flyttes (de andre er slukket)
     static constexpr int    kChunk      = 32;      // LFO'en og filtrene opdateres hver 32. sample (0.7 ms ved 44.1 kHz)
     // Kanterne flytter sig hoejst saa hurtigt (oktaver pr. sekund). Hurtigere gav niveauhop (maalt med eet baand,

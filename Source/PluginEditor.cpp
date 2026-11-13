@@ -980,8 +980,8 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     styleKnob (freqSlider,   " Hz", hw::green);
     freqSlider.setTooltip ("The middle of the band's sweep. You can also drag left / right in the display.");
     styleKnob (amountSlider, " %",  hw::green);
-    amountSlider.setTooltip ("Sweep: how far the LFO moves the band from Frequency toward each end of the spectrum (100 % = all the way down to "
-                             "20 Hz and up to 20 kHz). "
+    amountSlider.setTooltip ("Sweep: how wide the area is that the LFO moves the band across, centred on Frequency (100 % = the whole "
+                             "spectrum, 20 Hz - 20 kHz). Near an end of the spectrum the area is pushed inwards, so it keeps its width. "
                              "It only changes the area the band travels across (the Sweep display), not the band itself. "
                              "More travel = more pitch change.");
     styleKnob (widthSlider,  " oct", hw::green);

@@ -19,12 +19,13 @@ static void sweepEnds (DopplerSatProcessor& p, double& lo, double& hi)
 
 // 1.10 (brugeren 2026-11-13): skriv bunden eller toppen i Sweep-displayet; den anden ende skal blive staaende, og den
 // skrevne naas (1.11: Frequency og Sweep har ingen trin, saa begge skal ramme inden for 0.1 %). Bund over top skal
-// afvises. 1.11: Sweep 100 % = hele spektret, saa alle omraader mellem 20 Hz og 20 kHz kan laves (ogsaa med Offset):
-// sweepForEnds maa aldrig svare 2 (= den anden ende maatte flyttes).
+// afvises. 1.13: uden Offset kan alle omraader mellem 20 Hz og 20 kHz laves (sweepForEnds maa aldrig svare 2 = den anden
+// ende maatte flyttes). Med Offset kan omraadet vaere for stort (Offset bruger kun en del af det); saa skal den skrevne
+// ende stadig naas.
 static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
 {
     bool ok = true;
-    int cases = 0, moved = 0;
+    int cases = 0, moved = 0, movedOffset = 0;
     struct S { float freq, sweep; };
     for (float off : { 0.f, 40.f, -60.f, 100.f, -100.f })
         for (S s : { S { 600.f, 50.f }, S { 100.f, 80.f }, S { 5000.f, 30.f }, S { 40.f, 100.f }, S { 600.f, 0.f }, S { 12000.f, 60.f },
@@ -45,14 +46,15 @@ static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
                     double f2, s2;
                     const int code = DopplerSatProcessor::sweepForEnds (typedTop ? lo : t, typedTop ? t : hi, typedTop, off * 0.01,
                                                                         s.freq, f2, s2);
-                    if (code == 2) ++moved;
+                    if (code == 2) ++(off == 0.f ? moved : movedOffset);
                     if (! ed.applySweepText (single ? -1 : top, juce::String (typed, 3) + " Hz")) { ok = false; std::printf ("    afvist?!\n"); continue; }
                     ++cases;
                     double nlo, nhi;
                     sweepEnds (p, nlo, nhi);
                     const double fixedEnd = typedTop ? lo : hi;
                     const double gotTyped = typedTop ? nhi : nlo, gotFixed = typedTop ? nlo : nhi;
-                    const bool pass = code == 1 && std::abs (gotTyped / t - 1.0) < 0.001 && std::abs (gotFixed / fixedEnd - 1.0) < 0.001;
+                    const bool pass = std::abs (gotTyped / t - 1.0) < 0.001
+                                      && (code == 2 ? off != 0.f : std::abs (gotFixed / fixedEnd - 1.0) < 0.001);
                     if (! pass)
                     {
                         ok = false;
@@ -86,10 +88,52 @@ static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
     sweepEnds (p, lo, hi);
     const bool fmt2 = std::abs (hi / 2500.0 - 1.0) < 0.005;
     std::printf ("  skrivemaader \"1,2 kHz\" og \"2.5k\": %s\n", fmt1 && fmt2 ? "OK" : "FEJL");
-    std::printf ("  skriv bund / top: %d tilfaelde (5 Offset, 8 indstillinger, bund og top), den anden ende flyttet %d gange  %s\n",
-                 cases, moved, ok && moved == 0 ? "OK" : "FEJL");
+    std::printf ("  skriv bund / top: %d tilfaelde (5 Offset, 8 indstillinger, bund og top), den anden ende flyttet %d gange uden "
+                 "Offset, %d med Offset  %s\n", cases, moved, movedOffset, ok && moved == 0 ? "OK" : "FEJL");
     setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
     return ok && moved == 0 && wideOk && rej && fmt1 && fmt2;
+}
+
+// 1.13 (brugeren 2026-11-13): "Pilen, der indikerer Frequency Middle skal være i midten af de to yderkanter i alle
+// tilfælde, hvor det er muligt". Uden Offset: er der plads, ligger Frequency midt i Sweep-omraadet; ellers er omraadet
+// skubbet ind til en ende med samme bredde (Sweep * log2 1000 oktaver). Og baandet klippes ikke ved 20 Hz / 20 kHz
+// ("som hvis ikke den ende kant rører ved en ende af spektrummet"): ved Sweep 100 % og Band Size 1 okt naar kanterne
+// 14.1 Hz og 28.3 kHz.
+static bool centreTest (DopplerSatProcessor& p)
+{
+    bool ok = true;
+    int centred = 0, pushed = 0;
+    const double full = std::log2 (1000.0);
+    setParam (p, "offset", 0.f);
+    for (float f : { 20.f, 40.f, 100.f, 300.f, 600.f, 2000.f, 8000.f, 15000.f, 20000.f })
+        for (float s : { 0.f, 10.f, 30.f, 50.f, 80.f, 100.f })
+        {
+            setParam (p, "freq", f); setParam (p, "amount", s);
+            const double fr = p.apvts.getRawParameterValue ("freq")->load(), sr = p.apvts.getRawParameterValue ("amount")->load();
+            double lo, hi;
+            sweepEnds (p, lo, hi);
+            const double W = sr * 0.01 * full;
+            const bool fits = std::log2 (fr / 20.0) >= 0.5 * W - 1.0e-6 && std::log2 (20000.0 / fr) >= 0.5 * W - 1.0e-6;
+            bool pass = std::abs (std::log2 (hi / lo) - W) < 0.002;
+            if (fits) { pass = pass && std::abs (std::log2 (std::sqrt (lo * hi) / fr)) < 0.002; ++centred; }
+            else      { pass = pass && (std::abs (lo / 20.0 - 1.0) < 0.001 || std::abs (hi / 20000.0 - 1.0) < 0.001); ++pushed; }
+            if (! pass)
+            {
+                ok = false;
+                std::printf ("    FEJL: %.0f Hz, Sweep %.0f %%: %.1f - %.1f Hz\n", f, s, lo, hi);
+            }
+        }
+    std::printf ("  pilen i midten: %d tilfaelde i midten, %d skubbet ind med samme bredde  %s\n", centred, pushed, ok ? "OK" : "FEJL");
+
+    setParam (p, "freq", 600.f); setParam (p, "amount", 100.f); setParam (p, "width", 1.f);
+    double a, b, c, d;
+    p.bandEdgesFor (-1.0, a, b);
+    p.bandEdgesFor ( 1.0, c, d);
+    const bool noClip = std::abs (a / 14.142 - 1.0) < 0.005 && std::abs (d / 28284.0 - 1.0) < 0.005;
+    std::printf ("  baandet ved Sweep 100 %%, Band Size 1 okt: %.1f Hz - %.1f Hz og %.0f Hz - %.0f Hz (glider ud over enderne)  %s\n",
+                 a, b, c, d, noClip ? "OK" : "FEJL");
+    setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
+    return ok && noClip;
 }
 
 static void run (DopplerSatProcessor& p, double seconds)
@@ -205,6 +249,7 @@ int main (int argc, char** argv)
     if (auto* de = dynamic_cast<DopplerSatEditor*> (ed.get()))
     {
         typeOk = sweepTypeTest (*de, proc);
+        typeOk = centreTest (proc) && typeOk;                   // 1.13
         double lo0, hi0;
         sweepEnds (proc, lo0, hi0);
         de->testBeginSweepEdit (0, "180");

@@ -175,92 +175,83 @@ double DopplerSatProcessor::getProcessingRate() const
 
 double DopplerSatProcessor::centreOctFor (double freqHz, double sweepPct, double v)
 {
-    const double fo = std::log2 (juce::jlimit ((double) minFreq, (double) maxFreq, freqHz));
-    const double s  = juce::jlimit (0.0, 1.0, sweepPct * 0.01);
-    return v < 0.0 ? fo + v * s * (fo - std::log2 ((double) minFreq))
-                   : fo + v * s * (std::log2 ((double) maxFreq) - fo);
+    // 1.13: omraadet er symmetrisk om Frequency og skubbes ind, hvis det rammer en ende (se PluginProcessor.h)
+    const double L20 = std::log2 ((double) minFreq), H20 = std::log2 ((double) maxFreq);
+    const double half = 0.5 * juce::jlimit (0.0, 1.0, sweepPct * 0.01) * (H20 - L20);
+    const double fo   = std::log2 (juce::jlimit ((double) minFreq, (double) maxFreq, freqHz));
+    const double c    = juce::jlimit (L20 + half, H20 - half, fo);
+    return c + juce::jlimit (-1.0, 1.0, v) * half;
 }
 
-double DopplerSatProcessor::maxSideOct (double freqHz, double sweepPct)
+double DopplerSatProcessor::maxSideOct (double, double sweepPct)
 {
-    const double fo = std::log2 (juce::jlimit ((double) minFreq, (double) maxFreq, freqHz));
-    return juce::jlimit (0.0, 1.0, sweepPct * 0.01)
-         * juce::jmax (fo - std::log2 ((double) minFreq), std::log2 ((double) maxFreq) - fo);
+    return 0.5 * juce::jlimit (0.0, 1.0, sweepPct * 0.01) * (std::log2 ((double) maxFreq) - std::log2 ((double) minFreq));
 }
 
 void DopplerSatProcessor::bandEdgesFor (double v, double& lo, double& hi) const
 {
-    const double centre = centreOctFor ((double) freqP->load(), (double) amountP->load(), v);   // 1.11
+    const double centre = centreOctFor ((double) freqP->load(), (double) amountP->load(), v);
     const double half   = 0.5 * (double) widthP->load();
-    lo = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre - half));
-    hi = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre + half));
-    if (hi < lo * 1.05) { if (lo * 1.05 <= maxFreq) hi = lo * 1.05; else lo = hi / 1.05; }
+    // 1.13 (brugeren: bevaegelsen skal ske, "som hvis ikke den ende kant rører ved en ende af spektrummet"): kanterne
+    // klippes ikke laengere ved 20 Hz / 20 kHz, saa baandet glider ud over enden. Det uden for spektret kan hverken ses
+    // eller hoeres. Kun ved meget stor Band Size stopper den yderste kant (13 Hz / 0.30 af den oversamplede rate).
+    const double eMin = kEdgeMinHz, eMax = kEdgeMaxOfProc * getProcessingRate();
+    lo = juce::jlimit (eMin, eMax, std::exp2 (centre - half));
+    hi = juce::jlimit (eMin, eMax, std::exp2 (centre + half));
+    if (hi < lo * 1.05) { if (lo * 1.05 <= eMax) hi = lo * 1.05; else lo = hi / 1.05; }
 }
 
 double DopplerSatProcessor::bandCentreFor (double v) const
 {
-    const double centre = centreOctFor ((double) freqP->load(), (double) amountP->load(), v);   // 1.11
+    const double centre = centreOctFor ((double) freqP->load(), (double) amountP->load(), v);
     return juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (centre));
 }
 
-// 1.11: med Sweep som andel af vejen til hver ende (centreOctFor). I oktaver (log2): a = hvor langt LFO'en naar ned
-// (-v1), b = hvor langt op (v2), begge 0..1. Displayets ender er
-//   bund = Fo - a s (Fo - L20),   top = Fo + b s (H20 - Fo).
-// Staar bunden fast, er Fo (s) = (bund - a s L20) / (1 - a s), og toppen vokser med s fra bunden, indtil Fo naar 20 kHz.
-// Staar toppen fast, er Fo (s) = (top - b s H20) / (1 - b s), og bunden falder med s, indtil Fo naar 20 Hz. s findes ved
-// halvering. Uden Offset (a = b = 1) kan alle omraader mellem 20 Hz og 20 kHz laves.
+// 1.13: i oktaver (log2) med a = hvor langt LFO'en naar ned (-v1) og b = hvor langt op (v2), begge 0..1 (Offset), og h =
+// halv bredde, c = omraadets midte (efter skub). Displayets ender er bund = c - a h, top = c + b h, saa
+//   h = (top - bund) / (a + b),   c = bund + a h.
+// Det kan laves, hvis omraadet kan ligge der: c - h >= log2 20, c + h <= log2 20000 og 2 h <= log2 1000. Saa er
+// Frequency = c (ikke skubbet). Uden Offset (a = b = 1) gaelder det altid. Med Offset kan omraadet vaere for stort (fx
+// +100 % bruger kun den oeverste halvdel): saa gaelder det skrevne tal, og h goeres saa stor, som der er plads til.
 int DopplerSatProcessor::sweepForEnds (double lo, double hi, bool typedTop, double off, double curFreqHz,
                                        double& freqHz, double& sweepPct)
 {
+    juce::ignoreUnused (curFreqHz);
     lo = juce::jlimit ((double) minFreq, (double) maxFreq, lo);
     hi = juce::jlimit ((double) minFreq, (double) maxFreq, hi);
     if (! (hi > lo)) return 0;                                       // bund over (eller lig med) top: afvist
     off = juce::jlimit (-1.0, 1.0, off);
-    const double a = -juce::jmax (-1.0, off - 1.0), b = juce::jmin (1.0, off + 1.0);
-    const double L20 = std::log2 ((double) minFreq), H20 = std::log2 ((double) maxFreq);
+    const double a = -juce::jmax (-1.0, off - 1.0), b = juce::jmin (1.0, off + 1.0);   // a + b >= 1
+    const double L20 = std::log2 ((double) minFreq), H20 = std::log2 ((double) maxFreq), hMax = 0.5 * (H20 - L20);
     const double Lo = std::log2 (lo), Hi = std::log2 (hi);
 
-    auto foPinLo = [&] (double s) { const double d = 1.0 - a * s; return d > 1.0e-12 ? (Lo - a * s * L20) / d : H20; };
-    auto foPinHi = [&] (double s) { const double d = 1.0 - b * s; return d > 1.0e-12 ? (Hi - b * s * H20) / d : L20; };
-    auto topAt   = [&] (double s) { const double fo = juce::jmin (H20, foPinLo (s)); return fo + b * s * (H20 - fo); };
-    auto botAt   = [&] (double s) { const double fo = juce::jmax (L20, foPinHi (s)); return fo - a * s * (fo - L20); };
-    const double sMaxLo = a > 0.0 ? juce::jmin (1.0, (H20 - Lo) / (a * (H20 - L20))) : 1.0;   // bunden fast: Fo <= 20 kHz
-    const double sMaxHi = b > 0.0 ? juce::jmin (1.0, (Hi - L20) / (b * (H20 - L20))) : 1.0;   // toppen fast: Fo >= 20 Hz
-
-    // Halvering: f (s) stiger (op = true) eller falder med s; find s, hvor f (s) = maal
-    auto solve = [] (auto f, double sMax, double target, bool up)
-    {
-        double s0 = 0.0, s1 = sMax;
-        for (int i = 0; i < 80; ++i)
-        {
-            const double m = 0.5 * (s0 + s1);
-            if ((f (m) < target) == up) s0 = m; else s1 = m;
-        }
-        return 0.5 * (s0 + s1);
-    };
-
+    double h = (Hi - Lo) / (a + b);
+    double c = Lo + a * h;
+    const double eps = 1.0e-9;
     int result = 1;
-    bool pinLo;                                                      // hvilken ende Frequency regnes fra
-    double s;
-    if (typedTop)
+    if (h > hMax + eps || c - h < L20 - eps || c + h > H20 + eps)
     {
-        pinLo = Hi <= topAt (sMaxLo) + 1.0e-12;                      // kan toppen naas med bunden fast?
-        s = pinLo ? solve (topAt, sMaxLo, Hi, true) : sMaxHi;        // ellers: toppen gaelder, bunden saa taet som muligt
+        result = 2;                                                  // kan ikke laves: den skrevne ende gaelder
+        double hCap = hMax;
+        if (typedTop)
+        {
+            // c = top - b h: c - h >= L20 -> h <= (top - L20) / (b + 1); c + h <= H20 -> h <= (H20 - top) / (1 - b)
+            hCap = juce::jmin (hCap, (Hi - L20) / (b + 1.0));
+            if (b < 1.0) hCap = juce::jmin (hCap, (H20 - Hi) / (1.0 - b));
+            h = juce::jlimit (0.0, hCap, h);
+            c = Hi - b * h;
+        }
+        else
+        {
+            // c = bund + a h: c + h <= H20 -> h <= (H20 - bund) / (a + 1); c - h >= L20 -> h <= (bund - L20) / (1 - a)
+            hCap = juce::jmin (hCap, (H20 - Lo) / (a + 1.0));
+            if (a < 1.0) hCap = juce::jmin (hCap, (Lo - L20) / (1.0 - a));
+            h = juce::jlimit (0.0, hCap, h);
+            c = Lo + a * h;
+        }
     }
-    else
-    {
-        pinLo = ! (Lo >= botAt (sMaxHi) - 1.0e-12);                  // kan bunden naas med toppen fast?
-        s = pinLo ? sMaxLo : solve (botAt, sMaxHi, Lo, false);
-    }
-    if (pinLo == ! typedTop) result = 2;                             // den skrevne ende maatte holdes, ikke den anden
-
-    // 1.11: Sweep har ingen trin, saa begge ender rammes
-    sweepPct = juce::jlimit (0.0, 100.0, s * 100.0);
-    const double sq = sweepPct * 0.01;
-    double fo;
-    if (pinLo)  fo = 1.0 - a * sq > 1.0e-9 ? foPinLo (sq) : (1.0 - b * sq > 1.0e-9 ? foPinHi (sq) : std::log2 (curFreqHz));
-    else        fo = 1.0 - b * sq > 1.0e-9 ? foPinHi (sq) : (1.0 - a * sq > 1.0e-9 ? foPinLo (sq) : std::log2 (curFreqHz));
-    freqHz = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (fo));
+    sweepPct = juce::jlimit (0.0, 100.0, h / hMax * 100.0);
+    freqHz   = juce::jlimit ((double) minFreq, (double) maxFreq, std::exp2 (c));
     return result;
 }
 

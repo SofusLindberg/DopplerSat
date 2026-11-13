@@ -4,6 +4,43 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (5) — Version 1.13: symmetrisk Sweep (pilen i midten), båndet glider ud over enderne
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.13"** (D113, 13 parametre), uden fejl eller advarsler. **Installeret og verificeret med filhash** (`A9B3CB78…`, moduleinfo 1.13.0). Buildet (13:39:01) er nyere end sidste kildeændring (13:37:59). 1.0–1.12 ligger uændret ved siden af.
+- Røgtest og DAW-test: OK. Højeste peak ved fuld fart 1,11 for en 0,6-indgang.
+- Halen er længst 1,45 s (20 Hz, Band Size 2 okt, 96 dB; kanten går nu ned til 13 Hz). Pluginnet melder 2 s.
+- `EditorShot --reach`: midten når præcis 20 Hz – 20 kHz ved alle former og stejlheder, 1 og 20 Hz.
+- **Ikke testet i en DAW.**
+- **Brugeren skrev undervejs: "hvis det ikke fungerer, så mind mig om, at v. 1.10 fungerede godt. Så snakker vi om det."** → Virker 1.13 ikke for brugeren, så mind dem om 1.10 (Sweep ±3 okt, kanter klippet ved 20 Hz / 20 kHz, skrivning i displayet).
+
+**Ønsket:** se `KRAV.md` ("Version 1.13"): pilen i midten, når det er muligt (punkt 1), og bevægelsen som om enden ikke var der (punkt 3). Punkt 2 (farten i Sine) løses af de to.
+
+**Lavet:**
+1. **`centreOctFor`:**
+   - Bredde W = s · log2 1000 oktaver. Midten c = Frequency klippet til [log2 20 + W/2, log2 20000 − W/2], og midten for LFO-værdien v er c + v·W/2. Så er farten den samme begge veje.
+   - `maxSideOct` = W/2 (fartgrænsen).
+   - Standard 30 % ≈ 213 Hz – 1,69 kHz ved 600 Hz.
+2. **`bandEdgesFor`:** kanterne klippes ved `kEdgeMinHz` = 13 Hz og `kEdgeMaxOfProc` = 0,30 × den oversamplede rate i stedet for 20 Hz / 20 kHz. Ved Sweep 100 % og Band Size 1 okt går de ud til 14,1 Hz og 28,3 kHz. Band Size-displayet viser de rigtige kanter.
+3. **`sweepForEnds`:** h = (top − bund)/(a + b), og c = bund + a·h. Det kan laves, hvis c ± h ligger i spektret og 2h ≤ log2 1000; så er Frequency = c. Ellers gælder den skrevne ende, og h gøres så stor, som der er plads til (svar 2). Uden Offset sker det aldrig.
+4. **Tooltip:** "how wide the area is that the LFO moves the band across, centred on Frequency (100 % = the whole spectrum [...]) Near an end of the spectrum the area is pushed inwards, so it keeps its width."
+5. **Test:**
+   - HostSmoke: halen testes også med Band Size 2 og 6 okt.
+   - EditorShot `centreTest`, uden Offset: 23 tilfælde med pilen i midten og 31 skubbet ind med samme bredde, og båndet går ud til 14,1 Hz / 28,3 kHz.
+   - Skrivetesten: 369 tilfælde, og den anden ende flyttede sig 0 gange uden Offset. Med Offset 102 gange, fordi Offset kun bruger en del af området; den skrevne ende nås altid.
+   - Feltet: 180 giver 180,0 Hz, og toppen står på 1691,0 Hz.
+
+**Pitch ved Sweep 100 %** (HostSmoke, 300 Hz, Width 1 okt):
+
+| | 24 | 48 | 96 |
+|---|---|---|---|
+| 1 Hz | 125 | 358 | 950 cent |
+| 12 Hz | 1114 | 1847 | 2974 cent |
+
+**NÆSTE GANG:** test 1.13 i en DAW: Sine ved Sweep 100 %, pilen i midten, skriv i displayet. Hvis det ikke fungerer: mind brugeren om, at 1.10 fungerede godt. Band Size-displayet venter ("Efter 1.13").
+
+---
+
 ## 2026-11-13 (4) — Spørgsmål: pilen i midten, og er farten ujævn i Sine? (svar, intet bygget)
 
 - Brugeren vil have Frequency-pilen midt mellem Sweep-områdets yderkanter, når det er muligt. De spurgte også, om det er kunstigt, at båndet i Sine ser ud til at sætte farten ned ved kanterne. Se `KRAV.md` ("Efter 1.12").

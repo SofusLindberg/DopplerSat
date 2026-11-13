@@ -421,7 +421,7 @@ static bool dawTests (const char* path, juce::AudioPluginInstance& inst)
         juce::String worstWhat;
         for (float m : { 0.f, 1.f, 2.f })
             for (float f : { 20.f, 40.f, 100.f })
-                for (float w : { 0.1f, 1.f })
+                for (float w : { 0.1f, 1.f, 2.f, 6.f })              // 1.13: brede baand gaar under 20 Hz (ned til 13 Hz)
                 {
                     prepare (CS::stereo(), CS::stereo(), 44100.0, 512);
                     standard(); setReal (amount, 0.f); setReal (freq, f); setReal (width, w); setReal (mode, m);
