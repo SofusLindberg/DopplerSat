@@ -4,6 +4,22 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (4) — Spørgsmål: pilen i midten, og er farten ujævn i Sine? (svar, intet bygget)
+
+- Brugeren vil have Frequency-pilen midt mellem Sweep-områdets yderkanter, når det er muligt. De spurgte også, om det er kunstigt, at båndet i Sine ser ud til at sætte farten ned ved kanterne. Se `KRAV.md` ("Efter 1.12").
+- **1) Pilen:** i 1.11/1.12 er Sweep en andel af vejen til hver ende, så siderne er forskellige, når Frequency ikke står ved ca. 630 Hz. Ved 100 Hz og Sweep 50 % går området fx fra 45 Hz til 1,4 kHz (midten 250 Hz).
+  - **Bud:** Sweep = samlet bredde (s · log2 1000 ≈ 10 okt), symmetrisk om Frequency, skubbet ind hvis det rammer en ende.
+  - Pilen står i midten, når der er plads, og farten er den samme begge veje. 100 % er stadig hele spektret, og 30 % ≈ 213 Hz – 1,69 kHz.
+  - Skrivning: Frequency = midten af det skrevne, Sweep = bredden.
+  - Pris: nær 100 % kan Frequency næsten ikke flytte området, og med Offset kan ikke alle områder skrives (Offset bruger kun en del af området).
+- **2) Farten:**
+  - Sinus er langsomst ved yderpunkterne af natur (90 % ude: 44 % af topfarten; som et pendul og som Abletons LFO). Jævn fart = Triangle.
+  - **Kunstigt i 1.11/1.12:** forskellig fart på de to sider og et brat skift ved Frequency. Det forsvinder med buddet.
+  - **Kunstigt:** `bandEdgesFor` klipper kanterne ved 20 Hz / 20 kHz, så ved Sweep 100 % står den yderste kant stille, mens midten fortsætter. Med Sine og Band Size 1 okt sker det ca. 30 % af tiden (|sin| > 0,9). Mulig løsning: midten stopper en halv Band Size før enden. Så viser Sweep-displayet fx 28 Hz – 14 kHz ved Band Size 1 okt.
+  - Fartgrænsen (mindst 1,25 × LFO'ens topfart) og Smooth Peaks bremser ikke.
+
+---
+
 ## 2026-11-13 (3) — Version 1.11 og 1.12: Sweep 100 % = hele spektret
 
 **Status:**

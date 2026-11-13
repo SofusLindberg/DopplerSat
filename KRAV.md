@@ -178,6 +178,13 @@ Det betyder (Claudes bud fra 2026-11-13, se nedenfor):
 
 ## Efter 1.12 (2026-11-13, ikke bygget endnu)
 
+Brugerens ord:
+> 1) Pilen, der indikerer Frequency Middle skal være i midten af de to yderkanter i alle tilfælde, hvor det er muligt. 2) Jeg synes ikke, at hastigheden på bevægelsen fra den ene kant til den anden er jævn (test i sine). Er det kunstigt skabt, at det virker som om, at hastigheden på bevægelsen er langsommere, når vi nærmer os yderkanten? Svar, før du bygger.
+
+Claudes bud (venter på brugerens ja):
+- Sweep bestemmer områdets samlede bredde (100 % = hele spektret), og området ligger symmetrisk om Frequency. Rammer det en ende af spektret, skubbes hele området ind, så bredden holdes. Så står pilen i midten, når det kan lade sig gøre, og båndet har samme fart begge veje. 100 % er stadig 20 Hz – 20 kHz, og standard 30 % giver som før ca. 213 Hz – 1,69 kHz ved 600 Hz.
+- Muligt (brugerens valg): at båndets yderste kant i stedet for midten når præcis ud til 20 Hz / 20 kHz ved Sweep 100 %, så båndet ikke klippes og ikke ser ud til at gå i stå ved enderne.
+
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:
