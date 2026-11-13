@@ -163,9 +163,22 @@ Det betyder:
 - **Det andet tal bliver stående.** Frequency og Sweep regnes ud og drejer med, så det er én ændring i DAW'en. Der er ingen nye parametre, og lyden ændres ikke.
 - Er området bredere, end Sweep 100 % kan nå, gælder det skrevne tal, og det andet flyttes kun så meget, som det er nødvendigt. En bund over toppen (eller noget, der ikke er et tal) afvises.
 
-## Efter 1.10 (2026-11-13, ikke bygget endnu)
+## Version 1.11 / 1.12 (2026-11-13)
 
-Brugeren vil tage én ting ad gangen. De to andre ønsker venter.
+Brugerens ord (efter 1.10):
+> Redigering af Sweep fungerer efter hensigten. Jeg kan se, at afsstanden mellem de to kanter når et maksimum, og den ene side trækkes med af den anden, hvis afstanden bliver for stor. Vi skal derfor have bygget, at 100% travel range går helt ud til kanterne (dybeste og lyseste frekvens).
+
+Det betyder (Claudes bud fra 2026-11-13, se nedenfor):
+- **Sweep 100 % = båndets midte når helt ud til 20 Hz og 20 kHz**, uanset Frequency. Sweep er en andel af vejen fra Frequency ud mod hver ende: 0 % = båndet står på Frequency, 50 % = halvvejs i oktaver. Frequency er stadig midten. Til og med 1.10: 100 % = 3 oktaver til hver side.
+- Står Frequency langt fra midten af spektret (ca. 630 Hz), er den ene side længere, og båndet bevæger sig hurtigere og bøjer pitchen mere på den side.
+- Standard-Sweep er 30 % (før 50 %), så standardlyden er næsten som før (ved 600 Hz: 216 Hz – 1,72 kHz mod 212 Hz – 1,70 kHz).
+- Alle områder mellem 20 Hz og 20 kHz kan nu skrives ind i Sweep-displayet, også med Offset. Den anden ende trækkes ikke længere med.
+- Frequency og Sweep har ingen trin længere (før 0,1 Hz og 0,1 %), så den urørte ende står helt stille, når man skriver.
+- 1.11 viste Frequency og Sweep med 7 decimaler ("600.0001221 Hz"). 1.12 viser én decimal som før; ellers er 1.12 som 1.11.
+
+## Efter 1.12 (2026-11-13, ikke bygget endnu)
+
+Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:
 > Band size skal også kunne justeres ved, at brugeren kan skrive i displayet.
@@ -174,11 +187,11 @@ Claudes bud (venter på brugerens ja):
 - Klik på et af Band Size-displayets tal og skriv en ny kant. Kun Band Size ændres. Båndets midte bliver, hvor den er, så den anden kant flytter sig lige så meget den modsatte vej.
 - Under Pause rammer båndet præcis det skrevne. Når LFO'en kører, står tallet stille, mens man skriver.
 
-Undervejs, brugerens ord:
+Undervejs, brugerens ord (bygget i 1.11 / 1.12, se ovenfor):
 > Sweep (travel range): 100% skal gå helt ud til hver ende af spektrummet.
 
-Claudes bud (venter på brugerens ja):
-- Sweep bliver "hvor langt mod hver ende": 0 % = båndet står på Frequency, 100 % = båndets midte når helt ud til 20 Hz og 20 kHz, uanset Frequency. Til og med 1.9: 100 % = 3 oktaver til hver side.
+Claudes bud (bygget):
+- Sweep bliver "hvor langt mod hver ende": 0 % = båndet står på Frequency, 100 % = båndets midte når helt ud til 20 Hz og 20 kHz, uanset Frequency. Til og med 1.10: 100 % = 3 oktaver til hver side.
 - Standard-Sweep bliver 30 %, så standardlyden er næsten som nu.
 
 ## Funktioner der skal blive ved med at virke
@@ -195,7 +208,7 @@ Claudes bud (venter på brugerens ja):
   - **Offset** −100 til +100 %: kurven flyttes op eller ned og klippes ved top og bund, så båndet bliver længere tid i den ene ende (som i Abletons LFO).
 - **Band:**
   - **Frequency**: midten af området.
-  - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
+  - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. **1.11: 100 % = båndets midte når helt ud til 20 Hz og 20 kHz** (brugerens ønske 2026-11-13; Sweep er en andel af vejen fra Frequency til hver ende, standard 30 %). Til og med 1.10: 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
   - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
   - **Sweep-displayets tal kan skrives ind** (1.10): klik på bunden eller toppen og skriv. Det andet tal bliver stående, og Frequency og Sweep følger med.

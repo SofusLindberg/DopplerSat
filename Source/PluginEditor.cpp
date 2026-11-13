@@ -980,7 +980,8 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     styleKnob (freqSlider,   " Hz", hw::green);
     freqSlider.setTooltip ("The middle of the band's sweep. You can also drag left / right in the display.");
     styleKnob (amountSlider, " %",  hw::green);
-    amountSlider.setTooltip ("Sweep: how far the LFO moves the band to each side of Frequency (100 % = 3 octaves each way). "
+    amountSlider.setTooltip ("Sweep: how far the LFO moves the band from Frequency toward each end of the spectrum (100 % = all the way down to "
+                             "20 Hz and up to 20 kHz). "
                              "It only changes the area the band travels across (the Sweep display), not the band itself. "
                              "More travel = more pitch change.");
     styleKnob (widthSlider,  " oct", hw::green);
@@ -1195,7 +1196,9 @@ bool DopplerSatEditor::applySweepText (int part, const juce::String& typed)
         top = hz > c1;
     }
     double freq = 0.0, sweep = 0.0;
-    if (! P::sweepForEnds (top ? c1 : hz, top ? hz : c2, top, off, freq, sweep)) return false;
+    if (P::sweepForEnds (top ? c1 : hz, top ? hz : c2, top, off, (double) s.getRawParameterValue ("freq")->load(),
+                         freq, sweep) == 0)
+        return false;
 
     auto* fp = s.getParameter ("freq");
     auto* ap = s.getParameter ("amount");

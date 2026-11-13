@@ -23,7 +23,13 @@ public:
     static constexpr float  minFreq     = 20.f;
     static constexpr float  maxFreq     = 20000.f;
     static constexpr float  minDb       = -80.f;
-    static constexpr double kMaxSweepOct = 3.0;    // Amount 100 % = baandet flyttes +/- 3 oktaver
+    // Til og med 1.10: Sweep 100 % = baandets midte flyttes +/- 3 oktaver fra Frequency (kMaxSweepOct = 3).
+    // 1.11 (brugeren 2026-11-13: "100% travel range går helt ud til kanterne (dybeste og lyseste frekvens)"): Sweep er
+    // en andel af vejen fra Frequency ud til hver ende af spektret, saa 100 % = 20 Hz - 20 kHz uanset Frequency.
+    // LFO-vaerdier under 0 bruger den nedre side, over 0 den oevre: midten = log2 F + v * s * (log2 F - log2 20) for
+    // v < 0 og log2 F + v * s * (log2 20000 - log2 F) for v >= 0 (s = Sweep 0..1). Frequency er stadig midten (v = 0).
+    static double centreOctFor (double freqHz, double sweepPct, double v);   // log2 af midten (Hz)
+    static double maxSideOct (double freqHz, double sweepPct);               // den laengste side i oktaver (til fartgraensen)
     static constexpr int    kBand       = 1;       // motorens baand, der flyttes (de andre er slukket)
     static constexpr int    kChunk      = 32;      // LFO'en og filtrene opdateres hver 32. sample (0.7 ms ved 44.1 kHz)
     // Kanterne flytter sig hoejst saa hurtigt (oktaver pr. sekund). Hurtigere gav niveauhop (maalt med eet baand,
@@ -117,17 +123,19 @@ public:
     };
     Analyzer outAnalyzer;            // 1.1: kun output vises (brugeren: "Vis kun output på grafen")
 
-    // Baandets kanter for en LFO-vaerdi v (-1..1): midten flyttes v * Amount * 3 oktaver fra Frequency
+    // Baandets kanter for en LFO-vaerdi v (-1..1): midten er centreOctFor (1.11: Sweep = andel af vejen til hver ende)
     void bandEdgesFor (double v, double& lo, double& hi) const;
     // 1.6: baandets midte for en LFO-vaerdi v (Hz, 20 Hz - 20 kHz). Sweep-displayet og det skraverede omraade viser
     // midtens vej (Frequency +/- Sweep), saa Band Size ikke aendrer dem (brugeren 2026-11-10)
     double bandCentreFor (double v) const;
-    // 1.10 (brugeren 2026-11-13): Sweep-displayets bund og top kan skrives ind. Midtens vej er log2 (Frequency) + v * A
-    // for v fra v1 = max (-1, offset - 1) til v2 = min (1, offset + 1), A = Sweep * 3 okt. lo / hi = de nye ender (Hz),
-    // typedTop = brugeren skrev toppen (ellers bunden); den anden ende bliver staaende. Er omraadet bredere end Sweep
-    // 100 % kan naa, gaelder det skrevne tal, og den anden ende flyttes kun saa meget, som det er noedvendigt.
-    // Giver Frequency (Hz) og Sweep (%); false = afvist (bunden er ikke under toppen).
-    static bool sweepForEnds (double lo, double hi, bool typedTop, double offset01, double& freqHz, double& sweepPct);
+    // 1.10 (brugeren 2026-11-13): Sweep-displayets bund og top kan skrives ind. Displayet viser midtens vej for v fra
+    // v1 = max (-1, offset - 1) til v2 = min (1, offset + 1) (centreOctFor). lo / hi = de nye ender (Hz), typedTop =
+    // brugeren skrev toppen (ellers bunden); den anden ende bliver staaende. Kan omraadet ikke laves (kun muligt med
+    // Offset, 1.11), gaelder det skrevne tal, og den anden ende flyttes kun saa meget, som det er noedvendigt.
+    // curFreqHz: Frequency nu (bruges kun, hvis begge ender staar i spektrets ender). Giver Frequency (Hz) og Sweep (%).
+    // 0 = afvist (bunden er ikke under toppen), 1 = OK, 2 = OK, men den anden ende maatte flyttes.
+    static int sweepForEnds (double lo, double hi, bool typedTop, double offset01, double curFreqHz,
+                             double& freqHz, double& sweepPct);
     // Motorens parametre med baandet mellem lo og hi (faelles for lyden og tegningen)
     satdsp::EngineParams buildEngineParams (double lo, double hi) const;
     double getProcessingRate() const;                 // 4x vaertens rate (oversampling er altid til)

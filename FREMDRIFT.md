@@ -4,6 +4,38 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (3) — Version 1.11 og 1.12: Sweep 100 % = hele spektret
+
+**Status:**
+- **1.12 er den, der skal bruges.** Bygget som "Pitch Bend Texture 1.12" (D112, 13 parametre), uden fejl eller advarsler. **Installeret og verificeret med filhash** (`0114FC80…`, moduleinfo 1.12.0). Buildet (12:50:54) er nyere end sidste kildeændring (12:49:56).
+- **1.11** (`E826A2C9…`) blev installeret, før jeg så, at tal-felterne under Frequency og Sweep viste 7 decimaler ("600.0001221 Hz", "30.0000019 %"). Det har JUCE som standard for parametre uden trin. Efter reglen (hvert installeret nummer er en version, intet slettes) er rettelsen 1.12. 1.11 ligger der stadig, og ellers er 1.12 som 1.11.
+- 1.0–1.10 ligger uændret ved siden af.
+- Røgtest og DAW-test (alle 13 parametre, gem/hent, samplerater, blokke, hale): OK. Højeste peak ved fuld fart 1,14 for en 0,6-indgang (som 1.9), og de værste toppe er +5,6 dB peak / +1,8 dB RMS.
+- `EditorShot --reach`: båndets midte når 20 Hz – 20 kHz (de klippede kanters midte 21,8 Hz – 18,3 kHz) ved 1 og 20 Hz for alle former og stejlheder.
+- `--compare` mod 1.10: "FORSKELLIG LYD", som forventet (Sweep betyder noget andet). CPU som 1.10: ca. 2,4 % standard og 2,8–3,0 % ved 12 Hz, Sweep 100 %.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.11 / 1.12"). Brugeren skrev: "Redigering af Sweep fungerer efter hensigten [...] den ene side trækkes med af den anden, hvis afstanden bliver for stor. Vi skal derfor have bygget, at 100% travel range går helt ud til kanterne".
+
+**Lavet:**
+1. **`DopplerSatProcessor::centreOctFor (freq, sweep, v)`:** midten = log2 F + v·s·(log2 F − log2 20) for v < 0 og log2 F + v·s·(log2 20000 − log2 F) for v ≥ 0. `bandEdgesFor` og `bandCentreFor` bruger den. `kMaxSweepOct` er væk.
+2. **Fartgrænsen** bruger den længste side (`maxSideOct`). Ved 600 Hz, Sweep 100 % er den ca. 5 oktaver, så Square 20 Hz kan nå ca. 2000 okt/s. TPT-SVF'erne klarer det (ingen NaN eller niveauspring i røgtesten).
+3. **Standard-Sweep 30 %.** **Frequency og Sweep har ingen trin** (`NormalisableRange` interval 0). Med trin på 0,1 % flyttede den faste ende sig op til 1 %, når man skrev nær spektrets ender (19 af 384 testtilfælde). 1.12: `withStringFromValueFunction` med én decimal.
+4. **`sweepForEnds` er regnet om:** bund = Fo − a·s·(Fo − L20), top = Fo + b·s·(H20 − Fo), hvor a = −v1 og b = v2 (Offset). Med den ene ende fast findes s ved halvering, og Fo regnes fra den faste ende. Svar 0 = afvist, 1 = OK, 2 = den anden ende måtte flyttes. Fordi den ene af a og b altid er 1 (Offset ≥ 0 giver b = 1, ≤ 0 giver a = 1), kan alle områder mellem 20 Hz og 20 kHz laves, så svar 2 forekommer ikke.
+5. **Test (EditorShot):** 384 tilfælde (5 Offset, 8 indstillinger inkl. 20 Hz og 20 kHz, bund og top, 6 faktorer inkl. ud over spektret). Begge ender rammer inden for 0,1 %, og den anden ende blev aldrig flyttet. "Bund 20 Hz, så top 20 kHz" giver 20 Hz – 20 kHz og Sweep 100 %. Feltet med 180 giver 180,0 Hz, toppen står på 1718,0 Hz. Rækkeviddetesten måler mod `bandEdgesFor (±1)`.
+6. Sweep-tooltippen: "how far the LFO moves the band from Frequency toward each end of the spectrum (100 % = all the way down to 20 Hz and up to 20 kHz)".
+
+**Pitch ved Sweep 100 %** (HostSmoke-tabellen, 300 Hz, Width 1 okt; båndet rejser nu længere):
+
+| | 24 | 48 | 96 |
+|---|---|---|---|
+| 1 Hz | 148 | 433 | 1086 cent |
+| 12 Hz | 1345 | 2060 | 3373 cent |
+
+**NÆSTE GANG:** test 1.12 i en DAW: Sweep 100 % hele vejen ud, standardlyden, skriv i displayet. Derefter Band Size-displayet (venter, se KRAV "Efter 1.12").
+
+---
+
 ## 2026-11-13 (2) — Version 1.10: skriv Sweeps bund og top ind i displayet
 
 **Status:**

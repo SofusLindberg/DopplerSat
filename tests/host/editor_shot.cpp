@@ -18,57 +18,67 @@ static void sweepEnds (DopplerSatProcessor& p, double& lo, double& hi)
 }
 
 // 1.10 (brugeren 2026-11-13): skriv bunden eller toppen i Sweep-displayet; den anden ende skal blive staaende, og den
-// skrevne naas (Frequency og Sweep har trin paa 0.1 Hz / 0.1 %, saa der tillades 0.3 % / 0.5 %). Er omraadet bredere end
-// Sweep 100 % kan naa, skal den skrevne naas. Bund over top skal afvises.
+// skrevne naas (1.11: Frequency og Sweep har ingen trin, saa begge skal ramme inden for 0.1 %). Bund over top skal
+// afvises. 1.11: Sweep 100 % = hele spektret, saa alle omraader mellem 20 Hz og 20 kHz kan laves (ogsaa med Offset):
+// sweepForEnds maa aldrig svare 2 (= den anden ende maatte flyttes).
 static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
 {
     bool ok = true;
-    int cases = 0;
+    int cases = 0, moved = 0;
     struct S { float freq, sweep; };
-    for (float off : { 0.f, 40.f, -60.f, 100.f })
-        for (S s : { S { 600.f, 50.f }, S { 100.f, 80.f }, S { 5000.f, 30.f }, S { 40.f, 100.f }, S { 600.f, 0.f }, S { 12000.f, 60.f } })
+    for (float off : { 0.f, 40.f, -60.f, 100.f, -100.f })
+        for (S s : { S { 600.f, 50.f }, S { 100.f, 80.f }, S { 5000.f, 30.f }, S { 40.f, 100.f }, S { 600.f, 0.f }, S { 12000.f, 60.f },
+                     S { 20.f, 70.f }, S { 20000.f, 40.f } })
             for (int top = 0; top < 2; ++top)
-                for (double factor : { 0.7, 1.3, 0.25, 4.0 })
+                for (double factor : { 0.7, 1.3, 0.25, 4.0, 0.001, 1000.0 })
                 {
                     setParam (p, "offset", off); setParam (p, "freq", s.freq); setParam (p, "amount", s.sweep);
                     double lo, hi;
                     sweepEnds (p, lo, hi);
                     const bool single = lo == hi;
                     double typed = (top ? hi : lo) * factor;
-                    if ((top && typed <= lo) || (! top && typed >= hi && ! single)) continue;   // bund over top: nedenfor
-                    if (single && typed == lo) continue;
-                    const bool typedTop = single ? typed > lo : top == 1;
+                    const double t = juce::jlimit (20.0, 20000.0, typed);
+                    if ((top && t <= lo) || (! top && t >= hi && ! single)) continue;   // bund over top: nedenfor
+                    if (single && t == lo) continue;
+                    if (t == (top ? hi : lo)) continue;                                   // uaendret (klippet)
+                    const bool typedTop = single ? t > lo : top == 1;
+                    double f2, s2;
+                    const int code = DopplerSatProcessor::sweepForEnds (typedTop ? lo : t, typedTop ? t : hi, typedTop, off * 0.01,
+                                                                        s.freq, f2, s2);
+                    if (code == 2) ++moved;
                     if (! ed.applySweepText (single ? -1 : top, juce::String (typed, 3) + " Hz")) { ok = false; std::printf ("    afvist?!\n"); continue; }
                     ++cases;
                     double nlo, nhi;
                     sweepEnds (p, nlo, nhi);
-                    const double t = juce::jlimit (20.0, 20000.0, typed);
-                    const double v1 = juce::jmax (-1.0, off * 0.01 - 1.0), v2 = juce::jmin (1.0, off * 0.01 + 1.0);
                     const double fixedEnd = typedTop ? lo : hi;
-                    const bool tooWide = std::abs (std::log2 (t / fixedEnd)) / (v2 - v1) > 3.0 + 1.0e-9;
                     const double gotTyped = typedTop ? nhi : nlo, gotFixed = typedTop ? nlo : nhi;
-                    const bool pass = std::abs (gotTyped / t - 1.0) < 0.005 && (tooWide || std::abs (gotFixed / fixedEnd - 1.0) < 0.003);
+                    const bool pass = code == 1 && std::abs (gotTyped / t - 1.0) < 0.001 && std::abs (gotFixed / fixedEnd - 1.0) < 0.001;
                     if (! pass)
                     {
                         ok = false;
-                        std::printf ("    FEJL: offset %.0f, %.0f Hz, Sweep %.0f %%, %s %.1f Hz: %.1f - %.1f -> %.1f - %.1f\n", off, s.freq, s.sweep,
-                                     typedTop ? "top" : "bund", typed, lo, hi, nlo, nhi);
+                        std::printf ("    FEJL: offset %.0f, %.0f Hz, Sweep %.0f %%, %s %.1f Hz: %.1f - %.1f -> %.1f - %.1f (svar %d)\n", off,
+                                     s.freq, s.sweep, typedTop ? "top" : "bund", t, lo, hi, nlo, nhi, code);
                     }
                 }
-    // For bredt: Frequency 600 Hz, Sweep 50 % (212 Hz - 1.70 kHz), bund 20 Hz -> 20 Hz naas, toppen bliver 20 Hz + 6 okt
+    // Hele spektret: Frequency 600 Hz, Sweep 50 %, bund 20 Hz og top 20 kHz -> 20 Hz - 20 kHz (= Sweep 100 %)
     setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 50.f);
+    double lo, hi, hi0;
+    sweepEnds (p, lo, hi0);
     ed.applySweepText (0, "20");
-    double lo, hi;
     sweepEnds (p, lo, hi);
-    const bool wideOk = std::abs (lo / 20.0 - 1.0) < 0.005 && std::abs (hi / 1280.0 - 1.0) < 0.005;
-    std::printf ("  for bredt (bund 20 Hz ved 212 Hz - 1.70 kHz): %.1f Hz - %.1f Hz  %s\n", lo, hi, wideOk ? "OK" : "FEJL");
+    const bool fullLo = std::abs (lo / 20.0 - 1.0) < 0.005 && std::abs (hi / hi0 - 1.0) < 0.003;
+    ed.applySweepText (1, "20k");
+    sweepEnds (p, lo, hi);
+    const float sw = p.apvts.getRawParameterValue ("amount")->load();
+    const bool wideOk = fullLo && std::abs (lo / 20.0 - 1.0) < 0.005 && std::abs (hi / 20000.0 - 1.0) < 0.005 && sw > 99.9f;
+    std::printf ("  hele spektret (bund 20 Hz, saa top 20 kHz): %.1f Hz - %.1f Hz, Sweep %.1f %%  %s\n", lo, hi, sw, wideOk ? "OK" : "FEJL");
     // Bund over top, og noget der ikke er et tal: afvist, intet aendret
     setParam (p, "freq", 600.f); setParam (p, "amount", 50.f);
     const float f0 = p.apvts.getRawParameterValue ("freq")->load(), a0 = p.apvts.getRawParameterValue ("amount")->load();
     const bool rej = ! ed.applySweepText (0, "5k") && ! ed.applySweepText (1, "100") && ! ed.applySweepText (0, "abc")
                   && p.apvts.getRawParameterValue ("freq")->load() == f0 && p.apvts.getRawParameterValue ("amount")->load() == a0;
     std::printf ("  bund over top / ikke et tal: %s\n", rej ? "afvist OK" : "FEJL");
-    // Skrivemaader: "1,2 kHz" og "1.2k" som top
+    // Skrivemaader: "1,2 kHz" og "2.5k" som top
     ed.applySweepText (1, "1,2 kHz");
     sweepEnds (p, lo, hi);
     const bool fmt1 = std::abs (hi / 1200.0 - 1.0) < 0.005;
@@ -76,9 +86,10 @@ static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
     sweepEnds (p, lo, hi);
     const bool fmt2 = std::abs (hi / 2500.0 - 1.0) < 0.005;
     std::printf ("  skrivemaader \"1,2 kHz\" og \"2.5k\": %s\n", fmt1 && fmt2 ? "OK" : "FEJL");
-    std::printf ("  skriv bund / top: %d tilfaelde (4 Offset, 6 indstillinger, bund og top)  %s\n", cases, ok ? "OK" : "FEJL");
-    setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 50.f);
-    return ok && wideOk && rej && fmt1 && fmt2;
+    std::printf ("  skriv bund / top: %d tilfaelde (5 Offset, 8 indstillinger, bund og top), den anden ende flyttet %d gange  %s\n",
+                 cases, moved, ok && moved == 0 ? "OK" : "FEJL");
+    setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
+    return ok && moved == 0 && wideOk && rej && fmt1 && fmt2;
 }
 
 static void run (DopplerSatProcessor& p, double seconds)
@@ -113,7 +124,9 @@ static void save (juce::Component& c, const juce::File& f)
 static bool reachTest()
 {
     bool ok = true;
-    std::printf ("  raekkevidde (Frequency 600 Hz, Sweep 100 %% = 75 Hz - 4.80 kHz, Band Size 0.5 okt):\n");
+    // 1.11: Sweep 100 % = hele spektret. Maalet er midten af baandets kanter ved LFO -1 / +1 (kanterne klippes ved
+    // 20 Hz og 20 kHz, saa den geometriske midte af de klippede kanter ligger lidt indenfor)
+    std::printf ("  raekkevidde (Frequency 600 Hz, Sweep 100 %% = 20 Hz - 20 kHz, Band Size 0.5 okt):\n");
     for (int mode = 0; mode < 3; ++mode)
         for (int shape = 0; shape < 4; ++shape)
             for (float rate : { 1.f, 20.f })
@@ -136,7 +149,10 @@ static bool reachTest()
                     lo = std::min (lo, c); hi = std::max (hi, c);
                 }
                 // Random naar sjaeldent helt ud (tilfaeldige maal); de andre skal naa inden for 0.1 oktav
-                const double loOct = std::log2 (lo / 75.0), hiOct = std::log2 (4800.0 / hi);
+                double e1, e2, e3, e4;
+                p.bandEdgesFor (-1.0, e1, e2);
+                p.bandEdgesFor ( 1.0, e3, e4);
+                const double loOct = std::log2 (lo / std::sqrt (e1 * e2)), hiOct = std::log2 (std::sqrt (e3 * e4) / hi);
                 const bool pass = shape == 3 || (loOct < 0.1 && hiOct < 0.1);
                 ok = ok && pass;
                 static const char* sn[] = { "Sine", "Triangle", "Square", "Random" };
