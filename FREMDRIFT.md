@@ -4,6 +4,24 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (10) — Mockup: elementerne på fælles linjer (få pixels)
+
+- Brugeren skrev, at elementerne skal være "lidt mere parallelle med hinanden", fx Shape / Hz / Sync, Band Size-displayet og 96 dB/oct. Se `KRAV.md` ("Efter 2.06").
+- **Målt i 2.06** (y fra modulets top):
+  - Shape, Hz og Sync: 94–116 (22 høje). Band Size-displayet 92–114 (22), 96 dB/oct 93–113 (20), Sweep-displayet 42–64 (22), 24 dB/oct 43–63 (20), Bypass 42–64 (22).
+  - Shape-rækken lå altså 2 px lavere end displayet, og højderne var forskellige.
+  - Underteksten øverst til højre stod på grundlinje 27, titlen på 28.
+- **Mockup** (`DopplerSatEditor::setMockupLayout (1)`, kun EditorShot):
+  - Øverste række: top 43, højde 20 (Sweep-display, 24 dB/oct, Bypass).
+  - Nederste række: top 93, højde 20 (Shape, Hz, Sync, Band Size-display, 96 dB/oct).
+  - "SHAPE" på grundlinje 106,5, så den står midt på rækken (før 109). Underteksten på 28.
+  - Edges-knapperne var allerede 43 / 68 / 93 og 20 høje.
+- Billeder: `doppler10_align_before.png`, `doppler11_mockup_aligned.png` og `align_compare.png` (2× forstørret før / efter med røde hjælpelinjer). Pluginnet er uændret.
+
+**NÆSTE GANG:** brugerens svar på mockuppet. Ved ja: byg 2.07 med de nye linjer (mockup-koden bliver til fast kode).
+
+---
+
 ## 2026-11-13 (9) — Nye versionsnavne: 1.10–1.14 er nu 2.01–2.05, ny version 2.06
 
 **Status:**

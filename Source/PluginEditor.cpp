@@ -1309,6 +1309,14 @@ void DopplerSatEditor::testSweepDrag (int part, float dyPixels, bool fine)
     rangeLcd->endDrag();
 }
 
+void DopplerSatEditor::setMockupLayout (int variant)
+{
+    mockup = juce::jlimit (0, 1, variant);
+    plate = {};                                   // pladen tegnes forfra (labels og undertekst)
+    resized();
+    repaint();
+}
+
 void DopplerSatEditor::resized()
 {
     const auto L = makeLayout();
@@ -1323,9 +1331,11 @@ void DopplerSatEditor::resized()
         const int x = L.mx[0], w = L.mw[0];
         lfoView->setBounds (x + 12, y (28), w - 24, 58);
         pauseButton.setBounds (x + w - 12 - 72, (int) mY + 2, 72, 22);     // titellinjen, midt paa linjen (y 13)
-        shapeBox.setBounds (x + 60, y (94), 94, 22);
-        hzButton.setBounds (x + w - 12 - 106, y (94), 48, 22);
-        syncButton.setBounds (x + w - 12 - 54, y (94), 54, 22);
+        // Mockup (2026-11-13): raekke B = top 93, hoejde 20, som Band Size-displayet og 96 dB/oct-knappen (foer 94 / 22)
+        const int rowB = mockup == 1 ? 93 : 94, rowH = mockup == 1 ? 20 : 22;
+        shapeBox.setBounds (x + 60, y ((float) rowB), 94, rowH);
+        hzButton.setBounds (x + w - 12 - 106, y ((float) rowB), 48, rowH);
+        syncButton.setBounds (x + w - 12 - 54, y ((float) rowB), 54, rowH);
         placeKnob (rateSlider,     (float) x + (float) w * 0.3f, mY + layout::knob, mY + layout::value);
         placeKnob (syncRateSlider, (float) x + (float) w * 0.3f, mY + layout::knob, mY + layout::value);
         placeKnob (offsetSlider,   (float) x + (float) w * 0.7f, mY + layout::knob, mY + layout::value);
@@ -1334,8 +1344,9 @@ void DopplerSatEditor::resized()
     {
         const int x = L.mx[1], w = L.mw[1];
         const int lcdW = edgeColX - 14 - (x + 12);
-        rangeLcd->setBounds (x + 12, y (42), lcdW, 22);
-        nowLcd->setBounds (x + 12, y (92), lcdW, 22);
+        // Mockup: displayene 20 hoeje med top 43 / 93 som Edges-knapperne (foer 42 / 92 og 22)
+        rangeLcd->setBounds (x + 12, y (mockup == 1 ? 43.f : 42.f), lcdW, mockup == 1 ? 20 : 22);
+        nowLcd->setBounds (x + 12, y (mockup == 1 ? 93.f : 92.f), lcdW, mockup == 1 ? 20 : 22);
         // 1.15 (brugeren 2026-11-13): "Sweep skal være længst til venstre, Band size i midten, Frequency længst til
         // højre" (til og med 1.14: Frequency, Sweep, Band Size)
         for (int i = 0; i < 3; ++i)
@@ -1350,7 +1361,7 @@ void DopplerSatEditor::resized()
     // Output: Bypass, Dry / Wet og Output gain. Bypass flugter med midten af den foerste 0 ms-knap (brugeren 2026-11-05:
     // "Ryk bypass op, så den flugter med den første 0 - ms indstilling [...] gerne flugte lige med midten")
     {
-        const int x = L.mx[3], w = L.mw[3], h = 22;
+        const int x = L.mx[3], w = L.mw[3], h = mockup == 1 ? 20 : 22;     // mockup: 20 som raekkerne
         bypassButton.setBounds (x + 12, modeButtons[0].getBounds().getCentreY() - h / 2, w - 24, h);
         placeKnob (dryWetSlider, (float) x + (float) w * 0.27f, mY + layout::knob, mY + layout::value);
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
@@ -1389,7 +1400,8 @@ void DopplerSatEditor::renderPlate()
     g.setFont (hwFont ("Bahnschrift", 15.f, "SemiBold", 3.f));
     g.setColour (juce::Colours::white.withAlpha (0.92f));
     g.drawSingleLineText ("PITCH BEND TEXTURE", 30, 28);       // 1.3: nyt navn (var "DOPPLER SATURATOR")
-    silkText (g, "Moving band  -  pitch bends as its edges sweep across the sound", (float) W - 30.f, 27.f, 9.5f,
+    // Mockup: underteksten paa samme grundlinje som titlen (28, foer 27)
+    silkText (g, "Moving band  -  pitch bends as its edges sweep across the sound", (float) W - 30.f, mockup == 1 ? 28.f : 27.f, 9.5f,
               hw::silkDim, juce::Justification::right, 0.6f);
 
     const auto R = L.plot.toFloat();
@@ -1426,7 +1438,7 @@ void DopplerSatEditor::renderPlate()
 
     // faste labels
     const auto silkC = hw::silk.withAlpha (0.85f);
-    silkText (g, "Shape", (float) L.mx[0] + 12.f, mY + 109.f, 9.5f, silkC);
+    silkText (g, "Shape", (float) L.mx[0] + 12.f, mY + (mockup == 1 ? 106.5f : 109.f), 9.5f, silkC);   // mockup: midt paa raekke B
     // 1.5 (brugeren 2026-11-09): "Sørg for at de to displays, der viser range af frekvenser, har samme navn som de
     // tilhørende knobs (Sweep og Band Size)" (foer "Sweep range" og "Band now")
     silkText (g, "Sweep", (float) L.mx[1] + 12.f, mY + 37.f, 9.5f, silkC);

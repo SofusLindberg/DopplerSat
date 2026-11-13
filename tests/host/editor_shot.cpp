@@ -335,6 +335,18 @@ int main (int argc, char** argv)
         typeOk = typeOk && viaField;
         save (*ed, dir.getChildFile ("doppler9_sweep_typed.png"));
         setParam (proc, "freq", 600.f); setParam (proc, "amount", 50.f);
+
+        // Mockup (brugeren 2026-11-13): "elementerne i GUI er lidt mere parallelle med hinanden [...] Lav et mockup".
+        // Foer og efter i samme tilstand (doppler10_align_before / doppler11_mockup_aligned)
+        setParam (proc, "amount", 30.f);
+        run (proc, 0.3);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+        save (*ed, dir.getChildFile ("doppler10_align_before.png"));
+        de->setMockupLayout (1);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
+        save (*ed, dir.getChildFile ("doppler11_mockup_aligned.png"));
+        de->setMockupLayout (0);
+        setParam (proc, "amount", 50.f);
     }
 
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);
