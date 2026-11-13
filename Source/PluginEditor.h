@@ -26,9 +26,6 @@ public:
     // Til EditorShot: aabn feltet over et tal med en bestemt tekst i (til billedet), og et traek (dy pixel, + = ned)
     void testBeginSweepEdit (int part, const juce::String& shownText);
     void testSweepDrag (int part, float dyPixels, bool fine);
-    // Mockup (brugeren 2026-11-13, kun EditorShot): 0 = som nu, 1 = Sweep- og Band Size-displayet lige over deres knapper
-    // (tre soejler i Band, displayene paa to linjer), Edges over Frequency
-    void setMockupLayout (int variant);
 
     // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
     template <class Base>
@@ -56,9 +53,6 @@ private:
 
     void timerCallback() override;
     void updateSweepLcd();                     // 1.15: kun Sweep-displayets tekst (ved skrivning og traek)
-    static int mockColX (int x, int w, int i);
-    static int mockColW (int w);
-    int mockup = 0;
     void renderPlate();
     void updateSync (bool sync);
     void updateMode (int mode);

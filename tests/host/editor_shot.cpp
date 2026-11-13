@@ -335,16 +335,6 @@ int main (int argc, char** argv)
         typeOk = typeOk && viaField;
         save (*ed, dir.getChildFile ("doppler9_sweep_typed.png"));
         setParam (proc, "freq", 600.f); setParam (proc, "amount", 50.f);
-
-        // Mockup (brugeren 2026-11-13): "Lav et mockup af GUI, hvor Sweep knob står lige under Sweep display og Band
-        // size knob står lige under Band size display"
-        setParam (proc, "amount", 30.f);
-        de->setMockupLayout (1);
-        run (proc, 0.3);
-        juce::MessageManager::getInstance()->runDispatchLoopUntil (100);
-        save (*ed, dir.getChildFile ("doppler10_mockup_columns.png"));
-        de->setMockupLayout (0);
-        setParam (proc, "amount", 50.f);
     }
 
     setParam (proc, "shape", 2.f);  setParam (proc, "offset", 40.f); setParam (proc, "sync", 1.f);

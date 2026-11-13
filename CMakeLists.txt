@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 1.15.0)
+project(DopplerSat VERSION 2.6.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
 
 # Hver installeret version er sit EGET plugin i Ableton (eget navn og egen plugin-kode), saa de gamle
 # versioner stadig kan bruges ved siden af. Hoej minor-versionen ovenfor foer hver ny installation.
-set(DS_VERSION_NAME "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+# Fra 2.x (brugeren 2026-11-13) har navnet to cifre efter punktummet (VERSION 2.6.0 -> "2.06"), saa det laeses rigtigt som
+# decimaltal og sorteres rigtigt i DAW'ernes lister (1.10-1.15 stod foer 1.3). 1.10-1.14 er bygget igen som 2.01-2.05
+# med deres gamle plugin-koder (D110-D114), saa gemte projekter finder dem. 1.0-1.9 beholder deres navne.
+if (PROJECT_VERSION_MAJOR GREATER_EQUAL 2 AND PROJECT_VERSION_MINOR LESS 10)
+    set(DS_VERSION_NAME "${PROJECT_VERSION_MAJOR}.0${PROJECT_VERSION_MINOR}")
+else()
+    set(DS_VERSION_NAME "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+endif()
 if (PROJECT_VERSION_MINOR LESS 10)
     set(DS_PLUGIN_CODE "D${PROJECT_VERSION_MAJOR}0${PROJECT_VERSION_MINOR}")
 else()

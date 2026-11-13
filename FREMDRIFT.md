@@ -4,6 +4,22 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (9) — Nye versionsnavne: 1.10–1.14 er nu 2.01–2.05, ny version 2.06
+
+**Status:**
+- Brugeren skrev: "1) Ja, genlæs plugins med løsning A. for navne på versionerne 2) Lad GUI være mht. til displays, som det var, men lad knobsene indtage den rækkefølge, som vises på GUI."
+- **2.06** = 1.15-koden: knapperne er Sweep, Band Size, Frequency, displayene som før, og træk opdaterer kun Sweep-tallet. Mockup-koden fra (8) er fjernet. Plugin-kode D206, moduleinfo 2.6.0. `--compare` mod 1.14: "SAMME LYD" (16/16 bit-identisk). Røgtest, DAW-test og EditorShot: OK.
+- **2.01–2.05** = 1.10–1.14 bygget igen fra deres commits (0c1269a, 5a445f4 uden én-decimals-teksten for 1.11, 5a445f4, 801ad76, 79897cb).
+  - I en kopi af CMakeLists: VERSION 2.N.0, `DS_VERSION_NAME` "2.0N" og `DS_PLUGIN_CODE` D110–D114 (de gamle).
+  - Bygget i `%TEMP%\dsrb`, fordi scratchpad-stien gjorde JUCE's hjælpebyg længere end Windows' 260 tegn (MSB6003 / tlog ikke fundet).
+  - **Tjekket:** moduleinfo-CID er den samme som originalens, og `--compare` er "SAMME LYD", 16/16 bit-identisk, for alle fem.
+- **CMakeLists:** fra version 2 har navnet to cifre efter punktummet (`DS_VERSION_NAME` "2.0x" for minor < 10). Plugin-koden er stadig "D" + major + minor med to cifre.
+- Installation (`install-2x.ps1` i scratchpad, med administrator-adgang): kopierer 2.01–2.06 og tjekker filhash. Først derefter fjernes 1.10–1.14, og en åben DAW stopper det. **Første forsøg stoppede uden at ændre noget: Ableton Live 11 Suite kørte.** Venter på, at brugeren lukker Ableton.
+
+**NÆSTE GANG:** rescan plugins i DAW'en. Projekter med 1.10–1.14 åbner nu med 2.01–2.05 (samme id). Test 2.06. Hvis det ikke fungerer: mind brugeren om, at 1.10 (nu 2.01) fungerede godt. Band Size-displayet venter.
+
+---
+
 ## 2026-11-13 (8) — Versionsnavne (spørgsmål) og mockup: displayene lige over deres knapper
 
 - Brugeren skrev: "Ja, og sorter også tidligere versioner efter den nye talrække i versionerne. Så du starter fra 1.10. 2) Lav et mockup af GUI, hvor Sweep knob står lige under Sweep display og Band size knob står lige under Band size display."

@@ -207,7 +207,7 @@ Det betyder:
 - **Fejlen er rettet:** med Offset skubbes Sweep-området nu efter den del, LFO'en faktisk bruger, så bunden kan blive 20 Hz. Er et skrevet område for bredt (kun muligt med Offset), bliver den anden ende stående, og den skrevne går så langt, den kan. Sweep falder aldrig sammen til 0 %.
 - **Træk op / ned i et af Sweep-displayets tal** ændrer netop det tal; op = højere frekvens (100 pixel = 2 oktaver, Shift = 10 gange finere). Den anden ende bliver stående, som når man skriver, og hele trækket er én ændring i DAW'en. Et klik uden træk åbner tekstfeltet som før.
 
-## Version 1.15 (2026-11-13, bygget, ikke installeret: venter på brugerens valg af versionsnavn)
+## Version 2.06 (2026-11-13; bygget som "1.15", installeret som 2.06)
 
 Brugerens ord (med billede af de tre knapper i Band):
 > rigtigt godt. 1) Hvorfor bliver frame rate højere, når jeg skruer på en af kanterne i Sweep-displayet? 2) Billede: Sweep skal være længst til venstre, Band size i midten, Frequency længst til højre
@@ -226,6 +226,13 @@ Brugerens ord (svar på forslaget om 2.01):
 Foreløbig status:
 - **Versionsnavne:** to måder at forstå "starter fra 1.10" på. Spurgt (FREMDRIFT 2026-11-13 (8)); intet omdøbt eller installeret endnu.
 - **Mockup:** `doppler10_mockup_columns.png`. Tre søjler i Band: Sweep-displayet over Sweep-knappen, Band Size-displayet over Band Size-knappen (begge på to linjer, toppen øverst) og Edges over Frequency. Venter på brugerens ja.
+
+Brugerens ord:
+> 1) Ja, genlæs plugins med løsning A. for navne på versionerne 2) Lad GUI være mht. til displays, som det var, men lad knobsene indtage den rækkefølge, som vises på GUI.
+
+Det betyder:
+- **Versionsnavne (løsning A):** 1.10–1.14 er bygget igen fra deres commits som **2.01–2.05** med deres gamle plugin-koder (D110–D114), så gemte projekter finder dem. 1.10–1.14 er fjernet fra VST3-mappen (brugerens ønske). Den nye version er **2.06** (D206). Fra nu af: 2.07, 2.08 ... (to cifre efter punktummet). 1.0–1.9 beholder deres navne.
+- **Displayene** står som før (mockuppet bygges ikke). **Knapperne** i Band: Sweep, Band Size, Frequency (som i 1.15).
 
 ## Efter 1.15 (2026-11-13, ikke bygget endnu)
 
@@ -276,7 +283,7 @@ Claudes bud (bygget):
 - **Hz / Sync** (1.3): begge tekster kan ses helt i knapperne.
 - **Alle DAW'er (1.4):** stereo-, mono- og mono-til-stereo-spor; samplerater 44,1–192 kHz; skiftende blokstørrelser (0–4096); alle 12 parametre kan automatiseres samtidig midt i lyden; gem / hent projekt giver samme værdier; pluginnet melder en hale på 2 s (længst målt 1,32 s), så DAW'er ikke klipper efterklangen af. `HostSmoke` tjekker det hele hver gang.
 - **Mac (1.5):** samme kode bygger som Audio Unit og VST3 på Mac (Apple Silicon og Intel), og lyden er bit for bit den samme som på Windows (målt med SSE2 slået fra på Windows). Mac-buildet tjekkes med auval og `HostSmoke` i GitHub Actions.
-- **Versioner:** hver version hedder "Pitch Bend Texture 1.x" (1.3 og frem; 1.0–1.2: "Doppler Saturator 1.x") og har sin egen plugin-kode (D1xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
+- **Versioner:** hver version hedder "Pitch Bend Texture 1.x" (1.3–1.9; 1.0–1.2: "Doppler Saturator 1.x") eller, fra 2026-11-13, "Pitch Bend Texture 2.xx" med to cifre efter punktummet (2.01–2.05 = de tidligere 1.10–1.14, 2.06 og frem nye), og har sin egen plugin-kode (D1xx / D2xx). Den lægges i `C:\Program Files\Common Files\VST3` ved siden af de gamle, så alle versioner kan vælges i DAW'erne (brugeren gentog det 2026-11-04).
 
 ## Arbejdsregler (som i Multiband Saturator)
 - Svar på dansk, og forklar enkelt. Kommentarer i koden skal være på dansk (ASCII: aa / oe / ae).
