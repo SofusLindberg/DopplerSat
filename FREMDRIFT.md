@@ -14,7 +14,7 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
   - Bygget i `%TEMP%\dsrb`, fordi scratchpad-stien gjorde JUCE's hjælpebyg længere end Windows' 260 tegn (MSB6003 / tlog ikke fundet).
   - **Tjekket:** moduleinfo-CID er den samme som originalens, og `--compare` er "SAMME LYD", 16/16 bit-identisk, for alle fem.
 - **CMakeLists:** fra version 2 har navnet to cifre efter punktummet (`DS_VERSION_NAME` "2.0x" for minor < 10). Plugin-koden er stadig "D" + major + minor med to cifre.
-- Installation (`install-2x.ps1` i scratchpad, med administrator-adgang): kopierer 2.01–2.06 og tjekker filhash. Først derefter fjernes 1.10–1.14, og en åben DAW stopper det. **Første forsøg stoppede uden at ændre noget: Ableton Live 11 Suite kørte.** Venter på, at brugeren lukker Ableton.
+- Installation (`install-2x.ps1` i scratchpad, med administrator-adgang): kopierer 2.01–2.06 og tjekker filhash. Først derefter fjernes 1.10–1.14, og en åben DAW stopper det. **Første forsøg stoppede uden at ændre noget: Ableton Live 11 Suite kørte.** Efter brugerens "Ableton er lukket": **installeret og verificeret med filhash.** 2.01 `7C76935E…`, 2.02 `AC34E20B…`, 2.03 `C4217BAD…`, 2.04 `69E08AD8…`, 2.05 `316A5391…`, 2.06 `8A54E374…`. 1.10–1.14 er fjernet. VST3-mappen indeholder nu Doppler Saturator 1.0–1.2, Pitch Bend Texture 1.3–1.9 og 2.01–2.06. `%TEMP%dsrb` er slettet igen.
 
 **NÆSTE GANG:** rescan plugins i DAW'en. Projekter med 1.10–1.14 åbner nu med 2.01–2.05 (samme id). Test 2.06. Hvis det ikke fungerer: mind brugeren om, at 1.10 (nu 2.01) fungerede godt. Band Size-displayet venter.
 

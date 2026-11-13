@@ -207,7 +207,7 @@ Det betyder:
 - **Fejlen er rettet:** med Offset skubbes Sweep-området nu efter den del, LFO'en faktisk bruger, så bunden kan blive 20 Hz. Er et skrevet område for bredt (kun muligt med Offset), bliver den anden ende stående, og den skrevne går så langt, den kan. Sweep falder aldrig sammen til 0 %.
 - **Træk op / ned i et af Sweep-displayets tal** ændrer netop det tal; op = højere frekvens (100 pixel = 2 oktaver, Shift = 10 gange finere). Den anden ende bliver stående, som når man skriver, og hele trækket er én ændring i DAW'en. Et klik uden træk åbner tekstfeltet som før.
 
-## Version 2.06 (2026-11-13; bygget som "1.15", installeret som 2.06)
+## Version 2.06 (2026-11-13; bygget som "1.15", installeret som 2.06 sammen med 2.01–2.05)
 
 Brugerens ord (med billede af de tre knapper i Band):
 > rigtigt godt. 1) Hvorfor bliver frame rate højere, når jeg skruer på en af kanterne i Sweep-displayet? 2) Billede: Sweep skal være længst til venstre, Band size i midten, Frequency længst til højre
