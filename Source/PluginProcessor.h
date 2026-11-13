@@ -29,9 +29,10 @@ public:
     // tilfælde, hvor det er muligt" og "Selvom den ene kant af Sweep travel range rører ved en ende af spektrummet, så
     // skal bevægelsen mellem de to punkter i travel range stadig ske, som hvis ikke [...]"): Sweep = omraadets samlede
     // bredde W = s * log2 (1000) oktaver (100 % = hele spektret), symmetrisk om Frequency. Rammer det en ende, skubbes
-    // hele omraadet ind (midten c = Frequency klippet til [log2 20 + W/2, log2 20000 - W/2]), saa bredden og
-    // bevaegelsen er den samme. Midten for LFO-vaerdien v er c + v * W / 2.
-    static double centreOctFor (double freqHz, double sweepPct, double v);   // log2 af midten (Hz)
+    // hele omraadet ind (midten c = Frequency klippet), saa bredden og bevaegelsen er den samme. Midten for LFO-vaerdien
+    // v er c + v * W / 2. 1.14: c klippes til [log2 20 + a W/2, log2 20000 - b W/2], a = -max (-1, offset - 1),
+    // b = min (1, offset + 1): kun den del, LFO'en bruger (med Offset), skal ligge i spektret.
+    static double centreOctFor (double freqHz, double sweepPct, double offset01, double v);   // log2 af midten (Hz)
     static double maxSideOct (double freqHz, double sweepPct);               // W / 2 i oktaver (til fartgraensen)
     // 1.13: baandets kanter maa gaa ud over 20 Hz / 20 kHz (som om spektret fortsatte), men ikke ned i det parkerede
     // baand 0 (10-12 Hz) eller op i baand 2 (0.40 af den oversamplede rate)
@@ -136,10 +137,10 @@ public:
     double bandCentreFor (double v) const;
     // 1.10 (brugeren 2026-11-13): Sweep-displayets bund og top kan skrives ind. Displayet viser midtens vej for v fra
     // v1 = max (-1, offset - 1) til v2 = min (1, offset + 1) (centreOctFor). lo / hi = de nye ender (Hz), typedTop =
-    // brugeren skrev toppen (ellers bunden); den anden ende bliver staaende. Kan omraadet ikke laves (kun muligt med
-    // Offset, 1.11), gaelder det skrevne tal, og den anden ende flyttes kun saa meget, som det er noedvendigt.
+    // brugeren skrev toppen (ellers bunden); den anden ende bliver staaende. 1.14: er omraadet for bredt (kun muligt med
+    // Offset), bliver den anden ende stadig staaende, og den skrevne gaar saa langt, som det kan (Sweep 100 %).
     // curFreqHz: Frequency nu (bruges kun, hvis begge ender staar i spektrets ender). Giver Frequency (Hz) og Sweep (%).
-    // 0 = afvist (bunden er ikke under toppen), 1 = OK, 2 = OK, men den anden ende maatte flyttes.
+    // 0 = afvist (bunden er ikke under toppen), 1 = OK, 2 = for bredt: den skrevne ende naaede ikke helt ud.
     static int sweepForEnds (double lo, double hi, bool typedTop, double offset01, double curFreqHz,
                              double& freqHz, double& sweepPct);
     // Motorens parametre med baandet mellem lo og hi (faelles for lyden og tegningen)

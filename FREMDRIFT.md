@@ -4,6 +4,37 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (6) — Version 1.14: fejl i Sweep-displayet rettet (Offset), træk op/ned i tallene
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 1.14"** (D114), uden fejl eller advarsler. **Installeret og verificeret med filhash** (`DC20B8B6…`, moduleinfo 1.14.0). Buildet (14:03:19) er nyere end sidste kildeændring (14:02:10). 1.0–1.13 ligger uændret ved siden af.
+- Røgtest og DAW-test: OK (højeste peak 1,11 for 0,6; halen højst 1,45 s). EditorShot (alle tests) og `--reach`: OK.
+- `--compare` mod 1.13 er bit-identisk i alle trin uden Offset. "Random 2 Hz, offset −40" er forskellig, fordi området skubbes efter den brugte del. De næste trin bærer forskellen med (båndet glider tilbage), indtil Bypass nulstiller.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** se `KRAV.md` ("Version 1.14"). Brugeren skrev: "Super. Det fungerer. Der er nogle bugs i sweep-displayet [...] Når man skriver 20 hz i laveste kant, så forsvinder tallet for øverste kant, og bandet bevæger sig ikke. 2) [...] Ved at trække lodret op og ned ud for hver tal i sweepdisplayet, kan man justere tallet".
+
+**Fejlen:** brugerens billede viste Offset 19,1 %. 1.13 skubbede hele det symmetriske område ind, også den del, LFO'en aldrig bruger med Offset. Den viste bund kunne derfor ikke blive 20 Hz med positivt Offset. `sweepForEnds` lod så det skrevne vinde ved at sætte h = 0, så Sweep blev 0 %, toppen forsvandt, og båndet stod stille.
+
+**Lavet:**
+1. **`centreOctFor (freq, sweep, offset, v)`:** midten c klippes til [log2 20 + a·W/2, log2 20000 − b·W/2] med a = −max(−1, offset − 1) og b = min(1, offset + 1). Kun den brugte del skal ligge i spektret. Uden Offset er det som 1.13 (bit-identisk).
+2. **`sweepForEnds`:** h = (top − bund)/(a + b), c = bund + a·h. Det kan altid laves, hvis 2h ≤ log2 1000. Ellers (kun med Offset) er h = maks., og den urørte ende står (svar 2). Sweep bliver aldrig 0 %, når bund < top.
+3. **Træk** (`LcdText::beginDrag` / `dragBy` / `endDrag`):
+   - Et klik registrerer tallet. Ved træk over 3 px ændres det med 0,02 okt/px, eller 0,002 med Shift, og op er højere. Værdien holdes for sig selv, så Shift kan skiftes midt i trækket, og den holdes inden for 20 Hz–20 kHz.
+   - Hvert trin går gennem `DopplerSatEditor::applySweepHz` (fælles med skrivning). Hele trækket er én gestus (`onDragGesture`). Klik uden træk åbner feltet.
+   - Viser displayet kun ét tal (Sweep 0 %), betyder træk op toppen og træk ned bunden.
+   - Musen er en op/ned-pil, og tooltippen forklarer træk og skrivning.
+4. **Test (EditorShot `bugAndDragTest`, offentlige `testSweepDrag`, `applySweepHz`, `sweepEndsNow`):**
+   - Offset 19,1 %, bund 20 Hz: 20,0 Hz – 1691,0 Hz (toppen står).
+   - Brugerens tilstand (20 Hz, Sweep 0 %), top 1 kHz: 20 Hz – 1 kHz.
+   - Top 20 kHz med Offset 19,1 % (for bredt): bunden står, og toppen bliver 10,3 kHz (største område).
+   - Træk bund 50 px ned halverer, top 50 px op fordobler, og med Shift er det 2^0,1. Bund forbi toppen gør intet. Sweep 0 % og træk op giver 600 Hz – 1200 Hz.
+   - Skrivetesten: den urørte ende står altid. Svar 2 (53 gange, kun med Offset) giver det største område.
+
+**NÆSTE GANG:** test 1.14 i en DAW: træk i tallene, skriv 20 Hz med og uden Offset. Hvis det ikke fungerer: mind brugeren om, at 1.10 fungerede godt. Band Size-displayet venter ("Efter 1.14").
+
+---
+
 ## 2026-11-13 (5) — Version 1.13: symmetrisk Sweep (pilen i midten), båndet glider ud over enderne
 
 **Status:**

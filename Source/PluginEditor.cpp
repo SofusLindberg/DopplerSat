@@ -291,12 +291,17 @@ class DopplerSatEditor::LcdText : public juce::Component, public juce::SettableT
 public:
     // part: 0 = venstre tal (bund), 1 = hoejre tal (top), -1 = displayet viser kun eet tal
     std::function<void (int part, const juce::String& typed)> onTyped;
+    // 1.14: traek op / ned i et tal. valueOf = tallets vaerdi nu (Hz), onDragged = ny vaerdi, onDragGesture = traek
+    // begynder (true) / slutter (false), saa DAW'en optager det som een bevaegelse
+    std::function<double (int part)> valueOf;
+    std::function<void (int part, double hz)> onDragged;
+    std::function<void (bool begin)> onDragGesture;
 
     explicit LcdText (juce::Colour c) : col (c) {}
     ~LcdText() override { if (field != nullptr) removeChildComponent (field.get()); }
 
     void setText (const juce::String& t) { if (t != text) { text = t; repaint(); } }
-    void setEditable (bool e) { setMouseCursor (e ? juce::MouseCursor::IBeamCursor : juce::MouseCursor::NormalCursor); }
+    void setEditable (bool e) { setMouseCursor (e ? juce::MouseCursor::UpDownResizeCursor : juce::MouseCursor::NormalCursor); }
 
     void paint (juce::Graphics& g) override
     {
@@ -311,7 +316,54 @@ public:
     {
         if (! onTyped || e.mods.isPopupMenu()) return;
         if (field != nullptr) endEdit (true, false);
-        beginEdit (partAt ((float) e.x));
+        downPart = partAt ((float) e.x);
+        lastDragY = 0;
+        dragging = false;
+    }
+
+    // 1.14 (brugeren 2026-11-13): "Ved at trække lodret op og ned ud for hver tal i sweepdisplayet, kan man justere
+    // tallet for det tal, man har fat i." Op = hoejere frekvens. 0.02 oktav pr. pixel (100 px = 2 oktaver), med Shift
+    // 0.002. Et klik uden traek aabner tekstfeltet som foer.
+    void mouseDrag (const juce::MouseEvent& e) override
+    {
+        if (! onTyped || ! onDragged || e.mods.isPopupMenu()) return;
+        const int dy = e.getDistanceFromDragStartY();
+        if (! dragging)
+        {
+            if (std::abs (dy) < 3) return;
+            beginDrag (downPart >= 0 ? downPart : (dy < 0 ? 1 : 0));   // eet tal (Sweep 0): op = toppen, ned = bunden
+            if (! dragging) return;
+        }
+        dragBy ((float) (dy - lastDragY), e.mods.isShiftDown());
+        lastDragY = dy;
+    }
+
+    void mouseUp (const juce::MouseEvent& e) override
+    {
+        if (! onTyped || e.mods.isPopupMenu()) return;
+        if (dragging) { endDrag(); return; }
+        beginEdit (downPart);
+    }
+
+    // Traek (ogsaa til EditorShot): part 0 = bund, 1 = top; dy i pixel (positiv = ned)
+    void beginDrag (int part)
+    {
+        dragPart = part;
+        dragHz = valueOf ? valueOf (part) : 0.0;
+        dragging = dragHz > 0.0;
+        if (dragging && onDragGesture) onDragGesture (true);
+    }
+    void dragBy (float dy, bool fine)
+    {
+        if (! dragging) return;
+        dragHz = juce::jlimit (20.0, 20000.0, dragHz * std::exp2 (-(double) dy * (fine ? 0.002 : 0.02)));
+        if (onDragged) onDragged (dragPart, dragHz);
+    }
+    void endDrag()
+    {
+        if (! dragging) return;
+        dragging = false;
+        if (onDragGesture) onDragGesture (false);
     }
 
     // Aabner feltet over et tal (ogsaa til EditorShot)
@@ -408,6 +460,9 @@ private:
     juce::String text, startText;
     std::unique_ptr<Field> field;
     int editPart = 0;
+    int downPart = 0, dragPart = 0, lastDragY = 0;      // 1.14: traek
+    bool dragging = false;
+    double dragHz = 0.0;
 };
 
 // 1.10: et skrevet tal i Hz: "180", "180 Hz", "1.2k", "1,2 kHz" (komma = punktum, k = tusind). -1 = ikke et tal.
@@ -937,11 +992,21 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     addAndMakeVisible (*lfoView);
     rangeLcd = std::make_unique<LcdText> (hw::green);
     rangeLcd->setTooltip ("Sweep: where the LFO moves the middle of the band (Frequency +/- Sweep). Band Size does not change it.\n"
-                          "Click the low or the high number to type it (e.g. 180, 1.2k). The other number stays where it is, "
-                          "and Frequency and Sweep follow.");
+                          "Drag the low or the high number up / down to change it (Shift = fine), or click it to type it "
+                          "(e.g. 180, 1.2k). The other number stays where it is, and Frequency and Sweep follow.");
     rangeLcd->setName ("Sweep display");
     rangeLcd->setEditable (true);
     rangeLcd->onTyped = [this] (int part, const juce::String& typed) { applySweepText (part, typed); };
+    // 1.14: traek op / ned i et tal (samme regning som skrivning; hele traekket er een aendring i DAW'en)
+    rangeLcd->valueOf = [this] (int part) { double c1, c2; sweepEndsNow (c1, c2); return part == 1 ? c2 : c1; };
+    rangeLcd->onDragged = [this] (int part, double hz) { applySweepHz (part, hz, false); };
+    rangeLcd->onDragGesture = [this] (bool begin)
+    {
+        auto* fp = processor.apvts.getParameter ("freq");
+        auto* ap = processor.apvts.getParameter ("amount");
+        if (begin) { fp->beginChangeGesture(); ap->beginChangeGesture(); }
+        else       { ap->endChangeGesture();   fp->endChangeGesture(); }
+    };
     addAndMakeVisible (*rangeLcd);
     nowLcd = std::make_unique<LcdText> (hw::green);
     nowLcd->setTooltip ("Band Size: where the band's edges are right now (they are Band Size apart, and the LFO moves them).");
@@ -1184,11 +1249,25 @@ void DopplerSatEditor::timerCallback()
 bool DopplerSatEditor::applySweepText (int part, const juce::String& typed)
 {
     const double hz = parseHz (typed);
-    if (hz <= 0.0) return false;
+    return hz > 0.0 && applySweepHz (part, hz, true);
+}
+
+// Sweep-displayets ender, som displayet viser dem (Offset regnet med)
+void DopplerSatEditor::sweepEndsNow (double& c1, double& c2) const
+{
+    const double off = (double) processor.apvts.getRawParameterValue ("offset")->load() * 0.01;
+    c1 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off));
+    c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
+}
+
+// Faelles for skrivning (1.10) og traek (1.14): en ny vaerdi for bunden (part 0) eller toppen (1); -1 = eet tal vist.
+// gesture = saet Frequency og Sweep som een aendring (ved traek styrer LcdText begyndelse og slutning).
+bool DopplerSatEditor::applySweepHz (int part, double hz, bool gesture)
+{
     auto& s = processor.apvts;
     const double off = (double) s.getRawParameterValue ("offset")->load() * 0.01;
-    const double c1 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off)),
-                 c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
+    double c1, c2;
+    sweepEndsNow (c1, c2);
     bool top = part == 1;
     if (part < 0)
     {
@@ -1202,12 +1281,10 @@ bool DopplerSatEditor::applySweepText (int part, const juce::String& typed)
 
     auto* fp = s.getParameter ("freq");
     auto* ap = s.getParameter ("amount");
-    fp->beginChangeGesture();
-    ap->beginChangeGesture();
+    if (gesture) { fp->beginChangeGesture(); ap->beginChangeGesture(); }
     fp->setValueNotifyingHost (fp->convertTo0to1 ((float) freq));
     ap->setValueNotifyingHost (ap->convertTo0to1 ((float) sweep));
-    ap->endChangeGesture();
-    fp->endChangeGesture();
+    if (gesture) { ap->endChangeGesture(); fp->endChangeGesture(); }
     timerCallback();                                 // displayet viser det nye med det samme
     return true;
 }
@@ -1216,6 +1293,13 @@ void DopplerSatEditor::testBeginSweepEdit (int part, const juce::String& shownTe
 {
     rangeLcd->beginEdit (part);
     if (auto* te = dynamic_cast<juce::TextEditor*> (rangeLcd->getChildComponent (0))) te->setText (shownText, false);
+}
+
+void DopplerSatEditor::testSweepDrag (int part, float dyPixels, bool fine)
+{
+    rangeLcd->beginDrag (part);
+    rangeLcd->dragBy (dyPixels, fine);
+    rangeLcd->endDrag();
 }
 
 void DopplerSatEditor::resized()

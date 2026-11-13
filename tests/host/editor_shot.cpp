@@ -53,8 +53,13 @@ static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
                     sweepEnds (p, nlo, nhi);
                     const double fixedEnd = typedTop ? lo : hi;
                     const double gotTyped = typedTop ? nhi : nlo, gotFixed = typedTop ? nlo : nhi;
-                    const bool pass = std::abs (gotTyped / t - 1.0) < 0.001
-                                      && (code == 2 ? off != 0.f : std::abs (gotFixed / fixedEnd - 1.0) < 0.001);
+                    // 1.14: den uroerte ende staar altid. Svar 1: den skrevne naas. Svar 2 (kun med Offset): omraadet er saa
+                    // bredt, som Offset tillader ((a + b) * log2 1000 / 2 oktaver), og Sweep er 100 %.
+                    const double a = -juce::jmax (-1.0, off * 0.01 - 1.0), b = juce::jmin (1.0, off * 0.01 + 1.0);
+                    const double maxSpan = (a + b) * 0.5 * std::log2 (1000.0);
+                    const bool pass = std::abs (gotFixed / fixedEnd - 1.0) < 0.001
+                                      && (code == 2 ? off != 0.f && std::abs (std::log2 (nhi / nlo) - maxSpan) < 0.002
+                                                    : std::abs (gotTyped / t - 1.0) < 0.001);
                     if (! pass)
                     {
                         ok = false;
@@ -92,6 +97,67 @@ static bool sweepTypeTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
                  "Offset, %d med Offset  %s\n", cases, moved, movedOffset, ok && moved == 0 ? "OK" : "FEJL");
     setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
     return ok && moved == 0 && wideOk && rej && fmt1 && fmt2;
+}
+
+// 1.14 (brugeren 2026-11-13): "Når man skriver 20 hz i laveste kant, så forsvinder tallet for øverste kant, og bandet
+// bevæger sig ikke" (Offset 19.1 %). Og traek: "Ved at trække lodret op og ned ud for hver tal i sweepdisplayet, kan
+// man justere tallet for det tal, man har fat i" (0.02 oktav pr. pixel, Shift 0.002; den anden ende staar).
+static bool bugAndDragTest (DopplerSatEditor& ed, DopplerSatProcessor& p)
+{
+    bool ok = true;
+    auto check = [&] (const char* what, bool pass, double lo, double hi)
+    {
+        std::printf ("  %s: %.1f Hz - %.1f Hz  %s\n", what, lo, hi, pass ? "OK" : "FEJL");
+        ok = ok && pass;
+    };
+    auto near = [] (double x, double want) { return std::abs (x / want - 1.0) < 0.001; };
+    double lo, hi, lo0, hi0;
+
+    // Fejlen: Offset 19.1 %, bund 20 Hz -> bunden bliver 20 Hz, toppen staar, Sweep > 0
+    setParam (p, "offset", 19.1f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
+    sweepEnds (p, lo0, hi0);
+    ed.applySweepText (0, "20");
+    sweepEnds (p, lo, hi);
+    check ("Offset 19.1 %, skriv bund 20 Hz", near (lo, 20.0) && near (hi, hi0) && p.apvts.getRawParameterValue ("amount")->load() > 1.f, lo, hi);
+    // Tilstanden fra brugerens billede (20 Hz, Sweep 0 %, Offset 19.1 %): skriv toppen 1k -> 20 Hz - 1 kHz
+    setParam (p, "freq", 20.f); setParam (p, "amount", 0.f);
+    ed.applySweepText (1, "1k");
+    sweepEnds (p, lo, hi);
+    check ("Offset 19.1 %, 20 Hz og Sweep 0 %, skriv top 1 kHz", near (lo, 20.0) && near (hi, 1000.0), lo, hi);
+    // For bredt med Offset: 20 Hz - 20 kHz kan ikke vises med Offset 19.1 % -> bunden (uroert) staar, toppen saa hoejt som muligt
+    sweepEnds (p, lo0, hi0);
+    ed.applySweepText (1, "20k");
+    sweepEnds (p, lo, hi);
+    const double maxSpan = (0.809 + 1.0) * 0.5 * std::log2 (1000.0);
+    check ("Offset 19.1 %, skriv top 20 kHz (for bredt: bunden staar)", near (lo, lo0) && std::abs (std::log2 (hi / lo) - maxSpan) < 0.002, lo, hi);
+
+    // Traek uden Offset: bund 50 px ned = halv frekvens, top 50 px op = dobbelt, Shift 50 px = 2^0.1; den anden staar
+    setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
+    sweepEnds (p, lo0, hi0);
+    ed.testSweepDrag (0, 50.f, false);
+    sweepEnds (p, lo, hi);
+    check ("traek bund 50 px ned (halv)", near (lo, lo0 * 0.5) && near (hi, hi0), lo, hi);
+    sweepEnds (p, lo0, hi0);
+    ed.testSweepDrag (1, -50.f, false);
+    sweepEnds (p, lo, hi);
+    check ("traek top 50 px op (dobbelt)", near (hi, hi0 * 2.0) && near (lo, lo0), lo, hi);
+    sweepEnds (p, lo0, hi0);
+    ed.testSweepDrag (1, -50.f, true);
+    sweepEnds (p, lo, hi);
+    check ("traek top 50 px op med Shift (2^0.1)", near (hi, hi0 * std::exp2 (0.1)) && near (lo, lo0), lo, hi);
+    // Traek forbi den anden ende: bunden kan ikke komme over toppen (intet sker)
+    sweepEnds (p, lo0, hi0);
+    ed.testSweepDrag (0, -500.f, false);
+    sweepEnds (p, lo, hi);
+    check ("traek bund forbi toppen (intet sker)", near (lo, lo0) && near (hi, hi0), lo, hi);
+    // Eet tal (Sweep 0): traek op = toppen
+    setParam (p, "freq", 600.f); setParam (p, "amount", 0.f);
+    ed.testSweepDrag (1, -50.f, false);
+    sweepEnds (p, lo, hi);
+    check ("Sweep 0 %, traek op (toppen)", near (lo, 600.0) && near (hi, 1200.0), lo, hi);
+
+    setParam (p, "offset", 0.f); setParam (p, "freq", 600.f); setParam (p, "amount", 30.f);
+    return ok;
 }
 
 // 1.13 (brugeren 2026-11-13): "Pilen, der indikerer Frequency Middle skal være i midten af de to yderkanter i alle
@@ -250,6 +316,7 @@ int main (int argc, char** argv)
     {
         typeOk = sweepTypeTest (*de, proc);
         typeOk = centreTest (proc) && typeOk;                   // 1.13
+        typeOk = bugAndDragTest (*de, proc) && typeOk;          // 1.14
         double lo0, hi0;
         sweepEnds (proc, lo0, hi0);
         de->testBeginSweepEdit (0, "180");

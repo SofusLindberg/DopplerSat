@@ -20,8 +20,12 @@ public:
     // 1.10: et skrevet tal i Sweep-displayet (part 0 = bund, 1 = top, -1 = eet tal vist). Samme vej som naar brugeren
     // klikker og trykker Enter; offentlig, saa EditorShot kan teste den. false = afvist (intet tal, bund over top).
     bool applySweepText (int part, const juce::String& typed);
-    // Til EditorShot: aabn feltet over et tal med en bestemt tekst i (til billedet)
+    // 1.14: faelles for skrivning og traek: ny vaerdi (Hz) for bund / top; gesture = een aendring i DAW'en
+    bool applySweepHz (int part, double hz, bool gesture);
+    void sweepEndsNow (double& lo, double& hi) const;     // Sweep-displayets ender, som de vises
+    // Til EditorShot: aabn feltet over et tal med en bestemt tekst i (til billedet), og et traek (dy pixel, + = ned)
     void testBeginSweepEdit (int part, const juce::String& shownText);
+    void testSweepDrag (int part, float dyPixels, bool fine);
 
     // Hoejreklik: en kontrol, der viser parameterens menu i stedet for at reagere paa hoejre museknap
     template <class Base>

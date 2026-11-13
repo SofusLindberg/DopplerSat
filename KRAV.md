@@ -198,7 +198,16 @@ Claudes bud (bygget i 1.13):
 Undervejs, brugerens ord:
 > hvis det ikke fungerer, så mind mig om, at v. 1.10 fungerede godt. Så snakker vi om det.
 
-## Efter 1.13 (2026-11-13, ikke bygget endnu)
+## Version 1.14 (2026-11-13)
+
+Brugerens ord (med billede: Frequency 20 Hz, Sweep 0 %, Offset 19,1 %):
+> Super. Det fungerer. Der er nogle bugs i sweep-displayet. (se billede) Når man skriver 20 hz i laveste kant, så forsvinder tallet for øverste kant, og bandet bevæger sig ikke. 2) Jeg ønsker følgende: Ved at trække lodret op og ned ud for hver tal i sweepdisplayet, kan man justere tallet for det tal, man har fat i.
+
+Det betyder:
+- **Fejlen er rettet:** med Offset skubbes Sweep-området nu efter den del, LFO'en faktisk bruger, så bunden kan blive 20 Hz. Er et skrevet område for bredt (kun muligt med Offset), bliver den anden ende stående, og den skrevne går så langt, den kan. Sweep falder aldrig sammen til 0 %.
+- **Træk op / ned i et af Sweep-displayets tal** ændrer netop det tal; op = højere frekvens (100 pixel = 2 oktaver, Shift = 10 gange finere). Den anden ende bliver stående, som når man skriver, og hele trækket er én ændring i DAW'en. Et klik uden træk åbner tekstfeltet som før.
+
+## Efter 1.14 (2026-11-13, ikke bygget endnu)
 
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
@@ -233,7 +242,7 @@ Claudes bud (bygget):
   - **Sweep** (til og med 1.3: Amount): hvor langt LFO'en flytter båndet. **1.11: 100 % = båndets midte når helt ud til 20 Hz og 20 kHz** (brugerens ønske 2026-11-13, standard 30 %). **1.13: Sweep er områdets samlede bredde, symmetrisk om Frequency**, så pilen står i midten, når der er plads; rammer området en ende, skubbes det ind med samme bredde, så bevægelsen er den samme (brugerens ønske 2026-11-13). **Båndet glider ud over 20 Hz / 20 kHz** i stedet for at blive klemt ved enden (1.13). 1.11–1.12: en andel af vejen til hver ende (siderne kunne være forskellige). Til og med 1.10: 100 % = 3 oktaver til hver side. Ændrer kun området, båndet bevæger sig hen over.
   - **Band Size** (til og med 1.3: Width): selve båndets bredde, 0,1–6 oktaver.
   - **Displayene** over knapperne hedder **Sweep** (området, båndets midte bevæger sig hen over; 1.6: uden Band Size) og **Band Size** (båndets kanter lige nu), som knapperne (1.5).
-  - **Sweep-displayets tal kan skrives ind** (1.10): klik på bunden eller toppen og skriv. Det andet tal bliver stående, og Frequency og Sweep følger med.
+  - **Sweep-displayets tal kan skrives ind** (1.10): klik på bunden eller toppen og skriv. Det andet tal bliver stående, og Frequency og Sweep følger med. **Træk op / ned i et tal** ændrer det (1.14, op = højere, Shift = fint).
 - **Pause** (1.6): LFO'en og båndet står stille. Knap i LFO-modulets titellinje, kan automatiseres.
 - **Smooth Peaks** (1.8 som knap under Bypass; **1.9 altid til**, uden knap og parameter, brugerens ønske 2026-11-10). Dæmper kun de korte niveautoppe ved hurtig Rate: det behandlede signal må højst nå 3 dB over toppene af en rolig version af effekten. Langsom Rate røres ikke.
 - **Layout (1.9):** tre moduler, LFO, Band og Output. Edges-knapperne ligger som en søjle i Band, og Edge steepness-tegningen er væk (brugerens ønske 2026-11-10, efter mockuppet).
