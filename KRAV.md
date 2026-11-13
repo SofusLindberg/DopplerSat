@@ -207,7 +207,20 @@ Det betyder:
 - **Fejlen er rettet:** med Offset skubbes Sweep-området nu efter den del, LFO'en faktisk bruger, så bunden kan blive 20 Hz. Er et skrevet område for bredt (kun muligt med Offset), bliver den anden ende stående, og den skrevne går så langt, den kan. Sweep falder aldrig sammen til 0 %.
 - **Træk op / ned i et af Sweep-displayets tal** ændrer netop det tal; op = højere frekvens (100 pixel = 2 oktaver, Shift = 10 gange finere). Den anden ende bliver stående, som når man skriver, og hele trækket er én ændring i DAW'en. Et klik uden træk åbner tekstfeltet som før.
 
-## Efter 1.14 (2026-11-13, ikke bygget endnu)
+## Version 1.15 (2026-11-13, bygget, ikke installeret: venter på brugerens valg af versionsnavn)
+
+Brugerens ord (med billede af de tre knapper i Band):
+> rigtigt godt. 1) Hvorfor bliver frame rate højere, når jeg skruer på en af kanterne i Sweep-displayet? 2) Billede: Sweep skal være længst til venstre, Band size i midten, Frequency længst til højre
+
+Undervejs, brugerens ord:
+> Du er vist kommet til at navngive versionerne forkert. Nyeste version hedder 1.15, men tidligere versioner har heddet 1.6
+
+Det betyder:
+- **Knapperne i Band-modulet:** Sweep til venstre, Band Size i midten, Frequency til højre. Til og med 1.14: Frequency, Sweep, Band Size.
+- **Frame rate:** et træk eller et skrevet tal i Sweep-displayet opdaterer nu kun tallet med det samme. Resten af displayet tegnes som altid 30 gange i sekundet. I 1.10–1.14 blev hele displayet tegnet ved hver musebevægelse, og Random-sporet løb hurtigere.
+- **Versionsnavne:** se FREMDRIFT 2026-11-13 (7). Brugeren vælger.
+
+## Efter 1.15 (2026-11-13, ikke bygget endnu)
 
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 

@@ -52,6 +52,7 @@ private:
     class HelpOverlay;                         // forklaringsboksen oven paa hele editoren
 
     void timerCallback() override;
+    void updateSweepLcd();                     // 1.15: kun Sweep-displayets tekst (ved skrivning og traek)
     void renderPlate();
     void updateSync (bool sync);
     void updateMode (int mode);

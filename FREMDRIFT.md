@@ -4,6 +4,28 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (7) — Version 1.15 bygget (knapperne byttet, frame rate), IKKE installeret: spørgsmål om versionsnavne
+
+**Status:**
+- Bygget som "Pitch Bend Texture 1.15" (D115), uden fejl eller advarsler. **Ikke installeret:** venter på brugerens valg af versionsnavn (se nedenfor).
+- EditorShot (alle tests, også højreklik og skrivning/træk): OK. Røgtest og DAW-test: OK.
+- `--compare` mod 1.14: "SAMME LYD", bit-identisk i alle 16 trin. Kun editoren er ændret.
+
+**Ønsket:** se `KRAV.md` ("Version 1.15"). Brugeren skrev: "rigtigt godt. 1) Hvorfor bliver frame rate højere, når jeg skruer på en af kanterne i Sweep-displayet? 2) [...] Sweep skal være længst til venstre, Band size i midten, Frequency længst til højre".
+
+**Lavet:**
+1. **Frame rate:** `applySweepHz` kaldte hele `timerCallback`. Under et træk blev plot og LFO-visning derfor tegnet ved hver musebevægelse (60–125 gange i sekundet mod ellers 30), og `lfoView->sample()` fik Random-sporet til at løbe hurtigere. Nu opdaterer den kun Sweep-displayets tekst (`updateSweepLcd`, som timeren også bruger).
+2. **Knapperne i Band:** Sweep, Band Size, Frequency (`resized` og labels i `renderPlate`). Højreklik-testen finder Frequency på enheden " Hz", ikke på placeringen.
+
+**Spørgsmål undervejs:** "Du er vist kommet til at navngive versionerne forkert. Nyeste version hedder 1.15, men tidligere versioner har heddet 1.6"
+- **Svar:** det er ikke en fejl, men software-tælling: efter 1.9 kommer 1.10, 1.11 ... 1.15 (femten versioner efter 1.0). Læst som decimaltal ser 1.15 dog mindre ud end 1.6, og DAW'ernes lister sorterer alfabetisk: 1.10–1.15 står før 1.3.
+- **Bud:** næste version hedder **2.01**, derefter 2.02, 2.03 ... Med to cifre efter punktummet læses de rigtigt som decimaltal og sorteres rigtigt, og 2.xx står efter alle 1.x. De gamle versioner bliver liggende med deres navne. Plugin-koden bliver D201, D202 ... (unik).
+- Alternativ: behold tællingen (1.15, 1.16 ...).
+
+**NÆSTE GANG:** installér den byggede version, når brugeren har valgt navn: 1.15 eller 2.01 (kræver ændring af navne-logikken i CMakeLists og et nyt build). Hvis det ikke fungerer: mind brugeren om, at 1.10 fungerede godt. Band Size-displayet venter.
+
+---
+
 ## 2026-11-13 (6) — Version 1.14: fejl i Sweep-displayet rettet (Offset), træk op/ned i tallene
 
 **Status:**

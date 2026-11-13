@@ -1234,12 +1234,16 @@ void DopplerSatEditor::timerCallback()
     plot->repaint();
     lfoView->sample();
     lfoView->repaint();
-    const double off = (double) processor.apvts.getRawParameterValue ("offset")->load() * 0.01;
-    // 1.6: Sweep-displayet viser midtens vej (Frequency +/- Sweep); Band Size aendrer det ikke
-    const double c1 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0, -1.0 + off)),
-                 c2 = processor.bandCentreFor (juce::jlimit (-1.0, 1.0,  1.0 + off));
-    rangeLcd->setText (hzText (c1) == hzText (c2) ? hzText (c1) : hzText (c1) + " - " + hzText (c2));
+    updateSweepLcd();
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
+}
+
+// 1.6: Sweep-displayet viser midtens vej (Frequency +/- Sweep); Band Size aendrer det ikke
+void DopplerSatEditor::updateSweepLcd()
+{
+    double c1, c2;
+    sweepEndsNow (c1, c2);
+    rangeLcd->setText (hzText (c1) == hzText (c2) ? hzText (c1) : hzText (c1) + " - " + hzText (c2));
 }
 
 // 1.10 (brugeren 2026-11-13): et skrevet tal i Sweep-displayet. part 0 = bunden, 1 = toppen, -1 = displayet viser
@@ -1285,7 +1289,10 @@ bool DopplerSatEditor::applySweepHz (int part, double hz, bool gesture)
     fp->setValueNotifyingHost (fp->convertTo0to1 ((float) freq));
     ap->setValueNotifyingHost (ap->convertTo0to1 ((float) sweep));
     if (gesture) { ap->endChangeGesture(); fp->endChangeGesture(); }
-    timerCallback();                                 // displayet viser det nye med det samme
+    // Kun Sweep-displayets tal med det samme. 1.10-1.14 kaldte hele timerCallback, saa displayet blev tegnet ved hver
+    // musebevaegelse under et traek (op til 60-125 gange i sekundet mod ellers 30), og Random-sporet i LFO-visningen
+    // loeb hurtigere (brugeren 2026-11-13: "Hvorfor bliver frame rate højere, når jeg skruer på en af kanterne").
+    updateSweepLcd();
     return true;
 }
 
@@ -1329,8 +1336,10 @@ void DopplerSatEditor::resized()
         const int lcdW = edgeColX - 14 - (x + 12);
         rangeLcd->setBounds (x + 12, y (42), lcdW, 22);
         nowLcd->setBounds (x + 12, y (92), lcdW, 22);
+        // 1.15 (brugeren 2026-11-13): "Sweep skal være længst til venstre, Band size i midten, Frequency længst til
+        // højre" (til og med 1.14: Frequency, Sweep, Band Size)
         for (int i = 0; i < 3; ++i)
-            placeKnob (*std::array<juce::Slider*, 3> { &freqSlider, &amountSlider, &widthSlider }[(size_t) i],
+            placeKnob (*std::array<juce::Slider*, 3> { &amountSlider, &widthSlider, &freqSlider }[(size_t) i],
                        (float) (x + 12) + (float) (w - 24) / 3.f * ((float) i + 0.5f), mY + layout::knob, mY + layout::value);
     }
     // Edges (1.9: en soejle i Band med "Edges" og "?" oeverst; til og med 1.8 et eget modul med "Edge steepness"-
@@ -1435,7 +1444,8 @@ void DopplerSatEditor::renderPlate()
     for (int i = 0; i < 3; ++i)
     {
         // 1.4: Amount -> Sweep (kun omraadet, baandet bevaeger sig hen over), Width -> Band Size (selve baandet)
-        static const char* m[] = { "Frequency", "Sweep", "Band Size" }, *sb[] = { "middle", "travel range", "the band itself" };
+        // 1.15: Sweep, Band Size, Frequency (som knapperne i resized)
+        static const char* m[] = { "Sweep", "Band Size", "Frequency" }, *sb[] = { "travel range", "the band itself", "middle" };
         knobText (1, 12.f + (float) (L.mw[1] - 24) / 3.f * ((float) i + 0.5f), m[i], sb[i]);
     }
     knobText (3, (float) L.mw[3] * 0.27f, "Dry / Wet", "");
