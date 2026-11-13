@@ -166,6 +166,13 @@ Claudes bud (venter på brugerens ja):
 - Klik på et af Band Size-displayets tal og skriv en ny kant. Kun Band Size ændres. Båndets midte bliver, hvor den er, så den anden kant flytter sig lige så meget den modsatte vej.
 - Under Pause rammer båndet præcis det skrevne. Når LFO'en kører, står tallet stille, mens man skriver.
 
+Undervejs, brugerens ord:
+> Sweep (travel range): 100% skal gå helt ud til hver ende af spektrummet.
+
+Claudes bud (venter på brugerens ja):
+- Sweep bliver "hvor langt mod hver ende": 0 % = båndet står på Frequency, 100 % = båndets midte når helt ud til 20 Hz og 20 kHz, uanset Frequency. Til og med 1.9: 100 % = 3 oktaver til hver side.
+- Standard-Sweep bliver 30 %, så standardlyden er næsten som nu.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran; fra 1.9 i Band-modulet). Der er ingen lineær fase.

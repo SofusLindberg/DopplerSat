@@ -19,6 +19,15 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
   - Under Pause rammer båndet præcis det skrevne. Når LFO'en kører, står tallet stille, mens man skriver, og den nye bredde gælder fra Enter. Grænser 0,1–6 oktaver.
   - Ikke anbefalet: at den anden kant står stille. Det kræver, at Frequency flyttes, og så flytter Sweep-området sig, når man retter Band Size.
   - Feltet under Band Size-knappen ("1.00 oct") kan man allerede klikke i og skrive bredden i oktaver. Det gælder alle knappernes tal-felter (JUCE-label, redigerbar med ét klik).
+- Undervejs: "Sweep (travel range): 100% skal gå helt ud til hver ende af spektrummet."
+- **Bud for Sweep 100 %:**
+  - Sweep bliver en andel af vejen ud mod hver ende. Midtens vej går fra F · (20/F)^s til F · (20000/F)^s, hvor s = Sweep 0–1. LFO-værdier under 0 bruger den nedre side og værdier over 0 den øvre, så 100 % = 20 Hz – 20 kHz uanset Frequency, og Frequency er stadig midten.
+  - Konsekvenser:
+    - Står Frequency langt fra ca. 630 Hz, er den ene side længere. Båndet bevæger sig da hurtigere på den side, og pitchen bøjer mere dér; farten skifter ved midten.
+    - Ved 100 % rejser båndet ca. 10 oktaver i stedet for 6, så hurtig Rate bøjer mere. Fartgrænsen skal bruge den længste side.
+    - Standard 30 % giver ved 600 Hz 216 Hz – 1,72 kHz (i dag 212 Hz – 1,70 kHz).
+    - Skrive-funktionen mister grænsen på 6 oktaver. s = log2(top/bund) / log2(1000), og Frequency regnes ud; med Offset findes de ved søgning.
+  - Fravalgt: 100 % = ±10 oktaver symmetrisk. Så står båndet stille i enderne en stor del af tiden (ca. 2/3 ved 600 Hz).
 
 ---
 
