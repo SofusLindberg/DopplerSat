@@ -150,6 +150,22 @@ Det betyder:
 - **Det nye layout:** tre moduler (LFO, Band, Output). De tre Edges-knapper ligger som en søjle i Band-modulet til højre for de to displays, med "Edges" og "?" øverst. **Edge steepness-tegningen er fjernet.**
 - **Mindre CPU, uden at lyden eller pluginnet ændrer sig:** målt bit for bit mod 1.8 med Smooth Peaks tændt.
 
+## Efter 1.9 (2026-11-13, ikke bygget endnu)
+
+Brugerens ord (med billede af Sweep-displayet):
+> SWEEP display: Brugeren skal kunne skrive grænserne af top og bund ind ved at klikke på displayet (Før du bygger, så giv mig et bud på, hvad vi gør, hvis brugeren kun vil rette den ene ekstrem ind (top eller bund), fordi både top og bund justeres lige nu ved at dreje på Sweep-knoben?)
+
+Claudes bud (venter på brugerens ja):
+- Man klikker på det tal, man vil rette (bund eller top). Kun det tal kan skrives om, og det andet bliver stående.
+- Pluginnet regner selv Frequency og Sweep ud, så displayet viser præcis det skrevne. Ingen nye parametre, og lyden ændres ikke.
+
+Undervejs, brugerens ord:
+> Band size skal også kunne justeres ved, at brugeren kan skrive i displayet.
+
+Claudes bud (venter på brugerens ja):
+- Klik på et af Band Size-displayets tal og skriv en ny kant. Kun Band Size ændres. Båndets midte bliver, hvor den er, så den anden kant flytter sig lige så meget den modsatte vej.
+- Under Pause rammer båndet præcis det skrevne. Når LFO'en kører, står tallet stille, mens man skriver.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran; fra 1.9 i Band-modulet). Der er ingen lineær fase.

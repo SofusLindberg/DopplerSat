@@ -4,6 +4,24 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-13 (1) — Ønske: skriv Sweep-områdets bund og top ind i displayet (bud, intet bygget)
+
+- Brugeren vil kunne klikke på Sweep-displayet og skrive bund og top ind. De spurgte først, hvad vi gør, hvis man kun vil rette den ene ende, når Sweep-knappen i dag flytter begge. Se `KRAV.md` ("Efter 1.9").
+- **Bud:**
+  - Klik på det tal, du vil rette. Kun dét tal åbner som tekstfelt (Enter = brug, Esc = fortryd, Tab = det andet tal), og det andet tal bliver stående.
+  - Bag kulissen er området altid Frequency ± Sweep (symmetrisk i oktaver, Offset regnet med). Ethvert par bund/top svarer derfor til præcis én Frequency og én Sweep. Pluginnet regner dem ud, og begge knapper drejer med. Der kommer ingen nye parametre, og lyden ændres ikke.
+  - Bagefter virker knapperne som før.
+  - Grænser: højst 6 oktaver (Sweep 100 %, mindre med Offset) og 20 Hz–20 kHz. Det skrevne tal gælder, og det andet flyttes kun så meget, som det er nødvendigt. Bund over top afvises.
+  - Ikke anbefalet: separate Low/High-knapper. Det giver nye parametre og en anden Sweep, og det er ikke nødvendigt, fordi alle områder allerede kan laves med Frequency + Sweep.
+- Undervejs: "Band size skal også kunne justeres ved, at brugeren kan skrive i displayet."
+- **Bud for Band Size:**
+  - Klik på det kant-tal, du vil rette. Kun Band Size ændres, og båndets midte bliver, hvor den er (den følger stadig LFO'en). Den anden kant flytter sig derfor lige så meget den modsatte vej, og Sweep røres ikke.
+  - Under Pause rammer båndet præcis det skrevne. Når LFO'en kører, står tallet stille, mens man skriver, og den nye bredde gælder fra Enter. Grænser 0,1–6 oktaver.
+  - Ikke anbefalet: at den anden kant står stille. Det kræver, at Frequency flyttes, og så flytter Sweep-området sig, når man retter Band Size.
+  - Feltet under Band Size-knappen ("1.00 oct") kan man allerede klikke i og skrive bredden i oktaver. Det gælder alle knappernes tal-felter (JUCE-label, redigerbar med ét klik).
+
+---
+
 ## 2026-11-10 (11) — Version 1.9: Smooth Peaks altid til, nyt layout, mindre CPU
 
 **Status:**
