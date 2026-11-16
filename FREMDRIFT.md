@@ -4,6 +4,18 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-16 (2) — Spørgsmål: skal betalingsfirmaet vælges først?
+
+- Brugeren spurgte: "skal jeg vælge, før vi kan gå videre med dette?"
+- **Svar: nej, ikke endnu.** Det, der kommer først, afhænger ikke af betalingsfirmaet:
+  - Lås-op-skærmen i pluginnet.
+  - Det signerede licensformat.
+  - En lokal test-licensserver.
+  - Login og "Min konto" på hjemmesiden.
+- Valget skal først træffes, når købet kobles på (betalingsvindue og købsbeskeder). Licensserverens platform (fx Supabase) skal vælges, før serveren lægges på nettet, men den kan udvikles lokalt først. Intet bygget.
+
+---
+
 ## 2026-11-16 (1) — Salg og licens: plan (intet bygget)
 
 - Brugeren vil sælge pluginnet via hjemmesiden. Det skal kun virke med en købt licens, låst op i pluginnet med nøgle eller login. Kravene er maksimal sikkerhed, salg til hele verden og nemt dansk regnskab. Se `KRAV.md` ("Salg og licens").
