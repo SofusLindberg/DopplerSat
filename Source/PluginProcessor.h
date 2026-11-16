@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "DopplerCore.h"
+#include "License.h"
 
 // Doppler Saturator (brugeren 2026-11-03): "Dobbler-effekt (ptitch ændres, når man trækker båndet henover
 // frekvenserne) i multiband saturation er faktisk super fedt. [...] Tag spektogrammet med et enkelt bånd med
@@ -155,6 +156,15 @@ public:
 
     // 1.9, til test (DspBench): antal stykker, hvor reference-motoren blev sprunget over / regnet
     juce::int64 refSkipped = 0, refRun = 0;
+
+    // 2.08 licens (License.h): uden gyldig licens koerer lyden som Bypass (toer lyd, samme latens), og editoren viser
+    // laas-op-skaermen. licence deles med editorens baggrundstraad (shared_ptr), saa den lever, til et kald er faerdigt.
+    std::shared_ptr<PitchBendUnlock> licence;
+    std::atomic<bool> licensed { false };
+    void updateLicensed();                                  // beskedtraaden: efter indlaesning, laas op, deaktivering
+   #if DS_LICENSE_TESTING
+    void setLicensedForTests (bool b) { licensed = b; }     // kun test-programmer (EditorShot, DspBench)
+   #endif
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();

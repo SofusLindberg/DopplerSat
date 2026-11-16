@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 2.7.0)
+project(DopplerSat VERSION 2.8.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
@@ -50,7 +50,10 @@ target_sources(DopplerSat PRIVATE
     Source/PluginEditor.h
     Source/SatDsp.h
     Source/SimdShim.h
-    Source/DopplerCore.h)
+    Source/DopplerCore.h
+    Source/License.cpp
+    Source/License.h
+    Source/LicensePublicKey.h)
 
 target_compile_definitions(DopplerSat PUBLIC
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
@@ -70,4 +73,5 @@ endif()
 
 target_link_libraries(DopplerSat PRIVATE
     juce::juce_audio_utils juce::juce_dsp juce::juce_audio_processors
+    juce::juce_product_unlocking
     juce::juce_recommended_config_flags)

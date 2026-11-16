@@ -1,0 +1,5 @@
+#pragma once
+// Licensens OFFENTLIGE RSA-noegle (2048 bit, eksponent 65537), lavet af 'LicenseTool genkeys' 2026-11-16.
+// Pluginnet tjekker noeglefiler med den. Den PRIVATE noegle ligger kun hos licensserveren (og i udviklerens
+// programdata, SoundSo/keys) - aldrig i repoet. Ny noegle = nyt build; gamle licenser virker saa ikke i det.
+#define DS_LICENSE_PUBLIC_KEY "10001,cd0ab4177d0c1cbf33bbc26390ffd5ad92b3d2b8ba4bc0e63fdf1181b1e1de62e5263aee9586280e9e810672a5997b8e6c5169ab1c3d56ec86f27317598dc5b47089723fafa9c9e6e1dd8570c29e8a26b921de2bbb92a445ff56125958aff7421dc9dcca6a924e700ff996213c92d57efd7497eb1e06d12a563f6b2b6aef0711756f1888b3dbcb31c9bb9599d4fa1cd6398ab0553bb946bbf9c364de9e51a19ee04daaa9c6431812a817f06ed559b21c4987463b3294b09e5ec0d211da5ab357458766ceacdd82598e76930b621038de3d2834f1d646c0a2022f543890265198af3f21aca70ab97fac8eb6bac6c4a2ff2f471a1dd4178ab2acf7508018fe53b7"

@@ -981,6 +981,241 @@ Layout makeLayout()
 }
 }
 
+// =============================================================================
+//  LicencePanel (2.08, brugeren 2026-11-16: "Pluginnet skal åbnes med en key eller login på ens konto fra hjemmesiden
+//  inde i pluginnet"). Dækker hele editoren, saa laenge pluginnet er laast (kan ikke lukkes), og aabnes med Licence-
+//  knappen i toppen, naar det er laast op (hvem det er licenseret til, deaktiver denne computer). Kaldet til serveren
+//  koerer i en baggrundstraad; svaret anvendes paa beskedtraaden (PitchBendUnlock::applyServerReply).
+// =============================================================================
+class DopplerSatEditor::LicencePanel : public juce::Component
+{
+public:
+    explicit LicencePanel (DopplerSatEditor& e) : ed (e)
+    {
+        for (auto* b : { &loginTab, &keyTab })
+        {
+            b->setClickingTogglesState (true);
+            b->setRadioGroupId (808);
+            b->getProperties().set ("led", (juce::int64) hw::green.getARGB());
+            addAndMakeVisible (*b);
+        }
+        loginTab.setButtonText ("Log in");
+        keyTab.setButtonText ("Licence key");
+        loginTab.setToggleState (true, juce::dontSendNotification);
+        loginTab.onClick = [this] { keyMode = false; refresh(); };
+        keyTab.onClick   = [this] { keyMode = true;  refresh(); };
+
+        for (auto* t : { &email, &password, &key })
+        {
+            t->setFont (hwFont ("Consolas", 13.f));
+            t->setIndents (6, 4);
+            t->onReturnKey = [this] { startUnlock(); };
+            addChildComponent (*t);
+        }
+        email.setTextToShowWhenEmpty ("you@example.com", hw::silkDim);
+        password.setPasswordCharacter ((juce::juce_wchar) 0x2022);
+        key.setTextToShowWhenEmpty ("PBT-XXXXX-XXXXX-XXXXX-XXXXX", hw::silkDim);
+        key.setInputRestrictions (32, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-");
+
+        unlockButton.setButtonText ("Unlock");
+        unlockButton.onClick = [this] { startUnlock(); };
+        deactivateButton.setButtonText ("Deactivate this computer");
+        deactivateButton.onClick = [this] { startDeactivate(); };
+        closeButton.setButtonText ("Close");
+        closeButton.onClick = [this] { setVisible (false); };
+        for (auto* b : { &unlockButton, &deactivateButton, &closeButton })
+            addChildComponent (*b);
+
+        buyLink.setButtonText ("Buy a licence");
+        buyLink.setURL (juce::URL (PitchBendUnlock::shopURL()));
+        forgotLink.setButtonText ("Forgot your password?");
+        forgotLink.setURL (juce::URL (PitchBendUnlock::shopURL().upToFirstOccurrenceOf ("#", false, false) + "#account"));
+        for (auto* l : { &buyLink, &forgotLink })
+        {
+            l->setColour (juce::HyperlinkButton::textColourId, hw::lfo);
+            l->setFont (hwFont ("Bahnschrift", 12.f), false, juce::Justification::centredLeft);
+            addChildComponent (*l);
+        }
+    }
+
+    // Laast: laas-op-felterne. Laast op: licens-info og deaktiver.
+    void refresh()
+    {
+        unlocked = ed.processor.licensed.load();
+        loginTab.setVisible (! unlocked);
+        keyTab.setVisible (! unlocked);
+        email.setVisible (! unlocked && ! keyMode);
+        password.setVisible (! unlocked && ! keyMode);
+        key.setVisible (! unlocked && keyMode);
+        unlockButton.setVisible (! unlocked);
+        buyLink.setVisible (! unlocked);
+        forgotLink.setVisible (! unlocked && ! keyMode);
+        deactivateButton.setVisible (unlocked);
+        closeButton.setVisible (unlocked);
+        for (auto* c : std::initializer_list<juce::Component*> { &loginTab, &keyTab, &email, &password, &key, &unlockButton, &deactivateButton })
+            c->setEnabled (! busy);
+        if (! busy && ! unlocked && status.isEmpty())
+            status = keyMode ? "Your licence key is in the email from SoundSo and in your account on the website." : "";
+        resized();
+        repaint();
+    }
+
+    juce::Rectangle<int> panel() const { return getLocalBounds().withSizeKeepingCentre (440, 300); }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (juce::Colours::black.withAlpha (unlocked ? 0.55f : 0.72f));
+        const auto p = panel().toFloat();
+        g.setColour (juce::Colour (0xff1c1e21));
+        g.fillRoundedRectangle (p, 6.f);
+        g.setColour (juce::Colours::black);
+        g.drawRoundedRectangle (p, 6.f, 1.5f);
+        g.setColour (juce::Colour (0xff5a5e66).withAlpha (0.55f));
+        g.drawRoundedRectangle (p.reduced (1.f), 5.f, 1.f);
+
+        const float x = p.getX() + 24.f, y = p.getY();
+        silkText (g, unlocked ? "Licence" : "Unlock Pitch Bend Texture", x, y + 32.f, 13.f, hw::silk, juce::Justification::left, 1.5f);
+        g.setColour (hw::silkDim);
+        g.setFont (hwFont ("Bahnschrift", 11.5f));
+        if (unlocked)
+        {
+            const auto who = ed.processor.licence->getUserEmail();
+            g.setColour (hw::silk);
+            g.drawFittedText ("Unlocked on this computer for " + (who.isNotEmpty() ? who : juce::String ("your account")) + ".",
+                              juce::Rectangle<int> ((int) x, (int) y + 56, 392, 40), juce::Justification::topLeft, 2);
+            g.setColour (hw::silkDim);
+            g.drawFittedText ("Your licence works on up to " + juce::String (PitchBendUnlock::maxComputers) + " computers. "
+                              "To move it to a new computer, deactivate this one first. It keeps working offline.",
+                              juce::Rectangle<int> ((int) x, (int) y + 100, 392, 60), juce::Justification::topLeft, 3);
+        }
+        else
+        {
+            g.drawText ("Log in with your SoundSo account, or enter your licence key.", (int) x, (int) y + 42, 392, 16,
+                        juce::Justification::left);
+            const auto silkC = hw::silk.withAlpha (0.85f);
+            if (keyMode)
+                silkText (g, "Licence key", x, y + 106.f, 9.5f, silkC);
+            else
+            {
+                silkText (g, "Email", x, y + 106.f, 9.5f, silkC);
+                silkText (g, "Password", x, y + 156.f, 9.5f, silkC);
+            }
+        }
+        if (status.isNotEmpty())
+        {
+            g.setColour (statusColour);
+            g.setFont (hwFont ("Bahnschrift", 11.f));
+            g.drawFittedText (status, juce::Rectangle<int> ((int) x, (int) y + 236, 392, 30), juce::Justification::topLeft, 2);
+        }
+    }
+
+    void resized() override
+    {
+        const auto p = panel();
+        const int x = p.getX() + 24, y = p.getY();
+        loginTab.setBounds (x, y + 70, 120, 22);
+        keyTab.setBounds (x + 128, y + 70, 120, 22);
+        email.setBounds (x, y + 112, 392, 26);
+        password.setBounds (x, y + 162, 392, 26);
+        key.setBounds (x, y + 112, 392, 26);
+        unlockButton.setBounds (x, y + 200, 120, 26);
+        deactivateButton.setBounds (x, y + 200, 190, 26);
+        closeButton.setBounds (x + 202, y + 200, 100, 26);
+        buyLink.setBounds (x, y + 268, 120, 20);
+        forgotLink.setBounds (x + 240, y + 268, 160, 20);
+    }
+
+    void mouseDown (const juce::MouseEvent&) override {}         // klik bag panelet naar ikke knapperne
+
+    void showStatus (const juce::String& s, bool isError)
+    {
+        status = s;
+        statusColour = isError ? hw::red : hw::green;
+        repaint();
+    }
+
+private:
+    void startUnlock()
+    {
+        if (busy) return;
+        const auto e  = keyMode ? juce::String() : email.getText().trim();
+        const auto pw = keyMode ? key.getText().trim() : password.getText();
+        if ((keyMode && pw.isEmpty()) || (! keyMode && (e.isEmpty() || pw.isEmpty())))
+        {
+            showStatus (keyMode ? "Enter your licence key." : "Enter your email and password.", true);
+            return;
+        }
+        busy = true;
+        showStatus ("Contacting SoundSo ...", false);
+        refresh();
+        auto lic = ed.processor.licence;
+        juce::Component::SafePointer<LicencePanel> safe (this);
+        juce::Thread::launch ([lic, e, pw, safe]
+        {
+            const auto reply = lic->readReplyFromWebserver (e, pw);
+            juce::MessageManager::callAsync ([lic, reply, safe]
+            {
+                const auto r = lic->applyServerReply (reply);        // ogsaa hvis editoren er lukket imens
+                if (safe != nullptr) safe->unlockFinished (r);
+            });
+        });
+    }
+
+    void unlockFinished (const juce::OnlineUnlockStatus::UnlockResult& r)
+    {
+        busy = false;
+        ed.processor.updateLicensed();
+        if (r.succeeded && ed.processor.licensed.load())
+        {
+            password.clear();
+            status.clear();
+            setVisible (false);                                       // pluginnet virker nu
+            ed.licenceButton.setButtonText ("Licence");
+            return;
+        }
+        showStatus (r.errorMessage.isNotEmpty() ? r.errorMessage : r.informativeMessage, true);
+        refresh();
+    }
+
+    void startDeactivate()
+    {
+        if (busy) return;
+        busy = true;
+        showStatus ("Contacting SoundSo ...", false);
+        refresh();
+        auto lic = ed.processor.licence;
+        juce::Component::SafePointer<LicencePanel> safe (this);
+        juce::Thread::launch ([lic, safe]
+        {
+            const auto reply = lic->requestDeactivation();
+            juce::MessageManager::callAsync ([lic, reply, safe]
+            {
+                const auto r = lic->applyDeactivationReply (reply);
+                if (safe == nullptr) return;
+                safe->busy = false;
+                safe->ed.processor.updateLicensed();
+                safe->showStatus (r.succeeded ? r.informativeMessage : r.errorMessage, ! r.succeeded);
+                safe->refresh();
+            });
+        });
+    }
+
+    DopplerSatEditor& ed;
+    juce::TextButton loginTab, keyTab, unlockButton, deactivateButton, closeButton;
+    juce::TextEditor email, password, key;
+    juce::HyperlinkButton buyLink, forgotLink;
+    juce::String status;
+    juce::Colour statusColour { hw::green };
+    bool busy = false, keyMode = false, unlocked = false;
+};
+
+void DopplerSatEditor::showLicencePanel()
+{
+    licencePanel->refresh();
+    licencePanel->setVisible (true);
+    licencePanel->toFront (false);
+}
+
 DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     : AudioProcessorEditor (&p), look (std::make_unique<HardwareLook>()), processor (p)
 {
@@ -1109,6 +1344,18 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     helpOverlay = std::make_unique<HelpOverlay>();
     addChildComponent (*helpOverlay);
 
+    // 2.08 licens: knappen i toppen og panelet (oeverst)
+    licenceButton.setButtonText (processor.licensed.load() ? "Licence" : "Unlock");
+    licenceButton.getProperties().set ("compact", true);
+    licenceButton.setTooltip ("Licence: unlock Pitch Bend Texture, see who it is licensed to, or deactivate this computer.");
+    licenceButton.onClick = [this] { showLicencePanel(); };
+    addAndMakeVisible (licenceButton);
+    licencePanel = std::make_unique<LicencePanel> (*this);
+    addChildComponent (*licencePanel);
+   #if ! DS_LICENSE_TESTING
+    if (processor.licence->reloadIfChanged()) processor.updateLicensed();    // en anden instans kan have laast op
+   #endif
+
     // Looket til sidst, naar alle boern er tilfoejet (saa faar tal-felterne og vaelgerne det nye look)
     setLookAndFeel (look.get());
 
@@ -1131,6 +1378,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
 
     setSize (kWidth, kHeight);
     startTimerHz (30);
+    if (! processor.licensed.load()) showLicencePanel();
 }
 
 DopplerSatEditor::~DopplerSatEditor()
@@ -1237,6 +1485,18 @@ void DopplerSatEditor::timerCallback()
     lfoView->repaint();
     updateSweepLcd();
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
+
+    // 2.08 licens: hvert sekund - har en anden instans laast op eller deaktiveret? Laast = panelet dækker alt.
+    if (++licenceTick >= 30)
+    {
+        licenceTick = 0;
+       #if ! DS_LICENSE_TESTING
+        if (processor.licence->reloadIfChanged()) processor.updateLicensed();
+       #endif
+    }
+    const bool locked = ! processor.licensed.load();
+    licenceButton.setButtonText (locked ? "Unlock" : "Licence");
+    if (locked && ! licencePanel->isVisible()) showLicencePanel();
 }
 
 // 1.6: Sweep-displayet viser midtens vej (Frequency +/- Sweep); Band Size aendrer det ikke
@@ -1363,6 +1623,8 @@ void DopplerSatEditor::resized()
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }
     helpOverlay->setBounds (getLocalBounds());
+    licenceButton.setBounds (262, 14, 72, 20);                 // 2.08: i toppen, efter titlen
+    licencePanel->setBounds (getLocalBounds());
 }
 
 void DopplerSatEditor::renderPlate()

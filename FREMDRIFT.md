@@ -4,6 +4,63 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-16 (3) — Version 2.08: licens i pluginnet og lokal test-licensserver
+
+**Status:**
+- Bygget som **"Pitch Bend Texture 2.08"** (D208), uden fejl eller advarsler. Installation: se nedenfor.
+- **Lås:** `HostSmoke --locktest` på den rigtige VST3 giver 0,00 cent uden licensfil (Bypass) og 195 cent med licens. "LAAS OK".
+- **Med licens:** `--compare` mod 2.07 giver "SAMME LYD" (16/16 bit-identisk). Røgtest og DAW-test: OK.
+- **LicenseTest:** 25 tjek OK (se nedenfor). EditorShot: OK, også lås-op-panelet.
+- Denne computer er låst op med udviklernøglen (`LicenseTool unlock-dev`), så 2.08 virker i Ableton med det samme.
+- **Ikke testet i en DAW.**
+
+**Ønsket:** brugeren skrev "Ja, begynd" (lås-op-skærm og test-server først; betalingsfirmaet vælges senere).
+
+**Lavet:**
+1. **`Source/License.h/.cpp` (`PitchBendUnlock : juce::OnlineUnlockStatus`):**
+   - Produkt-id "PitchBendTexture" (alle versioner), højst 3 computere.
+   - Licensen gemmes i `%APPDATA%\SoundSo\Pitch Bend Texture\licence.dat` (Mac: Application Support).
+   - `readReplyFromWebserver` sender en formular via POST: product, os, mach + email/pw eller key.
+   - `applyServerReply` (beskedtråden; som JUCE's private handleXmlReply, men gemmer med det samme). `requestDeactivation` / `applyDeactivationReply` sender noeglefilen som bevis. Derudover `forget`, `reloadIfChanged` og `postForm`.
+   - Adresser: `DS_LICENSE_URL` = http://127.0.0.1:8766 og `DS_SHOP_URL` = den lokale hjemmeside, til udvikling. Skal være https ved salg.
+2. **Nøgler:** `LicenseServerCore::makeKeyPair` laver RSA 2048 med e = 65537 og primtal fra `std::random_device` (kryptografisk på Windows og Mac). JUCE's `createKeyPair` kan vælge e = 3, og JUCE's noeglefiler er RSA uden padding, så en lille eksponent kunne i princippet give falske licenser.
+   - `LicenseTool genkeys` har skrevet den private nøgle til `%APPDATA%\SoundSo\keys\licence-private.key` (ikke i repoet; **brugeren skal tage en sikker kopi**) og den offentlige til `Source/LicensePublicKey.h`.
+3. **Processor:** `std::shared_ptr<PitchBendUnlock> licence` og `std::atomic<bool> licensed`. `buildEngineParams` giver bypass, når der ikke er licens.
+   - `DS_LICENSE_TESTING` (kun EditorShot og DspBench) giver `setLicensedForTests`, og test-programmerne er låst op som standard.
+4. **Editor:** `LicencePanel` dækker alt, mens pluginnet er låst, og kan ikke lukkes.
+   - Faneblade "Log in" / "Licence key", felter, Unlock og statuslinje, plus links "Buy a licence" / "Forgot your password?" til shoppen.
+   - Når pluginnet er låst op, viser panelet "Unlocked on this computer for ...", Deactivate og Close.
+   - Serverkaldet kører i en baggrundstråd (`Thread::launch` med `shared_ptr` til licensen), og svaret anvendes på beskedtråden.
+   - Knappen "Unlock" / "Licence" sidder i toppen (262, 14). Timeren tjekker licensfilen hvert sekund, så andre instanser følger med.
+5. **`tests/host/license_server.*` (`LicenseServerCore`):**
+   - JSON-data og saltede, itererede SHA-256-adgangskoder (kun test; den rigtige server bruger platformens login).
+   - Licensnøgler "PBT-XXXXX-XXXXX-XXXXX-XXXXX" (100 bit) og højst 3 computere (samme computer = et fælles maskine-id).
+   - Signering med `KeyGeneration::generateKeyFile`. HTTP på 127.0.0.1 med `StreamingSocket`.
+   - Ruter: `/api/unlock`, `/api/deactivate` og `/api/ping`.
+6. **`LicenseTool`:** genkeys, serve [port], add, unlock-dev, lock-dev og machine. Testkonto: `test@soundso.local` / `pitchbend-test`, nøgle `PBT-CBAM9-WTYWU-7DUNB-X5VKH` (data i `%APPDATA%\SoundSo\test-server\licences.json`).
+7. **`LicenseTest`** (25 tjek, midlertidigt nøglepar og egne filer):
+   - Forkert og rigtigt login, licensnøgle, licensen husket efter genstart (offline).
+   - Højst 3 computere, samme computer igen og deaktivering.
+   - Afvist: noeglefil til en anden computer, ændret noeglefil, andet produkt og en noeglefil signeret med en anden nøgle.
+   - Ingen server: forklarende fejl.
+8. **`HostSmoke --locktest`** og EditorShot `doppler12_locked` / `doppler13_licence`.
+
+**Åbent:**
+- Den rigtige licensserver på nettet (fx Supabase): samme ruter og samme signering, med den private nøgle i serverens hemmeligheder. Den skal porteres fra JUCE's `RSAKey::applyToValue`, og JUCE's dokumentation har en PHP-version.
+- Hjemmesidens login / "Min konto", betalingen (Paddle eller Lemon Squeezy) og købsbeskeden, der opretter licensen.
+- Mac-workflowen (`mac.yml`) har ingen licens på CI-maskinen, så HostSmoke dér vil teste et låst plugin. Det skal løses, før den køres.
+
+**NÆSTE GANG:** brugeren tester i Ableton:
+1. `LicenseTool lock-dev`
+2. `LicenseTool serve` (lad den køre)
+3. Åbn 2.08 og log ind med testkontoen eller nøglen.
+4. Prøv Deactivate.
+5. `LicenseTool unlock-dev` for at låse op igen uden server.
+
+Derefter: hjemmesidens konto-sider og valg af betalingsfirma.
+
+---
+
 ## 2026-11-16 (2) — Spørgsmål: skal betalingsfirmaet vælges først?
 
 - Brugeren spurgte: "skal jeg vælge, før vi kan gå videre med dette?"

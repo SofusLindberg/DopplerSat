@@ -50,8 +50,10 @@ private:
     class LcdText;
     class HelpButton;                          // lille rundt "?" (som i Multiband Saturator)
     class HelpOverlay;                         // forklaringsboksen oven paa hele editoren
+    class LicencePanel;                        // 2.08: laas op (login / licensnoegle) og licens-info
 
     void timerCallback() override;
+    void showLicencePanel();                   // 2.08
     void updateSweepLcd();                     // 1.15: kun Sweep-displayets tekst (ved skrivning og traek)
     void renderPlate();
     void updateSync (bool sync);
@@ -91,6 +93,10 @@ private:
 
     std::unique_ptr<HelpButton>  modeHelp;
     std::unique_ptr<HelpOverlay> helpOverlay;
+    // 2.08 licens: knap i toppen og panelet (ligger oeverst; dækker alt, saa laenge pluginnet er laast)
+    juce::TextButton licenceButton;
+    std::unique_ptr<LicencePanel> licencePanel;
+    int licenceTick = 0;
 
     std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;
     std::unique_ptr<ComboAtt>  shapeAtt;

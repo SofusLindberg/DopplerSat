@@ -460,6 +460,42 @@ int main (int argc, char** argv)
     if (inst == nullptr) return 1;
     std::printf ("Indlaest: %s, %d parametre\n", inst->getName().toRawUTF8(), inst->getParameters().size());
 
+    // --locktest (2.08 licens): uden licensfil skal pluginnet koere som Bypass (ingen pitch-aendring), med licens som
+    // altid. Licensfilen flyttes kort vaek og tilbage. Kraever en licens paa denne computer (LicenseTool unlock-dev).
+    if (argc >= 3 && juce::String (argv[2]) == "--locktest")
+    {
+        auto dir = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory);
+       #if JUCE_MAC
+        dir = dir.getChildFile ("Application Support");
+       #endif
+        const auto f = dir.getChildFile ("SoundSo").getChildFile ("Pitch Bend Texture").getChildFile ("licence.dat");
+        const auto bak = f.withFileExtension ("locktest-bak");
+        if (! f.existsAsFile()) { std::printf ("FEJL: ingen licens paa denne computer (LicenseTool unlock-dev)\n"); return 1; }
+        auto measure = [&] (double& peakDiff)
+        {
+            auto p = load (argv[1]);
+            p->setPlayConfigDetails (2, 2, 44100.0, 512);
+            p->prepareToPlay (44100.0, 512);
+            setReal (find (*p, "Frequency"), 300.f); setReal (find (*p, "Sweep"), 60.f);
+            setReal (find (*p, "Band Size"), 1.f);   setReal (find (*p, "Rate"), 1.f);
+            bool bad = false;
+            double peak = 0.0;
+            const double cents = pitchDeviation (*p, 300.0, 4.0, bad, peak);
+            peakDiff = peak;
+            p->releaseResources();
+            return bad ? 1.0e9 : cents;
+        };
+        double pk1 = 0.0, pk2 = 0.0;
+        f.moveFileTo (bak);
+        const double locked = measure (pk1);
+        bak.moveFileTo (f);
+        const double unlocked = measure (pk2);
+        const bool ok = locked < 1.0 && unlocked > 50.0 && f.existsAsFile();
+        std::printf ("  uden licens: pitch-afvigelse %.2f cent (Bypass)\n  med licens:  pitch-afvigelse %.0f cent\n%s\n",
+                     locked, unlocked, ok ? "LAAS OK" : "LAAS FEJL");
+        return ok ? 0 : 1;
+    }
+
     // --benchone <Rate> <Sweep> <Smooth 0/1> <spring 0/1>: kun een maaling i processen (senere maalinger i samme proces
     // kommer ud hoejere, se DspBench). spring = Frequency 600 -> 2500 Hz i foerste blok (Smooth Peaks' to motorer skilles).
     if (argc >= 7 && juce::String (argv[2]) == "--benchone")

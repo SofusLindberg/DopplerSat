@@ -259,7 +259,12 @@ Det betyder (krav):
 - Salg til hele verden.
 - Meget nemt regnskab til dansk skat.
 
-Claudes plan (venter på brugerens valg): se FREMDRIFT 2026-11-16 (1).
+Claudes plan: se FREMDRIFT 2026-11-16 (1). Brugeren: "Ja, begynd" (betalingsfirma vælges senere).
+
+Bygget i **2.08** (første del, uden betalingsfirma og uden server på nettet):
+- **Pluginnet er låst uden licens.** Lyden kører da som Bypass (tør lyd, samme forsinkelse), og et lås-op-panel dækker editoren. Det låses op med **login** (e-mail + adgangskode) eller **licensnøgle**. Licensen huskes og virker uden internet, på højst 3 computere, og kan deaktiveres fra pluginnet (Licence-knappen i toppen).
+- **Sikkerhed:** licensfiler er signeret med en privat RSA-nøgle på 2048 bit (eksponent 65537), som kun licensserveren har. Pluginnet indeholder kun den offentlige nøgle, så licenser ikke kan forfalskes. Den private nøgle ligger ikke i repoet.
+- **Lokal test-licensserver** (LicenseTool) med testkonti, så alt kan afprøves uden konti og penge. Den rigtige server på nettet, hjemmesidens login / "Min konto" og betalingen kommer senere.
 
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 

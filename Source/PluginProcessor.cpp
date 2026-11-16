@@ -100,6 +100,13 @@ DopplerSatProcessor::DopplerSatProcessor()
     pauseP    = apvts.getRawParameterValue ("pause");
     newRandom();
     newRandom();
+
+    licence = std::make_shared<PitchBendUnlock>();
+    licence->load();
+    updateLicensed();
+   #if DS_LICENSE_TESTING
+    licensed = true;                                        // test-programmerne lyder som foer, medmindre de laaser
+   #endif
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createLayout()
@@ -255,7 +262,7 @@ satdsp::EngineParams DopplerSatProcessor::buildEngineParams (double lo, double h
     const double fsProc = getProcessingRate();
     p.phaseMode = modePhase ((int) std::lround (modeP->load()));
     p.baseRate  = fsProc / 4.0;
-    p.bypass    = bypassP->load() > 0.5f;
+    p.bypass    = bypassP->load() > 0.5f || ! licensed.load();      // 2.08: uden licens = Bypass
     p.soloBand  = -1;
 
     // Motoren har fire baand. Kun baand kBand bruges; de andre er slukket og ligger langt udenfor det hoerbare
@@ -529,6 +536,11 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
 
     for (int i = 0; i < numSamples; ++i)
         outAnalyzer.push (mono ? L[i] : 0.5f * (L[i] + R[i]));
+}
+
+void DopplerSatProcessor::updateLicensed()
+{
+    licensed = (bool) licence->isUnlocked();
 }
 
 juce::AudioProcessorEditor* DopplerSatProcessor::createEditor()

@@ -416,6 +416,31 @@ int main (int argc, char** argv)
     }
     std::printf (menuOk ? "  hoejreklik OK\n" : "  hoejreklik FEJL\n");
 
+    // 2.08 licens: laast -> laas-op-panelet dækker alt (doppler12_locked); laast op -> Licence-knappen viser licens-info
+    // (doppler13_licence). Lyden: laast = Bypass (toer lyd) - maales af HostSmoke --locktest paa den rigtige VST3.
+    {
+        proc.setLicensedForTests (false);
+        run (proc, 0.2);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (150);
+        bool panelShown = false;
+        for (auto* c : ed->getChildren())
+            if (c->isVisible() && c->getBounds() == ed->getLocalBounds() && dynamic_cast<juce::TextButton*> (c) == nullptr
+                 && c->getNumChildComponents() > 5)
+                panelShown = true;
+        std::printf ("  laast: laas-op-panelet %s\n", panelShown ? "vises OK" : "vises IKKE (FEJL)");
+        typeOk = typeOk && panelShown;
+        save (*ed, dir.getChildFile ("doppler12_locked.png"));
+
+        proc.setLicensedForTests (true);
+        for (auto* c : ed->getChildren())
+            if (auto* b = dynamic_cast<juce::TextButton*> (c))
+                if (b->getButtonText() == "Unlock" || b->getButtonText() == "Licence") { b->triggerClick(); break; }
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (150);
+        save (*ed, dir.getChildFile ("doppler13_licence.png"));
+        for (auto* c : ed->getChildren())
+            if (c->getBounds() == ed->getLocalBounds() && c->getNumChildComponents() > 5) c->setVisible (false);
+    }
+
     // 1.1: "?" ved de to 0 ms-tilstande -> forklaringsboksen
     for (auto* c : ed->getChildren())
         if (auto* b = dynamic_cast<juce::Button*> (c))
