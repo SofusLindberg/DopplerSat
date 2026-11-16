@@ -7,7 +7,7 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 ## 2026-11-16 (3) — Version 2.08: licens i pluginnet og lokal test-licensserver
 
 **Status:**
-- Bygget som **"Pitch Bend Texture 2.08"** (D208), uden fejl eller advarsler. Installation: se nedenfor.
+- Bygget som **"Pitch Bend Texture 2.08"** (D208, build `7F105348…`), uden fejl eller advarsler. **Ikke installeret:** Windows-boksen til administrator-adgang blev afbrudt ("Handlingen blev afbrudt af brugeren"). Venter på brugeren.
 - **Lås:** `HostSmoke --locktest` på den rigtige VST3 giver 0,00 cent uden licensfil (Bypass) og 195 cent med licens. "LAAS OK".
 - **Med licens:** `--compare` mod 2.07 giver "SAMME LYD" (16/16 bit-identisk). Røgtest og DAW-test: OK.
 - **LicenseTest:** 25 tjek OK (se nedenfor). EditorShot: OK, også lås-op-panelet.
