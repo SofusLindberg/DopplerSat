@@ -4,6 +4,26 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-16 (1) — Salg og licens: plan (intet bygget)
+
+- Brugeren vil sælge pluginnet via hjemmesiden. Det skal kun virke med en købt licens, låst op i pluginnet med nøgle eller login. Kravene er maksimal sikkerhed, salg til hele verden og nemt dansk regnskab. Se `KRAV.md` ("Salg og licens").
+- **Undersøgt** (websøgning 2026-11-16, mest sammenligninger fra konkurrenter, så priserne skal tjekkes på udbydernes egne sider):
+  - Paddle: Merchant of Record, ca. 5 % + 0,50 $ pr. salg, ingen månedspris, ingen indbyggede licensnøgler (webhooks / API).
+  - Lemon Squeezy: samme gebyr, licensnøgler indbygget. Opkøbt af Stripe og på vej mod Stripe Managed Payments, så fremtiden er usikker.
+  - Keygen (licensserver): fra ca. 99 $/md.
+  - JUCE 9.0.3 har `juce_product_unlocking` (`OnlineUnlockStatus` / `OnlineUnlockForm`: login med e-mail og adgangskode, serveren svarer med en RSA-signeret nøglefil låst til computeren) og `juce_cryptography` (`RSAKey`).
+- **Plan (anbefalet):**
+  1. **Paddle som Merchant of Record.** Paddle er sælger over for kunden, tager kortet (PCI), opkræver moms i alle lande, håndterer svindel og refusion og udbetaler månedligt med en opgørelse. I regnskabet er det ét salg til Paddle (UK) pr. udbetaling, uden dansk moms på salget. Tjekkes med revisor / Skattestyrelsen.
+  2. **Egen lille licensserver** på en billig serverløs platform (fx Supabase: konti med færdig, sikker login og nulstilling af adgangskode, database, funktioner). Paddles webhook (signatur tjekkes) opretter licens og konto. Serveren signerer licensfiler med en privat nøgle, som kun den kender.
+  3. **Pluginnet** får en lås-op-skærm (login eller nøgle) via JUCE's modul. Den offentlige nøgle ligger i pluginnet, og licensfilen gemmes og virker offline, fx på 3 computere. Uden licens: lås-op-skærm og ingen effekt.
+  4. **Hjemmesiden** får checkout (Paddle-overlay), opret konto / log ind og "Min konto" (licensnøgle, download, computere).
+- **Brugeren skal selv:** oprette CVR (enkeltmandsvirksomhed), oprette Paddle-konto (identitet og bank), oprette serverkonto (fx Supabase) og have et domæne og hosting til hjemmesiden. Claude opretter ingen konti og indtaster ingen bank- eller kortoplysninger.
+- Ærligt: ingen kopibeskyttelse kan ikke knækkes. Målet er, at den er nem for ærlige købere og besværlig at snyde.
+
+**NÆSTE GANG:** brugerens valg af betalingsfirma og licensløsning. Derefter: lås-op-skærm i pluginnet og en lokal test-licensserver (kan bygges uden konti).
+
+---
+
 ## 2026-11-13 (11) — Version 2.07: elementerne på fælles linjer
 
 **Status:**

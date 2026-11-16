@@ -247,6 +247,20 @@ Claudes mockup, `doppler11_mockup_aligned.png` og `align_compare.png` (før / ef
 
 Band Size-displayet (skriv i det) venter stadig.
 
+### Salg og licens (2026-11-16, plan, intet bygget)
+
+Brugerens ord:
+> Godt. Vi er nået til, at pluginnet skal sættes op med hjemmesiden, så jeg kan sælge det: Pluginnet skal kun kunne bruges, hvis man har købt serial key gennem hjemmesiden ved at benytte et login. Pluginnet skal åbnes med en key eller login på ens konto fra hjemmesiden inde i pluginnet. Al salg skal foregå med maksimal sikkerhed, så både sælger og køber kan føle sig sikre. Handel skal være muligt med hele verden, og regnskaber til dansk skat skal være yderst nemt at foretage.
+
+Det betyder (krav):
+- Pluginnet virker kun med en købt licens. Det låses op inde i pluginnet med en licensnøgle eller et login på kundens konto fra hjemmesiden.
+- Køb sker på hjemmesiden med login (en kundekonto).
+- Maksimal sikkerhed for både sælger og køber.
+- Salg til hele verden.
+- Meget nemt regnskab til dansk skat.
+
+Claudes plan (venter på brugerens valg): se FREMDRIFT 2026-11-16 (1).
+
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:
