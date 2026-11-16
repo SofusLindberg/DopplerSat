@@ -4,6 +4,24 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-16 (4) — Undersøgt: sælge via en tredjeparts-butik (intet bygget)
+
+- Brugeren parkerer planen med egen licensserver. Spørgsmålet var: kan pluginnet uploades til en butik, der selv tager sig af salg, kundeservice, licensnøgler, logins og moms, så indberetningen til Skat er nem? Se `KRAV.md`.
+- **Fundet** (websøgning; mest udbydernes egne sider, så vilkår og priser skal tjekkes ved oprettelse):
+  - **Moonbase** (moonbase.sh), lavet specifikt til audio-plugins:
+    - Er Merchant of Record og opkræver og indbetaler moms og salgsskat i alle lande.
+    - Har licens med aktivering (også offline), SDK, kundekonti og selvbetjeningsportal, downloads og checkout.
+    - Pris: 5 % + 1 € pr. ordre (+1 % kort uden for EØS, +1,5 % PayPal, +1 % USD), 5 € pr. udbetaling, ingen månedspris. Udbetalingsfaktura med gebyrer.
+  - **Gumroad:** Merchant of Record siden 1.1.2025 ("worldwide"), automatiske licensnøgler med API-tjek, downloads og købers bibliotek. 10 % + 0,50 $ pr. salg (30 % via Gumroads egen Discover-markedsplads), ingen månedspris. Ikke lavet til audio.
+  - **Markedspladser / forhandlere** (KVR Marketplace, Plugin Boutique, Splice): kræver ansøgning og godkendelse. Hos KVR uploader udvikleren selv licenskoder og opgiver kontakt til teknisk support; KVR's procent fremgik ikke af siderne. Plugin Boutiques vilkår kunne ikke findes offentligt. Splice Rent-to-Own kræver Splices SDK og en partneraftale. Godt som ekstra kanal, ikke som den eneste.
+- **Dansk moms (Skattestyrelsen):** butikken (Merchant of Record) sælger til kunden, og man sælger selv til butikken (en virksomhed i udlandet). Normalt er der ingen dansk moms på det salg. Uden for EU indberettes beløbet i rubrik C, inden for EU i rubrik B, og så skal det også på EU-salgsangivelsen. Hver udbetalingsopgørelse er ét bilag i regnskabet. Momsregistreringsgrænsen (50.000 kr.) fandtes ikke i søgningen og skal tjekkes, ligesom detaljerne, med Skattestyrelsen eller en revisor.
+- **Ingen butik tager den tekniske support for pluginnet.** Betaling, kvitteringer og refusioner klarer de fleste Merchants of Record.
+- **Konsekvens for koden:** Moonbase eller Gumroad erstatter vores egen licensserver. Lås-op-panelet i 2.08 kan genbruges med deres licens-API / SDK i stedet for vores server.
+
+**NÆSTE GANG:** brugerens valg (fx Moonbase eller Gumroad). Derefter kobles pluginnets lås-op til den valgte butiks licens, og hjemmesidens køb-knapper peges på butikken.
+
+---
+
 ## 2026-11-16 (3) — Version 2.08: licens i pluginnet og lokal test-licensserver
 
 **Status:**

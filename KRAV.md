@@ -266,6 +266,11 @@ Bygget i **2.08** (første del, uden betalingsfirma og uden server på nettet):
 - **Sikkerhed:** licensfiler er signeret med en privat RSA-nøgle på 2048 bit (eksponent 65537), som kun licensserveren har. Pluginnet indeholder kun den offentlige nøgle, så licenser ikke kan forfalskes. Den private nøgle ligger ikke i repoet.
 - **Lokal test-licensserver** (LicenseTool) med testkonti, så alt kan afprøves uden konti og penge. Den rigtige server på nettet, hjemmesidens login / "Min konto" og betalingen kommer senere.
 
+Brugerens ord (2026-11-16, senere):
+> vi gemmer lige denne plan med at sætte key op osv til senere. Kan du undersøge, hvordan man eventuelt bare kan uploade sit plugin til en tredjeparts-store og så bare sælge, uden at skulle tænke i kundeservice, keys eller brugerlogins? Butikken skal også håndtere regnskab med moms, så det er nemt at indberette sine salg til Skat i Danmark
+
+Status: planen med egen licensserver er parkeret. Alternativet (en butik, der selv står for salg, moms, licenser og konti) er undersøgt: se FREMDRIFT 2026-11-16 (4). Intet valgt endnu.
+
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:
