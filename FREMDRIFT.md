@@ -4,6 +4,16 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (4) — 2.09: licens og login fjernet fra pluginnet igen
+
+- Brugeren: "fuck, vi fjerner det med test licens-kode lige nu. Det er først relevant, når jeg har besluttet, hvilken kanal, jeg vil sælge pluginnet igennem. Så fjern login på pluginnet igen"
+- **2.09:** ingen lås-op-skærm, ingen Unlock / Licence-knap, og lyden kører altid (også uden licensfil). Licenskoden fra 2.08 er ikke slettet. Den bygges kun med den nye CMake-indstilling `DS_LICENSE` (standard OFF; `cmake -DDS_LICENSE=ON` giver 2.08-opførslen). Uden den kompileres `License.cpp` ikke, og `juce_product_unlocking` linkes ikke. I koden står alt licens-relateret i `#if DS_LICENSE`. EditorShots lås-test kører kun med DS_LICENSE. LicenseTool og LicenseTest bygges stadig (de bruger License.cpp direkte).
+- **Test:** `HostSmoke --compare` mod 2.08 (låst op) gav SAMME LYD, bit-identisk i alle 16 trin. Hele HostSmoke og EditorShot: OK. `--locktest` viser 195 cent både med og uden licensfil, så 2.09 er ikke låst. Testen melder "LAAS FEJL", fordi den forventer en lås, og det er korrekt nu.
+- Installeret og verificeret med filhash (349F7852…). 2.08 og ældre ligger der stadig.
+- **NÆSTE GANG:** licensen tages op igen, når salgskanalen er valgt (Moonbase eller Gumroad, se 2026-11-16 (4)).
+
+---
+
 ## 2026-11-17 (3) — Spectrum Compare 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "lav version 1. Lav følgende som muligheder, der kan tændes og slukkes i appen, så den viste lydstyrke som udgangspunkt er det reelle input" (gennemsnitskurver med automatisk level match, forskelskurve, forskels-spektrogram, udglatning 1/3 / 1/6 oktav), og undervejs: "sørg for at oprette en ny projektmappe til dette projekt, så det ikke ligger i samme mappe som DopplerSat (Pitch Bend Texture)".

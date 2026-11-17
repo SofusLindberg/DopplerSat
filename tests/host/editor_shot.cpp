@@ -418,6 +418,8 @@ int main (int argc, char** argv)
 
     // 2.08 licens: laast -> laas-op-panelet dækker alt (doppler12_locked); laast op -> Licence-knappen viser licens-info
     // (doppler13_licence). Lyden: laast = Bypass (toer lyd) - maales af HostSmoke --locktest paa den rigtige VST3.
+    // 2.09: kun naar licensen er slaaet til (DS_LICENSE)
+   #if DS_LICENSE
     {
         proc.setLicensedForTests (false);
         run (proc, 0.2);
@@ -440,6 +442,7 @@ int main (int argc, char** argv)
         for (auto* c : ed->getChildren())
             if (c->getBounds() == ed->getLocalBounds() && c->getNumChildComponents() > 5) c->setVisible (false);
     }
+   #endif
 
     // 1.1: "?" ved de to 0 ms-tilstande -> forklaringsboksen
     for (auto* c : ed->getChildren())

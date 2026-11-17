@@ -1,7 +1,16 @@
 #pragma once
 #include <JuceHeader.h>
 #include "DopplerCore.h"
-#include "License.h"
+
+// 2.09 (brugeren 2026-11-17: "vi fjerner det med test licens-kode lige nu. Det er først relevant, når jeg har besluttet,
+// hvilken kanal, jeg vil sælge pluginnet igennem"): licensen fra 2.08 er slaaet fra. Pluginnet bygges uden login og
+// laas; koden ligger klar og slaas til med cmake -DDS_LICENSE=ON.
+#ifndef DS_LICENSE
+ #define DS_LICENSE 0
+#endif
+#if DS_LICENSE
+ #include "License.h"
+#endif
 
 // Doppler Saturator (brugeren 2026-11-03): "Dobbler-effekt (ptitch ændres, når man trækker båndet henover
 // frekvenserne) i multiband saturation er faktisk super fedt. [...] Tag spektogrammet med et enkelt bånd med
@@ -159,9 +168,11 @@ public:
 
     // 2.08 licens (License.h): uden gyldig licens koerer lyden som Bypass (toer lyd, samme latens), og editoren viser
     // laas-op-skaermen. licence deles med editorens baggrundstraad (shared_ptr), saa den lever, til et kald er faerdigt.
+    std::atomic<bool> licensed { DS_LICENSE == 0 };         // 2.09: uden DS_LICENSE altid sand
+   #if DS_LICENSE
     std::shared_ptr<PitchBendUnlock> licence;
-    std::atomic<bool> licensed { false };
     void updateLicensed();                                  // beskedtraaden: efter indlaesning, laas op, deaktivering
+   #endif
    #if DS_LICENSE_TESTING
     void setLicensedForTests (bool b) { licensed = b; }     // kun test-programmer (EditorShot, DspBench)
    #endif

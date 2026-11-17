@@ -981,8 +981,9 @@ Layout makeLayout()
 }
 }
 
+#if DS_LICENSE   // 2.09: kun med cmake -DDS_LICENSE=ON
 // =============================================================================
-//  LicencePanel (2.08, brugeren 2026-11-16: "Pluginnet skal åbnes med en key eller login på ens konto fra hjemmesiden
+//  LicencePanel (2.08,brugeren 2026-11-16: "Pluginnet skal åbnes med en key eller login på ens konto fra hjemmesiden
 //  inde i pluginnet"). Dækker hele editoren, saa laenge pluginnet er laast (kan ikke lukkes), og aabnes med Licence-
 //  knappen i toppen, naar det er laast op (hvem det er licenseret til, deaktiver denne computer). Kaldet til serveren
 //  koerer i en baggrundstraad; svaret anvendes paa beskedtraaden (PitchBendUnlock::applyServerReply).
@@ -1215,6 +1216,7 @@ void DopplerSatEditor::showLicencePanel()
     licencePanel->setVisible (true);
     licencePanel->toFront (false);
 }
+#endif
 
 DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     : AudioProcessorEditor (&p), look (std::make_unique<HardwareLook>()), processor (p)
@@ -1344,6 +1346,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     helpOverlay = std::make_unique<HelpOverlay>();
     addChildComponent (*helpOverlay);
 
+   #if DS_LICENSE
     // 2.08 licens: knappen i toppen og panelet (oeverst)
     licenceButton.setButtonText (processor.licensed.load() ? "Licence" : "Unlock");
     licenceButton.getProperties().set ("compact", true);
@@ -1354,6 +1357,7 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     addChildComponent (*licencePanel);
    #if ! DS_LICENSE_TESTING
     if (processor.licence->reloadIfChanged()) processor.updateLicensed();    // en anden instans kan have laast op
+   #endif
    #endif
 
     // Looket til sidst, naar alle boern er tilfoejet (saa faar tal-felterne og vaelgerne det nye look)
@@ -1378,7 +1382,9 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
 
     setSize (kWidth, kHeight);
     startTimerHz (30);
+   #if DS_LICENSE
     if (! processor.licensed.load()) showLicencePanel();
+   #endif
 }
 
 DopplerSatEditor::~DopplerSatEditor()
@@ -1486,6 +1492,7 @@ void DopplerSatEditor::timerCallback()
     updateSweepLcd();
     nowLcd->setText (hzText (processor.bandLoNow.load()) + " - " + hzText (processor.bandHiNow.load()));
 
+   #if DS_LICENSE
     // 2.08 licens: hvert sekund - har en anden instans laast op eller deaktiveret? Laast = panelet dækker alt.
     if (++licenceTick >= 30)
     {
@@ -1497,6 +1504,7 @@ void DopplerSatEditor::timerCallback()
     const bool locked = ! processor.licensed.load();
     licenceButton.setButtonText (locked ? "Unlock" : "Licence");
     if (locked && ! licencePanel->isVisible()) showLicencePanel();
+   #endif
 }
 
 // 1.6: Sweep-displayet viser midtens vej (Frequency +/- Sweep); Band Size aendrer det ikke
@@ -1623,8 +1631,10 @@ void DopplerSatEditor::resized()
         placeKnob (outSlider,    (float) x + (float) w * 0.73f, mY + layout::knob, mY + layout::value);
     }
     helpOverlay->setBounds (getLocalBounds());
+   #if DS_LICENSE
     licenceButton.setBounds (262, 14, 72, 20);                 // 2.08: i toppen, efter titlen
     licencePanel->setBounds (getLocalBounds());
+   #endif
 }
 
 void DopplerSatEditor::renderPlate()

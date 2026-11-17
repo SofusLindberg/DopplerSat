@@ -271,6 +271,11 @@ Brugerens ord (2026-11-16, senere):
 
 Status: planen med egen licensserver er parkeret. Alternativet (en butik, der selv står for salg, moms, licenser og konti) er undersøgt: se FREMDRIFT 2026-11-16 (4). Intet valgt endnu.
 
+Brugerens ord (2026-11-17):
+> fuck, vi fjerner det med test licens-kode lige nu. Det er først relevant, når jeg har besluttet, hvilken kanal, jeg vil sælge pluginnet igennem. Så fjern login på pluginnet igen
+
+Status 2.09: **pluginnet har ingen licens, intet login og ingen lås** (efter brugerens ønske). Kravet om købt licens gælder først, når salgskanalen er valgt. Koden fra 2.08 ligger stadig og slås til med `cmake -DDS_LICENSE=ON`. Den skal sandsynligvis erstattes af den valgte butiks egen licens (fx Moonbase).
+
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:

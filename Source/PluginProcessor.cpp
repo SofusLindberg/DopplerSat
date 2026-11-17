@@ -101,11 +101,13 @@ DopplerSatProcessor::DopplerSatProcessor()
     newRandom();
     newRandom();
 
+   #if DS_LICENSE
     licence = std::make_shared<PitchBendUnlock>();
     licence->load();
     updateLicensed();
-   #if DS_LICENSE_TESTING
+    #if DS_LICENSE_TESTING
     licensed = true;                                        // test-programmerne lyder som foer, medmindre de laaser
+    #endif
    #endif
 }
 
@@ -538,10 +540,12 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
         outAnalyzer.push (mono ? L[i] : 0.5f * (L[i] + R[i]));
 }
 
+#if DS_LICENSE
 void DopplerSatProcessor::updateLicensed()
 {
     licensed = (bool) licence->isUnlocked();
 }
+#endif
 
 juce::AudioProcessorEditor* DopplerSatProcessor::createEditor()
 {

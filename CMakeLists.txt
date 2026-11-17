@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 2.8.0)
+project(DopplerSat VERSION 2.9.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
@@ -50,10 +50,7 @@ target_sources(DopplerSat PRIVATE
     Source/PluginEditor.h
     Source/SatDsp.h
     Source/SimdShim.h
-    Source/DopplerCore.h
-    Source/License.cpp
-    Source/License.h
-    Source/LicensePublicKey.h)
+    Source/DopplerCore.h)
 
 target_compile_definitions(DopplerSat PUBLIC
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
@@ -73,5 +70,13 @@ endif()
 
 target_link_libraries(DopplerSat PRIVATE
     juce::juce_audio_utils juce::juce_dsp juce::juce_audio_processors
-    juce::juce_product_unlocking
     juce::juce_recommended_config_flags)
+
+# 2.08 licens (login / licensnoegle). Slaaet fra siden 2.09 (brugeren 2026-11-17: foerst relevant, naar salgskanalen
+# er valgt). Slaa til med cmake -DDS_LICENSE=ON.
+option(DS_LICENSE "Licens: pluginnet skal laases op med login eller licensnoegle" OFF)
+if (DS_LICENSE)
+    target_sources(DopplerSat PRIVATE Source/License.cpp Source/License.h Source/LicensePublicKey.h)
+    target_compile_definitions(DopplerSat PUBLIC DS_LICENSE=1)
+    target_link_libraries(DopplerSat PRIVATE juce::juce_product_unlocking)
+endif()
