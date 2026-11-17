@@ -4,6 +4,16 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (1) — Ideer til nye plugins (intet bygget)
+
+- Brugeren bad om "en række nye ideer til plugins til DAWs (Ableton, Fl Studio og alle de andre)".
+- Claude gav 14 ideer i tre grupper: (a) genbrug af vores motor (Transient Doppler, Stereo Doppler, Band Vibrato, Kick-hul, Pitch Bend Texture som serie), (b) nye lyde (Key Resonator, Tape Stop / Brake, Glitch Repeater, Formant-flytter, skala-styret resonans-daemper), (c) vaerktoejer (808/Kick-tuner, Mono-under-X med korrelationsmaaler, niveau-matchet A/B, "lyt som mobil/bil"-simulator).
+- Anbefalet foerst: Transient Doppler (billigst, samme familie), 808/Kick-tuner (let at forklare og saelge), Key Resonator (stor lyd, MIDI styrer akkorden).
+
+**NAESTE GANG:** brugerens valg af idé (eller fortsat valg af butik, se 2026-11-16 (4)).
+
+---
+
 ## 2026-11-16 (4) — Undersøgt: sælge via en tredjeparts-butik (intet bygget)
 
 - Brugeren parkerer planen med egen licensserver. Spørgsmålet var: kan pluginnet uploades til en butik, der selv tager sig af salg, kundeservice, licensnøgler, logins og moms, så indberetningen til Skat er nem? Se `KRAV.md`.
