@@ -287,6 +287,13 @@ Claudes bud (bygget):
 - Sweep bliver "hvor langt mod hver ende": 0 % = båndet står på Frequency, 100 % = båndets midte når helt ud til 20 Hz og 20 kHz, uanset Frequency. Til og med 1.10: 100 % = 3 oktaver til hver side.
 - Standard-Sweep bliver 30 %, så standardlyden er næsten som nu.
 
+### Udseende (2026-11-17)
+
+Brugerens ord:
+> det er vigtigt, at du ikke copy-paster udseendet af andre moderne plugins, men sørger for, at vi ikke bliver klandret for tyveri mht. udseendet
+
+Krav: pluginnets udseende skal være vores eget og ikke kunne opfattes som en kopi af et andet plugin. Ingen billeder, ikoner, skrifttyper, farvepaletter eller opsætninger skal hentes fra andre produkter. Alle skrifttyper og grafik skal have en licens, der tillader brug i et solgt plugin. Designets idé og valg skrives ned (FREMDRIFT), så det kan vises, hvis nogen spørger.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran; fra 1.9 i Band-modulet). Der er ingen lineær fase.

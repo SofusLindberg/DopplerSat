@@ -29,6 +29,12 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (2) — Krav: udseendet må ikke ligne andre plugins
+
+- Brugeren skrev: "det er vigtigt, at du ikke copy-paster udseendet af andre moderne plugins, men sørger for, at vi ikke bliver klandret for tyveri mht. udseendet". Se `KRAV.md` ("Udseende").
+- **Status:** mockup A og B (nedenfor) blev tegnet fra bunden efter pluginnets egne ting (spektret, båndet, LFO'en) og ikke efter et bestemt plugin, men de bruger almindelige træk (mørkt eller lyst, afrundede kort, buer til knapper). Det er ikke nok til at kunne sige, at vi er sikre.
+- **Forslag:** et eget udtryk bygget på pluginnets idé (et bånd, der glider over spektret, og pitchen, der bøjer), med egne former og en egen farve- og skrifttypevalg med frie licenser. Skrifttyperne i mockuppene (Inter, DM Sans, JetBrains Mono, DM Mono) er åbne (OFL) og må bruges i et solgt plugin, hvis licensteksten følger med. Intet bygget.
+
 ## 2026-11-17 — Mockups af mere moderne GUI (kun design, intet bygget)
 
 - Brugeren bad om et par mockups af mere moderne GUI'er til pluginnet.
