@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (3) — Spectrum Compare 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "lav version 1. Lav følgende som muligheder, der kan tændes og slukkes i appen, så den viste lydstyrke som udgangspunkt er det reelle input" (gennemsnitskurver med automatisk level match, forskelskurve, forskels-spektrogram, udglatning 1/3 / 1/6 oktav), og undervejs: "sørg for at oprette en ny projektmappe til dette projekt, så det ikke ligger i samme mappe som DopplerSat (Pitch Bend Texture)".
+- Lavet i `../SpectrumCompare` (eget git, endnu intet GitHub-repo): "Spectrum Compare 1.01" (S101). Bygget og testet (SpecTest og HostCheck: ALT OK). Installeret og verificeret med filhash. Detaljer i `../SpectrumCompare/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-17 (2) — Idé: spektrogram der sammenligner flere spor med et referencespor (intet bygget)
 
 - Brugeren: "Hvad med et spektogram, der kan tage lyden fra flere kanaler og vise forskellen på inputene ovenpaa hinanden, saa man kan arbejde med at sammenligne spektogrammet paa et reference-track mere effektivt? Kan det lade sig goere, saa det virker i alle moderne DAWS?"
