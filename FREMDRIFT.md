@@ -4,6 +4,21 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (2) — Idé: spektrogram der sammenligner flere spor med et referencespor (intet bygget)
+
+- Brugeren: "Hvad med et spektogram, der kan tage lyden fra flere kanaler og vise forskellen på inputene ovenpaa hinanden, saa man kan arbejde med at sammenligne spektogrammet paa et reference-track mere effektivt? Kan det lade sig goere, saa det virker i alle moderne DAWS?"
+- Claudes svar: ja. Tre maader at faa lyden ind:
+  - (1) Referencefil indlaest i pluginnet: virker overalt, ingen routing.
+  - (2) Sidechain-input: VST3/AU/AAX, men ofte kun et ekstra input pr. instans.
+  - (3) Sender-instanser paa hvert spor og en visnings-instans, der deler data via faelles hukommelse. Skal ogsaa virke paa tvaers af processer (Bitwig-sandbox, Reaper / FL bridge, Logic AU uden for processen), dvs. navngivet delt hukommelse, ikke kun en static i DLL'en. Tidsjustering via host-position.
+- Visning: niveau-matchede gennemsnitskurver ovenpaa hinanden plus en forskels-kurve og et forskels-spektrogram (roed = mere end reference, blaa = mindre), i 1/3-1/6 oktav udglatning.
+- Konkurrenter at skille sig ud fra: Voxengo SPAN (gratis, grupper), MMultiAnalyzer, Pro-Q (instansliste), Tonal Balance Control, REFERENCE, Metric AB.
+- Forslag til start: version 1 med (1) + (2), derefter (3).
+
+**NAESTE GANG:** brugerens svar paa om ideen skal laves (mockup foerst).
+
+---
+
 ## 2026-11-17 (1) — Ideer til nye plugins (intet bygget)
 
 - Brugeren bad om "en række nye ideer til plugins til DAWs (Ableton, Fl Studio og alle de andre)".
