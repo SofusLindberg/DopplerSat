@@ -14,6 +14,19 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 — Mockups af mere moderne GUI (kun design, intet bygget)
+
+- Brugeren bad om et par mockups af mere moderne GUI'er til pluginnet.
+- **Lavet:** et designlærred (claude.ai, privat) med to artboards på 900 × 600 og de samme kontroller, værdier og parametre som 2.08:
+  - **A, Graphite (mørk):** mørkt grafitgråt med afrundede kort, fladt og blødt. Teal til Band, cyan til LFO og violet til Output. Tynde buer til knapperne, aflæsningerne i monospace og Edges som en segmenteret vælger. Samme tre moduler under spektret som i dag, spektret fylder mere.
+  - **B, Paper (lys):** varm lys baggrund, sort tekst og orange accent. Anden opbygning: spektret til venstre, et styrepanel til højre (LFO-kurve, Sweep- og Band Size-aflæsning, Edges, Bypass), og alle otte knapper i én række nedenunder, grupperet i LFO, Band og Output.
+- Link: https://claude.ai/artifact/6DdHJXvwYJRvT5nv4dVGNs
+- Pluginnet er uændret (2.08). Et bygget design skal laves i JUCE (`PluginEditor.cpp`: nyt `LookAndFeel`, tegnede knapper og kort). Den nuværende 'hardware'-stil er tegnet med billeder og gradienter, så et fladt look er en stor omskrivning af tegningen, ikke af kontrollerne.
+
+**NÆSTE GANG:** brugerens valg af retning (A, B eller en blanding), og hvad der skal ændres. Ved ja: byg den i JUCE som ny version.
+
+---
+
 ## 2026-11-16 (4) — Undersøgt: sælge via en tredjeparts-butik (intet bygget)
 
 - Brugeren parkerer planen med egen licensserver. Spørgsmålet var: kan pluginnet uploades til en butik, der selv tager sig af salg, kundeservice, licensnøgler, logins og moms, så indberetningen til Skat er nem? Se `KRAV.md`.
