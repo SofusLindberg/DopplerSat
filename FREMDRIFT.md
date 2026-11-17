@@ -29,6 +29,22 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-17 (3) — Mockup C med eget udtryk, og skrifttypernes licenser
+
+- Brugeren: "ja, og vær sikker på, at designet ikke skaber nogen form for problemer med copyright. Alle skriftyper skal være helt gratis at bruge og tjene penge på i et produkt."
+- **Mockup C, "Drift"** (samme designlærred): udtrykket kommer fra pluginnets egen idé og ikke fra andre plugins.
+  - Frekvenslinjerne i spektret bøjer sig mod båndet, som om båndet bøjer rummet (en visuel version af pitch-bøjningen).
+  - Sweep-området er en måler under spektret med to håndtag (de to tal, man kan trække i) og en rude for Frequency midt imellem.
+  - Knapperne er erstattet af vandrette skydere med en smal "hjul"-tommelfinger og en amber-til-rosa fyldning. Mærket i toppen er en bølge med kortere og kortere perioder.
+  - Mørk blomme-farve, ikke blå eller grå. Skrifttyper: Sora og IBM Plex Mono.
+- **Licenser** (læst hos kilden, OFL.txt i google/fonts): begge er SIL Open Font License 1.1. Sora har ingen Reserved Font Name. IBM Plex Mono har "Plex" som Reserved Font Name, som kun gælder, hvis skrifttypen ændres. OFL's FAQ: software, der bundler skrifttyper, må sælges; copyright og licenstekst skal følge med; skrifttypen må ikke sælges alene.
+- **Ærligt:** ingen kan love, at et udseende aldrig giver problemer. Det, der er gjort: eget koncept, egen palette, frie skrifttyper med licens, og dokumentation her. En jurist kan tjekke varemærker og design, hvis man vil være helt sikker (navnet "Pitch Bend Texture" og mærket kunne søges i varemærkeregistre, men det er ikke gjort).
+- Pluginnet er uændret (2.08).
+
+**NÆSTE GANG:** brugerens valg af retning (A, B eller C). Ved C: eget JUCE-udseende med skydere og de nye linjer; tjek alle skrifttyper og læg OFL-tekster i pluginnet.
+
+---
+
 ## 2026-11-17 (2) — Krav: udseendet må ikke ligne andre plugins
 
 - Brugeren skrev: "det er vigtigt, at du ikke copy-paster udseendet af andre moderne plugins, men sørger for, at vi ikke bliver klandret for tyveri mht. udseendet". Se `KRAV.md` ("Udseende").

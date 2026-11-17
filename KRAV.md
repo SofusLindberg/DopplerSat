@@ -294,6 +294,10 @@ Brugerens ord:
 
 Krav: pluginnets udseende skal være vores eget og ikke kunne opfattes som en kopi af et andet plugin. Ingen billeder, ikoner, skrifttyper, farvepaletter eller opsætninger skal hentes fra andre produkter. Alle skrifttyper og grafik skal have en licens, der tillader brug i et solgt plugin. Designets idé og valg skrives ned (FREMDRIFT), så det kan vises, hvis nogen spørger.
 
+Brugeren, senere samme dag: "vær sikker på, at designet ikke skaber nogen form for problemer med copyright. Alle skriftyper skal være helt gratis at bruge og tjene penge på i et produkt."
+
+**Skrifttyper (krav):** kun skrifttyper under SIL Open Font License 1.1 (OFL), som tillader at bundle dem i software, der sælges. Licensteksten og copyright-linjen følger med pluginnet (fx i en "About" / licensfil), og skrifttyperne må ikke sælges alene. Tjekket 2026-11-17: Sora (Copyright 2019 The Sora Project Authors) og IBM Plex Mono (Copyright 2017 IBM Corp., Reserved Font Name "Plex": skrifttypen må ikke ændres under det navn). Mockup A og B bruger Inter, DM Sans, JetBrains Mono og DM Mono, som også er OFL, men som ikke er læst licens for endnu. Før bygning: hent fontfilerne fra den officielle kilde og læg hver `OFL.txt` med.
+
 ## Funktioner der skal blive ved med at virke
 
 - **Ét bånd** med 0 ms-motoren fra Multiband Saturator 3.17. Valget står mellem **24 dB/oct**, **48 dB/oct** og (1.2) **96 dB/oct** (tre knapper under hinanden, standard 48; til og med 1.2 stod der "0 ms - " foran; fra 1.9 i Band-modulet). Der er ingen lineær fase.
