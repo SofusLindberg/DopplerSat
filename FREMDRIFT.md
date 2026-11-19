@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-18 (2) — FL Plugin Host 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "Lav et plugin, der direkte kan anvende stock-plugins fra FL Studio inde i en DAW ved at placere pluginnet på et lydspor i DAW'en. Hvis man ejer en licens til FL Studio, skal man direkte inde fra pluginnet kunne pege på den mappe, hvor pluginsene ligger (uanset hvad skal pluginnet i hvertfald kunne opsnappe, hvor FL Studios plugins ligger og kunne anvende dem inde i en DAW)." Brugeren valgte "Direkte host" og "Kun til mig selv".
+- Lavet i `../FLPluginHost` (eget git, endnu intet GitHub-repo): "FL Plugin Host 1.01" (F101). Pluginnet indlæser FL Studios egne effekt-DLL'er direkte, og FL-SDK'ets headere er hentet fra fpsdk på docs.rs. 85 af 90 effekter starter. 68 kan vælges, men 19 betalte kører i demo-tilstand, fordi FL's licenstjek kun virker i FL Studio, og det svar forfalskes ikke. HostCheck: ALT OK. Ikke prøvet i Ableton endnu. Detaljer i `../FLPluginHost/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-18 (1) — App Capture 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Lav mig en driver (eller et plugin, hvis det er muligt), jeg kan vælge i min DAW, så jeg kan vælge, hvilken lyd fra hvilket program uden om min DAW, der skal sendes ind i min DAW [...]", "Ja, gerne et plugin, så jeg kan sælge det ;))", og senere: lyd fra andre DAW'er og så lidt forsinkelse som muligt.
