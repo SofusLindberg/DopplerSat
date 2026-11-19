@@ -14,7 +14,7 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 ## 2026-11-18 (1) — App Capture 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Lav mig en driver (eller et plugin, hvis det er muligt), jeg kan vælge i min DAW, så jeg kan vælge, hvilken lyd fra hvilket program uden om min DAW, der skal sendes ind i min DAW [...]", "Ja, gerne et plugin, så jeg kan sælge det ;))", og senere: lyd fra andre DAW'er og så lidt forsinkelse som muligt.
-- Lavet i `../AppCapture` (eget git, endnu intet GitHub-repo): "App Capture 1.01" (A101). Optager et programs lyd via Windows 11's process loopback, eller en "Send" fra App Capture i en anden DAW (også ASIO). Bygget og testet, **ikke installeret endnu**. Detaljer og næste skridt i `../AppCapture/FREMDRIFT.md`.
+- Lavet i `../AppCapture` (eget git, endnu intet GitHub-repo): "App Capture 1.01" (A101). Optager et programs lyd via Windows 11's process loopback, eller en "Send" fra App Capture i en anden DAW (også ASIO). Bygget og testet (alle tests OK 2026-11-19), installeret og verificeret med filhash 2026-11-19. Detaljer og næste skridt i `../AppCapture/FREMDRIFT.md`.
 
 ---
 
