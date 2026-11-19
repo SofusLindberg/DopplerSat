@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-19 (1) — FL Plugin Host 1.02 (intet ændret i Pitch Bend Texture)
+
+- 1.01 installeret (filhash `CC93CB7F…`), efter brugeren skrev "Ja, prøv igen".
+- Brugeren ønskede alle FL's presets (gemt og hentet i FL's egne mapper, begge veje mellem FL og Ableton), alle FL's synths, "ALT, der ligger af VST, plugins og synth i FL Studio" og automation af alt. Lavet i `../FLPluginHost` som "FL Plugin Host 1.02" + "FL Plugin Host Synth 1.02" (installeret og verificeret). Detaljer i `../FLPluginHost/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-18 (2) — FL Plugin Host 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Lav et plugin, der direkte kan anvende stock-plugins fra FL Studio inde i en DAW ved at placere pluginnet på et lydspor i DAW'en. Hvis man ejer en licens til FL Studio, skal man direkte inde fra pluginnet kunne pege på den mappe, hvor pluginsene ligger (uanset hvad skal pluginnet i hvertfald kunne opsnappe, hvor FL Studios plugins ligger og kunne anvende dem inde i en DAW)." Brugeren valgte "Direkte host" og "Kun til mig selv".
