@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-20 (1) — FL to Ableton 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "Bygge en måde at oversætte et projekt fra FL studio, så det kan indlæses i Ableton med alle automations, samples (SÅDAN SET ALT) korrekt indlæst og oversat til Abletons automation overlay. Brug nyeste udgave af vores egen FL wrapper hver gang, at et FL plugin fra FL projektet er anvendt [...] Dette skal virke for alle projekter fra FL studio." Undervejs: "Oversætteren skal bygge vores egen plugin-wrapper ind, så den altid bruger den nyeste udgave af wrapperen", og at FL-kanalens indstillingsfaner (ON, PAN, VOL, PITCH, RANGE og fanerne) skal genskabes i wrapperen og udfyldes (står nu også som krav 12 i `../FLPluginHost/KRAV.md`).
+- Lavet i `../FLtoAbleton` (eget git, endnu intet GitHub-repo): `flp2als.exe` og "FL to Ableton 1.01.exe". Læser alle brugerens FL-projekter (FL 20–26) og skriver Ableton-sæt med spor, klip, grupper / retur for mixeren, automation, samples og FL Plugin Host 1.02 med pluginnets egne indstillinger. Det konverterede slesk_5 blev indlæst i Ableton; et nedbrud i Abletons brugerflade bagefter er fundet og rettet, men ikke prøvet igen endnu. Detaljer og næste skridt i `../FLtoAbleton/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-19 (1) — FL Plugin Host 1.02 (intet ændret i Pitch Bend Texture)
 
 - 1.01 installeret (filhash `CC93CB7F…`), efter brugeren skrev "Ja, prøv igen".
