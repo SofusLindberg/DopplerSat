@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-26 (3) — FL Plugin Host 1.03 (intet ændret i Pitch Bend Texture)
+
+- Brugeren ønskede FL Keys, FPC og FLEX, "alle indstillingsvinduer for alle plugins, inklusive pitch" (FL's kanalvindue genskabt med automation, uden track routing). Piano roll og channel rack skulle springes over, fordi de ikke kan hentes fra FL Studio.
+- Lavet i `../FLPluginHost` som "FL Plugin Host 1.03" + "FL Plugin Host Synth 1.03" (installeret og verificeret). Kanalindstillingerne gemmes som `<Channel id="værdi">` med faste ID'er, som FL to Ableton kan skrive (se `../FLPluginHost/CLAUDE.md`, "Channel settings"). Detaljer i `../FLPluginHost/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-26 (2) — FL to Ableton: FL-projektet overskrives aldrig (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Sørg for, at det gamle FL projekt ikke overskrives, at man alle ændringer foretaget i Ableton gemmes i sin egen fil"
