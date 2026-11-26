@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-26 (1) — FL to Ableton: sættet virker i Ableton, al lyd i én projektmappe (intet ændret i Pitch Bend Texture)
+
+- Brugerens skærmbillede af Abletons nedbrud kom fra gendannelsen af den gamle test-version. Den rettede version indlæses og kører i Ableton (71 FL Plugin Host-instanser, ingen manglende samples, efter at FL's Ogg-i-WAV-samples nu pakkes ud).
+- Brugeren: "Hvordan sørger vi for, at lyden der hentes fra det gamle FL projekt, og eventuelt nye samples og lydklip i Ableton, gemmes samme sted, så de altid følger samme projektmappe? Eventuelt altid følge den oprindelige FL projektmappe?" Svar og løsning: konverteren laver nu et rigtigt Ableton-projekt inde i FL-projektets mappe, med al lyd i `Samples/Imported` og projekt-relative stier, så Ableton selv gemmer nye optagelser osv. i samme mappe. Detaljer i `../FLtoAbleton/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-20 (1) — FL to Ableton 1.01 lavet i sin egen projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Bygge en måde at oversætte et projekt fra FL studio, så det kan indlæses i Ableton med alle automations, samples (SÅDAN SET ALT) korrekt indlæst og oversat til Abletons automation overlay. Brug nyeste udgave af vores egen FL wrapper hver gang, at et FL plugin fra FL projektet er anvendt [...] Dette skal virke for alle projekter fra FL studio." Undervejs: "Oversætteren skal bygge vores egen plugin-wrapper ind, så den altid bruger den nyeste udgave af wrapperen", og at FL-kanalens indstillingsfaner (ON, PAN, VOL, PITCH, RANGE og fanerne) skal genskabes i wrapperen og udfyldes (står nu også som krav 12 i `../FLPluginHost/KRAV.md`).
