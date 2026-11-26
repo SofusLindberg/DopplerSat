@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-26 (2) — FL to Ableton: FL-projektet overskrives aldrig (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "Sørg for, at det gamle FL projekt ikke overskrives, at man alle ændringer foretaget i Ableton gemmes i sin egen fil"
+- Konverteren skriver nu kun nye filer og kun inde i Ableton-projektets egen undermappe; tre huller lukket. Testet på en kopi af slesk-mappen: alle 174 FL-filer bit-identiske efter tre konverteringer, og et redigeret Ableton-sæt blev ikke rørt. Detaljer i `../FLtoAbleton/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-26 (1) — FL to Ableton: sættet virker i Ableton, al lyd i én projektmappe (intet ændret i Pitch Bend Texture)
 
 - Brugerens skærmbillede af Abletons nedbrud kom fra gendannelsen af den gamle test-version. Den rettede version indlæses og kører i Ableton (71 FL Plugin Host-instanser, ingen manglende samples, efter at FL's Ogg-i-WAV-samples nu pakkes ud).
