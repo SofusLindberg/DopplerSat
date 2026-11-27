@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-27 (2) — FL Plugin Host: alle FLEX-pakker testet (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "få alle gratis pakker i flex til at virke. Både de, der installeret i fremtiden, og de, der allerede er installeret nu på computeren." og "virker flex-pakkerne i FL Studio, så skal de også virke i wrapperen i Ableton (og andre daw's)".
+- I `../FLPluginHost`: de 6 pakker, der er gratis for alle, spiller (også nye, der installeres senere); Core-pakkerne og de 13 "customers"-pakker kræver en registreret FL-kunde, som FLEX spørger FL om, og forbliver tavse, fordi licenstjekket ikke efterlignes. Officiel vej i Ableton: "FL Studio VSTi". Ingen ny version. Detaljer i `../FLPluginHost/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-27 (1) — FL Plugin Host 1.04: FLEX med de gratis lyde (intet ændret i Pitch Bend Texture)
 
 - Brugeren: "Er det ikke muligt at bruge de flex-lyde, der gratis følger med FL-studio? De er de eneste lyde, jeg bruger fra Flex", og senere "fortsæt, hvor du slap".
