@@ -109,6 +109,13 @@ DopplerSatProcessor::DopplerSatProcessor()
     licensed = true;                                        // test-programmerne lyder som foer, medmindre de laaser
     #endif
    #endif
+   #if DS_SERIAL
+    serial = std::make_unique<PitchBendSerial>();           // laeser serial.dat (2.10)
+    updateLicensed();
+    #if DS_LICENSE_TESTING
+    licensed = true;
+    #endif
+   #endif
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout DopplerSatProcessor::createLayout()
@@ -544,6 +551,13 @@ void DopplerSatProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
 void DopplerSatProcessor::updateLicensed()
 {
     licensed = (bool) licence->isUnlocked();
+}
+#endif
+
+#if DS_SERIAL
+void DopplerSatProcessor::updateLicensed()
+{
+    licensed = serial->isUnlocked();
 }
 #endif
 

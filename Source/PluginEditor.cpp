@@ -1218,6 +1218,114 @@ void DopplerSatEditor::showLicencePanel()
 }
 #endif
 
+#if DS_SERIAL
+// =============================================================================
+//  SerialPanel (2.10, brugeren 2026-11-27: "Serialkey der åbnes med én bestemt key [...] Når serialkey er skrevet i
+//  pluginnet på pågældende brugeres computer, skal han aldrig skrive den igen"). Dækker hele editoren, saa laenge
+//  pluginnet er laast (kan ikke lukkes). Noeglen tjekkes offline mod hashen (PitchBendSerial) og huskes paa computeren.
+// =============================================================================
+class DopplerSatEditor::SerialPanel : public juce::Component
+{
+public:
+    explicit SerialPanel (DopplerSatEditor& e) : ed (e)
+    {
+        key.setFont (hwFont ("Consolas", 14.f));
+        key.setIndents (8, 5);
+        key.setTextToShowWhenEmpty ("PBT-XXXXX-XXXXX-XXXXX-XXXXX", hw::silkDim);
+        key.setInputRestrictions (40, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- ");
+        key.onReturnKey = [this] { tryKey(); };
+        addAndMakeVisible (key);
+        unlockButton.setButtonText ("Unlock");
+        unlockButton.onClick = [this] { tryKey(); };
+        addAndMakeVisible (unlockButton);
+    }
+
+    juce::Rectangle<int> panel() const { return getLocalBounds().withSizeKeepingCentre (440, 214); }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (juce::Colours::black.withAlpha (0.72f));
+        const auto p = panel().toFloat();
+        g.setColour (juce::Colour (0xff1c1e21));
+        g.fillRoundedRectangle (p, 6.f);
+        g.setColour (juce::Colours::black);
+        g.drawRoundedRectangle (p, 6.f, 1.5f);
+        g.setColour (juce::Colour (0xff5a5e66).withAlpha (0.55f));
+        g.drawRoundedRectangle (p.reduced (1.f), 5.f, 1.f);
+
+        const float x = p.getX() + 24.f, y = p.getY();
+        silkText (g, "Unlock Pitch Bend Texture", x, y + 32.f, 13.f, hw::silk, juce::Justification::left, 1.5f);
+        g.setColour (hw::silkDim);
+        g.setFont (hwFont ("Bahnschrift", 11.5f));
+        g.drawFittedText ("Enter the serial key you received with the plugin. You only need to do this once on this computer.",
+                          juce::Rectangle<int> ((int) x, (int) y + 44, 392, 32), juce::Justification::topLeft, 2);
+        silkText (g, "Serial key", x, y + 92.f, 9.5f, hw::silk.withAlpha (0.85f));
+        if (status.isNotEmpty())
+        {
+            g.setColour (hw::red);
+            g.setFont (hwFont ("Bahnschrift", 11.f));
+            g.drawFittedText (status, juce::Rectangle<int> ((int) x + 132, (int) y + 146, 260, 30), juce::Justification::centredLeft, 2);
+        }
+    }
+
+    void resized() override
+    {
+        const auto p = panel();
+        const int x = p.getX() + 24, y = p.getY();
+        key.setBounds (x, y + 98, 392, 30);
+        unlockButton.setBounds (x, y + 148, 120, 26);
+    }
+
+    void mouseDown (const juce::MouseEvent&) override {}         // klik bag panelet naar ikke knapperne
+
+    void showLocked()
+    {
+        setVisible (true);
+        toFront (false);
+        focused = false;
+        focusOnce();
+    }
+
+    // Markoeren i feltet, foerste gang panelet faktisk er paa skaermen (editoren vises foerst efter constructoren)
+    void focusOnce()
+    {
+        if (! focused && isShowing())
+        {
+            key.grabKeyboardFocus();
+            focused = true;
+        }
+    }
+
+private:
+    void tryKey()
+    {
+        if (PitchBendSerial::normalise (key.getText()).isEmpty())
+        {
+            status = "Enter your serial key.";
+        }
+        else if (ed.processor.serial->tryUnlock (key.getText()))
+        {
+            ed.processor.updateLicensed();
+            key.clear();
+            status.clear();
+            setVisible (false);                                       // pluginnet virker nu, og noeglen er husket
+            return;
+        }
+        else
+        {
+            status = "That serial key is not correct. Check it and try again.";
+        }
+        repaint();
+    }
+
+    DopplerSatEditor& ed;
+    juce::TextEditor key;
+    juce::TextButton unlockButton;
+    juce::String status;
+    bool focused = false;
+};
+#endif
+
 DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
     : AudioProcessorEditor (&p), look (std::make_unique<HardwareLook>()), processor (p)
 {
@@ -1385,6 +1493,12 @@ DopplerSatEditor::DopplerSatEditor (DopplerSatProcessor& p)
    #if DS_LICENSE
     if (! processor.licensed.load()) showLicencePanel();
    #endif
+   #if DS_SERIAL
+    serialPanel = std::make_unique<SerialPanel> (*this);       // 2.10: oeverst, over alt andet
+    addChildComponent (*serialPanel);
+    serialPanel->setBounds (getLocalBounds());
+    if (! processor.licensed.load()) serialPanel->showLocked();
+   #endif
 }
 
 DopplerSatEditor::~DopplerSatEditor()
@@ -1504,6 +1618,20 @@ void DopplerSatEditor::timerCallback()
     const bool locked = ! processor.licensed.load();
     licenceButton.setButtonText (locked ? "Unlock" : "Licence");
     if (locked && ! licencePanel->isVisible()) showLicencePanel();
+   #endif
+   #if DS_SERIAL
+    // 2.10: hvert sekund - har en anden instans laast op? Laast = panelet dækker alt, laast op = panelet vaek.
+    if (++serialTick >= 30)
+    {
+        serialTick = 0;
+       #if ! DS_LICENSE_TESTING
+        if (processor.serial->reloadIfChanged()) processor.updateLicensed();
+       #endif
+    }
+    const bool locked = ! processor.licensed.load();
+    if (locked && ! serialPanel->isVisible())    serialPanel->showLocked();
+    if (! locked && serialPanel->isVisible())    serialPanel->setVisible (false);
+    if (locked)                                  serialPanel->focusOnce();
    #endif
 }
 
@@ -1634,6 +1762,9 @@ void DopplerSatEditor::resized()
    #if DS_LICENSE
     licenceButton.setBounds (262, 14, 72, 20);                 // 2.08: i toppen, efter titlen
     licencePanel->setBounds (getLocalBounds());
+   #endif
+   #if DS_SERIAL
+    if (serialPanel != nullptr) serialPanel->setBounds (getLocalBounds());
    #endif
 }
 

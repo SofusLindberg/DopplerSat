@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DopplerSat VERSION 2.9.0)
+project(DopplerSat VERSION 2.10.0)
 
 # JUCE 9.0.3 ligger som soesterfolder til repoet (samme som Multiband Saturator)
 add_subdirectory(../JUCE JUCE)
@@ -79,4 +79,14 @@ if (DS_LICENSE)
     target_sources(DopplerSat PRIVATE Source/License.cpp Source/License.h Source/LicensePublicKey.h)
     target_compile_definitions(DopplerSat PUBLIC DS_LICENSE=1)
     target_link_libraries(DopplerSat PRIVATE juce::juce_product_unlocking)
+endif()
+
+# 2.10 serienoegle (brugeren 2026-11-27): een fast noegle, tjekkes offline og huskes paa computeren (Source/SerialKey.*).
+# Hashen staar i Source/SerialKeyHash.h (LicenseTool serial-new), selve noeglen kun i SoundSo/keys. Kan ikke kombineres
+# med DS_LICENSE.
+option(DS_SERIAL "Serienoegle: pluginnet skal laases op med een bestemt noegle" ON)
+if (DS_SERIAL)
+    target_sources(DopplerSat PRIVATE Source/SerialKey.cpp Source/SerialKey.h Source/SerialKeyHash.h)
+    target_compile_definitions(DopplerSat PUBLIC DS_SERIAL=1)
+    target_link_libraries(DopplerSat PRIVATE juce::juce_cryptography)
 endif()

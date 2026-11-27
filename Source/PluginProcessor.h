@@ -12,6 +12,18 @@
  #include "License.h"
 #endif
 
+// 2.10 (brugeren 2026-11-27): een fast serienoegle i stedet (SerialKey.h, offline, huskes paa computeren). Slaaet til
+// som standard i CMakeLists (DS_SERIAL); kan ikke kombineres med DS_LICENSE.
+#ifndef DS_SERIAL
+ #define DS_SERIAL 0
+#endif
+#if DS_SERIAL
+ #include "SerialKey.h"
+#endif
+#if DS_SERIAL && DS_LICENSE
+ #error "DS_SERIAL og DS_LICENSE kan ikke bruges samtidig"
+#endif
+
 // Doppler Saturator (brugeren 2026-11-03): "Dobbler-effekt (ptitch ændres, når man trækker båndet henover
 // frekvenserne) i multiband saturation er faktisk super fedt. [...] Tag spektogrammet med et enkelt bånd med
 // phase-indstilligerne "0 ms - 24 db/oct" og "0 ms - 48 db/oct" (ikke medtag linear phase), så vi kan lave en
@@ -168,9 +180,14 @@ public:
 
     // 2.08 licens (License.h): uden gyldig licens koerer lyden som Bypass (toer lyd, samme latens), og editoren viser
     // laas-op-skaermen. licence deles med editorens baggrundstraad (shared_ptr), saa den lever, til et kald er faerdigt.
-    std::atomic<bool> licensed { DS_LICENSE == 0 };         // 2.09: uden DS_LICENSE altid sand
+    std::atomic<bool> licensed { DS_LICENSE == 0 && DS_SERIAL == 0 };   // uden laas altid sand
    #if DS_LICENSE
     std::shared_ptr<PitchBendUnlock> licence;
+   #endif
+   #if DS_SERIAL
+    std::unique_ptr<PitchBendSerial> serial;                // 2.10: kun beskedtraaden bruger den
+   #endif
+   #if DS_LICENSE || DS_SERIAL
     void updateLicensed();                                  // beskedtraaden: efter indlaesning, laas op, deaktivering
    #endif
    #if DS_LICENSE_TESTING

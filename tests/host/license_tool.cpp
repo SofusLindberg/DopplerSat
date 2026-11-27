@@ -6,6 +6,9 @@
 //   LicenseTool unlock-dev                                           laas pluginnet op paa denne computer (udvikling)
 //   LicenseTool lock-dev                                             glem licensen paa denne computer (se laas-op-skaermen)
 //   LicenseTool machine                                              denne computers maskine-id'er
+//   LicenseTool serial-new [--force]                                 2.10: ny serienoegle -> Source/SerialKeyHash.h + SoundSo/keys
+//   LicenseTool serial-unlock <noegle>                               2.10: skriv noeglen som i pluginnet (tjekkes mod hashen)
+//   LicenseTool serial-lock                                          2.10: glem serienoeglen paa denne computer
 //
 // Den PRIVATE noegle ligger kun i brugerens programdata (SoundSo/keys), aldrig i repoet. Den offentlige skrives ind i
 // Source/LicensePublicKey.h, som pluginnet bygges med. Mistes den private noegle, kan der ikke laves nye licenser til
@@ -13,6 +16,8 @@
 #include <JuceHeader.h>
 #include "license_server.h"
 #include "../../Source/License.h"
+#include "../../Source/SerialKey.h"
+#include <random>
 
 static juce::File soundSoDir()
 {
@@ -126,6 +131,67 @@ static int lockDev()
     return 0;
 }
 
+// 2.10 serienoegle (SerialKey.h). Noeglen: 20 tegn fra 32 (uden 0 / O / 1 / I), dvs. 100 bit, fra std::random_device
+// (paa Windows / MSVC styresystemets kryptografiske tilfaeldighed).
+static juce::File serialKeyFile() { return soundSoDir().getChildFile ("keys").getChildFile ("serial-key.txt"); }
+
+static int serialNew (const juce::StringArray& args)
+{
+    if (serialKeyFile().existsAsFile() && ! args.contains ("--force"))
+    {
+        std::printf ("Der findes allerede en serienoegle (%s). Brug --force for at lave en ny.\n"
+                     "OBS: en ny noegle virker ikke i plugins bygget med den gamle, og omvendt.\n",
+                     serialKeyFile().getFullPathName().toRawUTF8());
+        return 1;
+    }
+    const auto header = juce::File::getCurrentWorkingDirectory().getChildFile ("Source").getChildFile ("SerialKeyHash.h");
+    if (! header.getParentDirectory().isDirectory())
+    {
+        std::printf ("FEJL: koer fra repoets rod (ingen Source-mappe)\n");
+        return 1;
+    }
+    const char* alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    std::random_device rd;
+    juce::String body, salt;
+    for (int i = 0; i < 20; ++i) body << alphabet[rd() % 32];
+    for (int i = 0; i < 16; ++i) salt << juce::String::toHexString ((int) (rd() % 16));
+    const auto key  = PitchBendSerial::format (body);
+    const auto hash = PitchBendSerial::hashFor (salt, key);
+    const auto date = juce::Time::getCurrentTime().formatted ("%Y-%m-%d");
+
+    serialKeyFile().getParentDirectory().createDirectory();
+    serialKeyFile().replaceWithText ("Pitch Bend Texture serienoegle (2.10 og frem), lavet " + date + ":\r\n" + key + "\r\n");
+    juce::String s;
+    s << "#pragma once\n"
+      << "// Serienoeglens saltede SHA-256 (2.10, 'LicenseTool serial-new' " << date << ").\n"
+      << "// Selve noeglen staar IKKE her: kun i udviklerens programdata (SoundSo/keys/serial-key.txt).\n"
+      << "#define DS_SERIAL_SALT \"" << salt << "\"\n"
+      << "#define DS_SERIAL_HASH \"" << hash << "\"\n";
+    header.replaceWithText (s);
+    std::printf ("Serienoegle: %s\nGemt i: %s\nSkrevet: %s (byg pluginnet og LicenseTool igen)\n", key.toRawUTF8(),
+                 serialKeyFile().getFullPathName().toRawUTF8(), header.getFullPathName().toRawUTF8());
+    return 0;
+}
+
+static int serialUnlock (const juce::StringArray& args)
+{
+    if (args.size() < 2)
+    {
+        std::printf ("brug: LicenseTool serial-unlock <noegle>\n");
+        return 2;
+    }
+    PitchBendSerial s;
+    if (! s.tryUnlock (args[1]))
+    {
+        std::printf ("FEJL: forkert noegle (eller LicenseTool er bygget med en anden SerialKeyHash.h)\n");
+        return 1;
+    }
+    PitchBendSerial again;                                       // ny instans: laeses og dekrypteres fra filen
+    std::printf ("Laast op paa denne computer (%s), genlaest: %s\n", s.getStateFile().getFullPathName().toRawUTF8(),
+                 again.isUnlocked() ? "OK" : "FEJL");
+    return again.isUnlocked() ? 0 : 1;
+}
+
 int main (int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI init;
@@ -138,6 +204,15 @@ int main (int argc, char** argv)
     if (cmd == "add")        return add (args);
     if (cmd == "unlock-dev") return unlockDev();
     if (cmd == "lock-dev")   return lockDev();
+    if (cmd == "serial-new")    return serialNew (args);
+    if (cmd == "serial-unlock") return serialUnlock (args);
+    if (cmd == "serial-lock")
+    {
+        PitchBendSerial s;
+        s.forget();
+        std::printf ("Serienoeglen er glemt paa denne computer (%s)\n", s.getStateFile().getFullPathName().toRawUTF8());
+        return 0;
+    }
     if (cmd == "machine")
     {
         PitchBendUnlock lic;
@@ -145,6 +220,6 @@ int main (int argc, char** argv)
         return 0;
     }
     std::printf ("brug: LicenseTool genkeys [--header <fil>] [--force] | serve [port] | add <email> <password> | "
-                 "unlock-dev | lock-dev | machine\n");
+                 "unlock-dev | lock-dev | machine | serial-new [--force] | serial-unlock <noegle> | serial-lock\n");
     return 2;
 }

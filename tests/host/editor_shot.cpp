@@ -444,6 +444,71 @@ int main (int argc, char** argv)
     }
    #endif
 
+   #if DS_SERIAL
+    // 2.10 serienoegle: laast -> panelet dækker alt (doppler12_locked); forkert noegle -> stadig laast med besked
+    // (doppler13_wrongkey); med "EditorShot <mappe> --serial <noegle>" skrives den rigtige, og panelet skal forsvinde
+    // (noeglen gemmes da paa denne computer, som i pluginnet).
+    {
+        auto findPanel = [&]() -> juce::Component*
+        {
+            for (auto* c : ed->getChildren())
+                if (c->getBounds() == ed->getLocalBounds())
+                    for (auto* k : c->getChildren())
+                        if (dynamic_cast<juce::TextEditor*> (k) != nullptr) return c;
+            return nullptr;
+        };
+        auto typeKey = [&] (juce::Component& panel, const juce::String& k)
+        {
+            juce::TextEditor* te = nullptr;
+            juce::Button* b = nullptr;
+            for (auto* c : panel.getChildren())
+            {
+                if (auto* t  = dynamic_cast<juce::TextEditor*> (c)) te = t;
+                if (auto* bb = dynamic_cast<juce::Button*> (c))     b = bb;
+            }
+            if (te == nullptr || b == nullptr) return false;
+            te->setText (k);
+            b->triggerClick();
+            juce::MessageManager::getInstance()->runDispatchLoopUntil (150);
+            return true;
+        };
+
+        proc.setLicensedForTests (false);
+        run (proc, 0.2);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (150);
+        auto* panel = findPanel();
+        const bool shown = panel != nullptr && panel->isVisible();
+        std::printf ("  laast: serienoegle-panelet %s\n", shown ? "vises OK" : "vises IKKE (FEJL)");
+        typeOk = typeOk && shown;
+        save (*ed, dir.getChildFile ("doppler12_locked.png"));
+
+        if (shown)
+        {
+            const bool typed = typeKey (*panel, "PBT-AAAAA-AAAAA-AAAAA-AAAAA");
+            const bool stillLocked = typed && ! proc.licensed.load() && panel->isVisible();
+            std::printf ("  forkert noegle: %s\n", stillLocked ? "stadig laast OK" : "LAAST OP (FEJL)");
+            typeOk = typeOk && stillLocked;
+            save (*ed, dir.getChildFile ("doppler13_wrongkey.png"));
+
+            const int s = juce::StringArray (argv, argc).indexOf ("--serial");
+            if (s >= 0 && s + 1 < argc)
+            {
+                typeKey (*panel, juce::String (argv[s + 1]).toLowerCase());     // smaa bogstaver skal ogsaa virke
+                const bool open = proc.licensed.load() && ! panel->isVisible();
+                std::printf ("  rigtig noegle (smaa bogstaver): %s\n", open ? "laast op OK" : "IKKE laast op (FEJL)");
+                typeOk = typeOk && open;
+            }
+        }
+        proc.setLicensedForTests (true);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (150);       // timeren skjuler panelet
+        if (panel != nullptr && panel->isVisible())
+        {
+            std::printf ("  panelet forsvandt ikke efter oplaasning (FEJL)\n");
+            typeOk = false;
+        }
+    }
+   #endif
+
     // 1.1: "?" ved de to 0 ms-tilstande -> forklaringsboksen
     for (auto* c : ed->getChildren())
         if (auto* b = dynamic_cast<juce::Button*> (c))

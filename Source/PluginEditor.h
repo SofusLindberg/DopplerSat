@@ -54,6 +54,9 @@ private:
     class LicencePanel;                        // 2.08: laas op (login / licensnoegle) og licens-info
     void showLicencePanel();                   // 2.08
    #endif
+   #if DS_SERIAL
+    class SerialPanel;                         // 2.10: skriv serienoeglen (een gang paa hver computer)
+   #endif
 
     void timerCallback() override;
     void updateSweepLcd();                     // 1.15: kun Sweep-displayets tekst (ved skrivning og traek)
@@ -100,6 +103,10 @@ private:
     juce::TextButton licenceButton;
     std::unique_ptr<LicencePanel> licencePanel;
     int licenceTick = 0;
+   #endif
+   #if DS_SERIAL
+    std::unique_ptr<SerialPanel> serialPanel;  // dækker alt, saa laenge pluginnet er laast; ingen knap, naar laast op
+    int serialTick = 0;
    #endif
 
     std::unique_ptr<SliderAtt> rateAtt, syncRateAtt, offsetAtt, freqAtt, amountAtt, widthAtt, dryWetAtt, outAtt;

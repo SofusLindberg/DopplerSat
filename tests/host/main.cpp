@@ -468,9 +468,12 @@ int main (int argc, char** argv)
        #if JUCE_MAC
         dir = dir.getChildFile ("Application Support");
        #endif
-        const auto f = dir.getChildFile ("SoundSo").getChildFile ("Pitch Bend Texture").getChildFile ("licence.dat");
+        // 2.10: serienoeglens fil (serial.dat), hvis den findes, ellers 2.08's licensfil
+        const auto pbt = dir.getChildFile ("SoundSo").getChildFile ("Pitch Bend Texture");
+        const auto f = pbt.getChildFile ("serial.dat").existsAsFile() ? pbt.getChildFile ("serial.dat") : pbt.getChildFile ("licence.dat");
         const auto bak = f.withFileExtension ("locktest-bak");
-        if (! f.existsAsFile()) { std::printf ("FEJL: ingen licens paa denne computer (LicenseTool unlock-dev)\n"); return 1; }
+        if (! f.existsAsFile()) { std::printf ("FEJL: ingen licens paa denne computer (LicenseTool serial-unlock / unlock-dev)\n"); return 1; }
+        std::printf ("  laasefil: %s\n", f.getFileName().toRawUTF8());
         auto measure = [&] (double& peakDiff)
         {
             auto p = load (argv[1]);

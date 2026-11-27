@@ -276,6 +276,13 @@ Brugerens ord (2026-11-17):
 
 Status 2.09: **pluginnet har ingen licens, intet login og ingen lås** (efter brugerens ønske). Kravet om købt licens gælder først, når salgskanalen er valgt. Koden fra 2.08 ligger stadig og slås til med `cmake -DDS_LICENSE=ON`. Den skal sandsynligvis erstattes af den valgte butiks egen licens (fx Moonbase).
 
+Brugerens ord (2026-11-27):
+> Genbrug serial-key (som kun åbnes med én bestemt kode), som egentlig bare fungerer som password i denne demo for, at pluginnet ikke kopieres ud på nettet. Når serialkey er skrevet i pluginnet på pågældende brugeres computer, skal han aldrig skrive den igen. Så: Serialkey der åbnes med én bestemt key, som jeg gemmer og sender med til min ven (den skal ikke lægges i mappen med pluginnet)
+
+> gem nøglen som et element, der altid kan ses i oversigten her i chatten, så den hurtigt kan tilgås og aldrig bliver væk
+
+Krav (2.10): pluginnet låses op med **én bestemt serienøgle**, offline og uden server eller login. Nøglen skrives én gang pr. computer og huskes derefter. Nøglen må ikke ligge i zip-filen eller mappen med pluginnet og skal heller ikke kunne læses ud af pluginfilen. Brugeren gemmer den selv og sender den for sig. Nøglen er gemt i en fastgjort, privat side i brugerens claude.ai-sidebjælke og i `%APPDATA%SoundSokeysserial-key.txt`, aldrig i repoet.
+
 Brugeren vil tage én ting ad gangen. Band Size-displayet venter.
 
 Brugerens ord:

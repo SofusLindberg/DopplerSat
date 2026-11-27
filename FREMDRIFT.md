@@ -67,6 +67,26 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-27 (2) — 2.10: serienøgle (én fast nøgle, offline, huskes på computeren)
+
+- Brugeren: "Genbrug serial-key (som kun åbnes med én bestemt kode), som egentlig bare fungerer som password i denne demo for, at pluginnet ikke kopieres ud på nettet. Når serialkey er skrevet i pluginnet på pågældende brugeres computer, skal han aldrig skrive den igen. Så: Serialkey der åbnes med én bestemt key, som jeg gemmer og sender med til min ven (den skal ikke lægges i mappen med pluginnet)"
+- Undervejs: "gem nøglen som et element, der altid kan ses i oversigten her i chatten, så den hurtigt kan tilgås og aldrig bliver væk"
+- **2.10:** ny lås `PitchBendSerial` (`Source/SerialKey.h/.cpp`, CMake-indstillingen `DS_SERIAL`, som standard slået til; kan ikke kombineres med `DS_LICENSE`). Uden nøgle kører lyden som Bypass, og et panel dækker editoren ("Unlock Pitch Bend Texture", feltet "Serial key", knappen Unlock, rød besked ved forkert nøgle). Med den rigtige nøgle forsvinder panelet, og der er ingen knap bagefter.
+  - Pluginnet kender ikke nøglen, kun en saltet SHA-256 af den (`Source/SerialKeyHash.h`). Nøglen er 20 tilfældige tegn fra 32 (100 bit), så den ikke kan gættes ud fra hashen. Store eller små bogstaver, mellemrum og bindestreger er lige meget.
+  - Den rigtige nøgle gemmes BlowFish-krypteret med computerens SMBIOS-UUID (JUCE `getUniqueDeviceID`) i `%APPDATA%SoundSoPitch Bend Textureserial.dat`. Den samme fil gælder for alle versioner fra 2.10. Kopieres filen til en anden computer, virker den ikke dér. Andre åbne instanser følger med inden for et sekund.
+- **Nøglen** er lavet med `LicenseTool serial-new`, som skriver hashen i `SerialKeyHash.h` og gemmer nøglen i `%APPDATA%SoundSokeysserial-key.txt`. Den står også i en privat side, der er fastgjort i brugerens sidebjælke: https://claude.ai/artifact/DGTRV4bEcNqeA4eKgzVyU3. Den står IKKE i repoet. Nye LicenseTool-kommandoer: `serial-new [--force]`, `serial-unlock <nøgle>` og `serial-lock`.
+- **Test:**
+  - EditorShot `--serial <nøgle>`: panelet vises, når pluginnet er låst. En forkert nøgle holder det låst og viser beskeden. Den rigtige nøgle med små bogstaver låser op og skjuler panelet. Billeder: doppler12_locked og doppler13_wrongkey.
+  - LicenseTool: en forkert nøgle afvises, og den rigtige med mellemrum i stedet for bindestreger virker og læses igen fra filen.
+  - Nøglen findes hverken i pluginfilen eller i serial.dat. `HostSmoke --locktest` (nu med serial.dat) viste 0,00 cent uden nøgle og 195 cent med: LAAS OK.
+  - `--compare` mod 2.09 gav SAMME LYD, bit-identisk. Hele HostSmoke: OK.
+  - At serial.dat ikke virker på en anden computer, er ikke afprøvet (der er kun én computer).
+- **Zip:** `dist/Pitch Bend Texture 2.10 (Windows VST3).zip` (4,1 MB), med et nyt trin 5 om serienøglen i `Installation.txt`. Søgt igennem for personlige spor og for nøglen: 0 fund.
+- **Installation:** afbrudt ved UAC-spørgsmålet ("Handlingen blev afbrudt af brugeren"). 2.10 er IKKE installeret endnu.
+- **Før HostSmoke på en ny computer:** kør `LicenseTool serial-unlock <nøgle>` (ellers er pluginnet låst og lyder tørt).
+
+---
+
 ## 2026-11-27 — Zip-fil med 2.09 til en ven
 
 - Brugeren: "vil lave en zipfil, jeg kan sende til min ven med pluginnet med en kort beskrivelse af, hvordan han installerer, og samtidigt sørge for, at intet fra min computer medtages (personlige filer, noget der kan identificere mig. Koden skal ikke være synlig for modtageren)"
