@@ -67,6 +67,15 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-27 — Zip-fil med 2.09 til en ven
+
+- Brugeren: "vil lave en zipfil, jeg kan sende til min ven med pluginnet med en kort beskrivelse af, hvordan han installerer, og samtidigt sørge for, at intet fra min computer medtages (personlige filer, noget der kan identificere mig. Koden skal ikke være synlig for modtageren)"
+- `dist/Pitch Bend Texture 2.09 (Windows VST3).zip` (4,1 MB, `dist/` er i .gitignore). Indhold: `Installation.txt` (dansk, UTF-8 med BOM: krav, installation i C:\Program Files\Common Files\VST3, rescan i Ableton / FL / Reaper, de vigtigste knapper, afinstallation) og mappen `Pitch Bend Texture 2.09.vst3` (moduleinfo.json + den kompilerede DLL, samme hash som den installerede 2.09). Ingen kildekode.
+- **Tjekket for personlige spor:** DLL'en indeholder ingen stier fra computeren, intet brugernavn, ingen .pdb-henvisning og ingen kildefilnavne. Den eneste tekst om producenten er pladsholderen "DitNavn". Zip-posterne har en fast dato og ingen ejeroplysninger. Den udpakkede zip blev søgt igennem: 0 fund.
+- Pluginnet er uændret. Ingen ny version.
+
+---
+
 ## 2026-11-17 (4) — 2.09: licens og login fjernet fra pluginnet igen
 
 - Brugeren: "fuck, vi fjerner det med test licens-kode lige nu. Det er først relevant, når jeg har besluttet, hvilken kanal, jeg vil sælge pluginnet igennem. Så fjern login på pluginnet igen"

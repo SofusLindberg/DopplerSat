@@ -374,3 +374,6 @@ tests/host/build/
 
 # Test-build uden SSE2 (cmake -B build-shim -DDS_FORCE_SIMD_SHIM=ON)
 build-shim/
+
+# Zip-filer til at sende plugin til andre (indeholder kun den byggede .vst3 og en vejledning)
+dist/
