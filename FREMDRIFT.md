@@ -67,6 +67,14 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-27 (3) — Serienøglen glemt på udviklercomputeren, så brugeren kan prøve den
+
+- Brugeren: "kør tests/host/build/LicenseTool_artefacts/Release/LicenseTool.exe serial-lock, så jeg kan prøve serienøglen"
+- Kørt: `serial.dat` er slettet, så 2.10 er låst her nu. Der er ingen kodeændringer.
+- **Husk:** før HostSmoke skal computeren låses op igen. Det sker, når brugeren skriver nøglen i pluginnet, eller med `LicenseTool serial-unlock <nøgle>`.
+
+---
+
 ## 2026-11-27 (2) — 2.10: serienøgle (én fast nøgle, offline, huskes på computeren)
 
 - Brugeren: "Genbrug serial-key (som kun åbnes med én bestemt kode), som egentlig bare fungerer som password i denne demo for, at pluginnet ikke kopieres ud på nettet. Når serialkey er skrevet i pluginnet på pågældende brugeres computer, skal han aldrig skrive den igen. Så: Serialkey der åbnes med én bestemt key, som jeg gemmer og sender med til min ven (den skal ikke lægges i mappen med pluginnet)"
