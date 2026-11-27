@@ -82,7 +82,7 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
   - `--compare` mod 2.09 gav SAMME LYD, bit-identisk. Hele HostSmoke: OK.
   - At serial.dat ikke virker på en anden computer, er ikke afprøvet (der er kun én computer).
 - **Zip:** `dist/Pitch Bend Texture 2.10 (Windows VST3).zip` (4,1 MB), med et nyt trin 5 om serienøglen i `Installation.txt`. Søgt igennem for personlige spor og for nøglen: 0 fund.
-- **Installation:** afbrudt ved UAC-spørgsmålet ("Handlingen blev afbrudt af brugeren"). 2.10 er IKKE installeret endnu.
+- **Installation:** de to første forsøg blev afbrudt ved UAC-spørgsmålet ("Handlingen blev afbrudt af brugeren"). Brugeren skrev "Ja, installér", og tredje forsøg (startet i baggrunden) lykkedes. Verificeret med filhash (37BE5EC9…). 17 Pitch Bend-versioner ligger nu i VST3-mappen, og de gamle er bevaret. Computeren her er allerede låst op med serial.dat (fra testen), så 2.10 virker med det samme i Ableton.
 - **Før HostSmoke på en ny computer:** kør `LicenseTool serial-unlock <nøgle>` (ellers er pluginnet låst og lyder tørt).
 
 ---
