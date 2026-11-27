@@ -4,6 +4,13 @@ Logbog over arbejdet på Doppler Saturator. Nyeste øverst. Claude skriver en ny
 
 ---
 
+## 2026-11-27 (1) — FL Plugin Host 1.04: FLEX med de gratis lyde (intet ændret i Pitch Bend Texture)
+
+- Brugeren: "Er det ikke muligt at bruge de flex-lyde, der gratis følger med FL-studio? De er de eneste lyde, jeg bruger fra Flex", og senere "fortsæt, hvor du slap".
+- Lavet i `../FLPluginHost` som "FL Plugin Host 1.04" + "FL Plugin Host Synth 1.04" (installeret og verificeret): FLEX er valgbar og spiller FL's medfølgende og brugerens hentede pakker (manglede svar på tre sti-ID'er og FL's `Shared`-mappe til FLAC-dekoderen; ejerskab og licenstjek ikke rørt). Mod X / Y er nu 0..100 % med standard 100 % / 0 % som i FL. Detaljer i `../FLPluginHost/FREMDRIFT.md`.
+
+---
+
 ## 2026-11-26 (3) — FL Plugin Host 1.03 (intet ændret i Pitch Bend Texture)
 
 - Brugeren ønskede FL Keys, FPC og FLEX, "alle indstillingsvinduer for alle plugins, inklusive pitch" (FL's kanalvindue genskabt med automation, uden track routing). Piano roll og channel rack skulle springes over, fordi de ikke kan hentes fra FL Studio.
